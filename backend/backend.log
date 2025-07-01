@@ -1,0 +1,84 @@
+INFO:     Will watch for changes in these directories: ['/Users/ameetmund/Tech/Project/pdf-extraction-app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [42061] using StatReload
+INFO:     Started server process [42068]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:64794 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64849 - "GET / HTTP/1.1" 200 OK
+Processing PDF file: 125517-revised-ay2024-25-ameetraj-mund-aljpm5769q-computation.pdf, size: 134681 bytes
+Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpgnf_gw1k.pdf
+PDF opened successfully, 9 pages found
+Page 1: extracted 211 words
+Page 2: extracted 153 words
+Page 3: extracted 183 words
+Page 4: extracted 127 words
+Page 5: extracted 141 words
+Page 6: extracted 131 words
+Page 7: extracted 202 words
+Page 8: extracted 202 words
+Page 9: extracted 114 words
+Successfully extracted 1464 text blocks
+INFO:     127.0.0.1:64853 - "POST /upload-pdf/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49439 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50136 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50237 - "GET / HTTP/1.1" 200 OK
+Processing PDF file: 125517-revised-ay2024-25-ameetraj-mund-aljpm5769q-computation.pdf, size: 134681 bytes
+Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpv3b20sge.pdf
+PDF opened successfully, 9 pages found
+Page 1: extracted 211 words
+Page 2: extracted 153 words
+Page 3: extracted 183 words
+Page 4: extracted 127 words
+Page 5: extracted 141 words
+Page 6: extracted 131 words
+Page 7: extracted 202 words
+Page 8: extracted 202 words
+Page 9: extracted 114 words
+Successfully extracted 1464 text blocks
+INFO:     127.0.0.1:50249 - "POST /upload-pdf/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50470 - "GET / HTTP/1.1" 200 OK
+Processing PDF file: 125517-revised-ay2024-25-ameetraj-mund-aljpm5769q-computation.pdf, size: 134681 bytes
+Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmphvxy7y74.pdf
+PDF opened successfully, 9 pages found
+Page 1: extracted 211 words
+Page 2: extracted 153 words
+Page 3: extracted 183 words
+Page 4: extracted 127 words
+Page 5: extracted 141 words
+Page 6: extracted 131 words
+Page 7: extracted 202 words
+Page 8: extracted 202 words
+Page 9: extracted 114 words
+Successfully extracted 1464 text blocks
+INFO:     127.0.0.1:50476 - "POST /upload-pdf/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50832 - "OPTIONS /export-data/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50834 - "POST /export-data/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51629 - "GET / HTTP/1.1" 200 OK
+Processing PDF file: ALJPM5769Q_24120100021478ICIC_DTAX_01122024_TaxPayer.pdf, size: 12108 bytes
+Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpebafpfgt.pdf
+PDF opened successfully, 1 pages found
+Page 1: extracted 150 words
+Successfully extracted 150 text blocks
+INFO:     127.0.0.1:51651 - "POST /upload-pdf/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52649 - "GET / HTTP/1.1" 200 OK
+Processing PDF file: ALJPM5769Q_24120100021478ICIC_DTAX_01122024_TaxPayer.pdf, size: 12108 bytes
+Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpwxbx2w1j.pdf
+PDF opened successfully, 1 pages found
+Page 1: extracted 150 words
+Successfully extracted 150 text blocks
+INFO:     127.0.0.1:52660 - "POST /upload-pdf/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52778 - "OPTIONS /export-data/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52778 - "POST /export-data/ HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42068]
+Fatal Python error: init_sys_streams: can't initialize sys standard streams
+Python runtime state: core initialized
+OSError: [Errno 9] Bad file descriptor
+
+Current thread 0x00000001e864cc00 (most recent call first):
+  <no Python frame>
+INFO:     Stopping reloader process [42061]
