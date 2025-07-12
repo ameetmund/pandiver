@@ -1,4 +1,4 @@
-# PDF Text Extraction & Table Builder
+# Pandiver - PDF Text Extraction & Table Builder
 
 A full-stack application that allows users to upload PDF files, extract text blocks with coordinates, interactively select and drag text to build tables, and export the data to XLSX/CSV formats.
 
@@ -48,7 +48,7 @@ A full-stack application that allows users to upload PDF files, extract text blo
 
 1. Navigate to the backend directory:
    ```bash
-   cd pdf-extraction-app/backend
+   cd pandiver/backend
    ```
 
 2. Create and activate a virtual environment:
@@ -77,7 +77,7 @@ The backend API will be available at `http://localhost:8000`
 
 1. Navigate to the frontend directory:
    ```bash
-   cd pdf-extraction-app/frontend
+   cd pandiver/frontend
    ```
 
 2. Install Node.js dependencies:
@@ -147,7 +147,7 @@ const exportResponse = await fetch('http://localhost:8000/export-data/', {
 ## Project Structure
 
 ```
-pdf-extraction-app/
+pandiver/
 ├── backend/
 │   ├── main.py                 # FastAPI application
 │   ├── requirements.txt        # Python dependencies

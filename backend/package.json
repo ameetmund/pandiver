@@ -1,0 +1,10 @@
+{
+  "name": "pandiver-backend",
+  "version": "1.0.0",
+  "description": "FastAPI backend for PDF to XLS/CSV/TXT conversion",
+  "main": "main.py",
+  "scripts": {
+    "start": "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+  },
+  "dependencies": {}
+}
