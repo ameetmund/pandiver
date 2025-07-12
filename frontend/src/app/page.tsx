@@ -1,154 +1,168 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import DragDropProvider from '@/components/DragDropProvider';
-import PDFUploader from '@/components/PDFUploader';
-import InteractivePDFViewer from '@/components/InteractivePDFViewer';
-import DataTable from '@/components/DataTable';
-import ExportData from '@/components/ExportData';
+import React from 'react';
+import Link from 'next/link';
 
-interface TextBlock {
-  text: string;
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  width: number;
-  height: number;
-  page: number;
-}
-
-export default function Home() {
-  const [message, setMessage] = useState('');
-  const [textBlocks, setTextBlocks] = useState<TextBlock[]>([]);
-  const [tableData, setTableData] = useState<string[][]>([]);
-  const [columnHeaders, setColumnHeaders] = useState<string[]>([]);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-
-  const testBackend = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/');
-      const data = await response.json();
-      setMessage(data.message);
-    } catch (error) {
-      setMessage('Error connecting to backend');
-    }
-  };
-
-  const handleTextBlocksExtracted = (extractedTextBlocks: TextBlock[], uploadedFile: File) => {
-    setTextBlocks(extractedTextBlocks);
-    setPdfFile(uploadedFile);
-  };
-
-  const handleTableDataChange = (data: string[][]) => {
-    setTableData(data);
-  };
-
+export default function LandingPage() {
   return (
-    <DragDropProvider>
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <header className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Pandiver - PDF Text Extraction & Table Builder
-            </h1>
-            <p className="text-gray-600">
-              Upload a PDF, select single or multiple text blocks, drag them to the table, and export your data.
-            </p>
-          </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex justify-between items-center">
+            <div className="text-2xl font-bold text-blue-600">
+              Pandiver
+            </div>
+            <div className="space-x-4">
+              <Link 
+                href="/dashboard/smart-pdf-parser" 
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Launch App
+              </Link>
+            </div>
+          </nav>
+        </div>
+      </header>
 
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Application Status</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <button
-                  onClick={testBackend}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Test Backend Connection
-                </button>
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-16 text-center">
+        <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          Transform PDFs into Structured Data
+        </h1>
+        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          Our Smart PDF Parser uses advanced text detection to help you extract, organize, and export data from PDF files with an intuitive drag-and-drop interface.
+        </p>
+        <div className="space-x-4">
+          <Link 
+            href="/dashboard/smart-pdf-parser" 
+            className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg hover:bg-blue-700 transition-colors inline-block"
+          >
+            Try Smart PDF Parser
+          </Link>
+          <a 
+            href="#features" 
+            className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg border-2 border-blue-600 hover:bg-blue-50 transition-colors inline-block"
+          >
+            Learn More
+          </a>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="bg-white py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
+            Powerful Features
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6">
+              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
               </div>
-              
-              {message && (
-                <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                  Backend Response: {message}
-                </div>
-              )}
+              <h3 className="text-xl font-semibold mb-2">Smart Text Detection</h3>
+              <p className="text-gray-600">
+                Advanced algorithms automatically detect and extract text blocks from your PDF files with precise coordinates.
+              </p>
             </div>
-          </div>
-
-          {/* PDF Upload Section */}
-          <div className="mb-6">
-            <PDFUploader onTextBlocksExtracted={handleTextBlocksExtracted} />
-          </div>
-
-          {/* Main Drag & Drop Section - PDF and Table Side by Side */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-            <div className="order-1">
-              <InteractivePDFViewer 
-                pdfFile={pdfFile} 
-                textBlocks={textBlocks}
-              />
+            <div className="text-center p-6">
+              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Drag & Drop Interface</h3>
+              <p className="text-gray-600">
+                Intuitive drag-and-drop functionality to organize extracted text into tables with custom headers and formatting.
+              </p>
             </div>
-            <div className="order-2">
-              <DataTable 
-                onDataChange={handleTableDataChange}
-                onHeadersChange={setColumnHeaders}
-              />
-            </div>
-          </div>
-
-          {/* Export Section */}
-          <div className="mb-8">
-            <ExportData tableData={tableData} columnHeaders={columnHeaders} />
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-3">✅ What&apos;s Working:</h3>
-            <ul className="list-disc list-inside space-y-2 text-blue-800">
-              <li>✅ FastAPI backend running on port 8000</li>
-              <li>✅ Next.js frontend running on port 3000</li>
-              <li>✅ React and TypeScript setup</li>
-              <li>✅ Tailwind CSS styling</li>
-              <li>✅ react-dnd for drag & drop</li>
-              <li>✅ PDF upload and text extraction components</li>
-              <li>✅ Interactive table with add/remove rows & columns</li>
-              <li>✅ Export functionality (CSV & Excel)</li>
-              <li>✅ Enhanced drag & drop with multi-selection and side-by-side layout</li>
-            </ul>
-            
-            <div className="mt-4 p-4 bg-white rounded border-l-4 border-blue-500">
-              <h4 className="font-semibold mb-2">Backend API Endpoints:</h4>
-              <ul className="text-sm space-y-1">
-                <li>• <code>GET /</code> - Health check</li>
-                <li>• <code>POST /upload-pdf/</code> - Upload and extract text from PDF</li>
-                <li>• <code>POST /export-data/</code> - Export table data to XLSX/CSV</li>
-                <li>• <code>GET /docs</code> - API documentation</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-green-900 mb-3">🎉 Ready to Use:</h3>
-            <ol className="list-decimal list-inside space-y-2 text-green-800">
-              <li>✅ Upload PDF and extract text blocks</li>
-              <li>✅ Navigate through PDF pages with enhanced text block visibility</li>
-              <li>✅ Single drag: Drag individual text blocks to table cells</li>
-              <li>✅ Multi-select: Enable selection mode → drag to select multiple → drag to table</li>
-              <li>✅ Organize data in interactive table with custom headers</li>
-              <li>✅ Export your data as CSV or Excel files</li>
-            </ol>
-            <div className="mt-4 p-3 bg-white rounded border-l-4 border-green-500">
-              <p className="text-sm font-medium text-green-800">
-                💡 <strong>Pro Tip:</strong> Enable &quot;Selection Mode&quot; to drag-select multiple text blocks at once! 
-                Selected blocks turn green with checkmarks. Drag any selected block to move all selected text to table cells. 
-                Single-block mode still works for individual selections.
+            <div className="text-center p-6">
+              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Multiple Export Formats</h3>
+              <p className="text-gray-600">
+                Export your organized data to CSV or Excel formats for further analysis and integration with other tools.
               </p>
             </div>
           </div>
         </div>
-      </div>
-    </DragDropProvider>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
+            How It Works
+          </h2>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                1
+              </div>
+              <h3 className="font-semibold mb-2">Upload PDF</h3>
+              <p className="text-gray-600 text-sm">Upload your PDF file to start the extraction process</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                2
+              </div>
+              <h3 className="font-semibold mb-2">Review Text Blocks</h3>
+              <p className="text-gray-600 text-sm">View automatically detected text blocks overlaid on your PDF</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                3
+              </div>
+              <h3 className="font-semibold mb-2">Drag & Organize</h3>
+              <p className="text-gray-600 text-sm">Drag text blocks into table cells to organize your data</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                4
+              </div>
+              <h3 className="font-semibold mb-2">Export Data</h3>
+              <p className="text-gray-600 text-sm">Download your organized data as CSV or Excel files</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-blue-600 text-white py-16">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl font-bold mb-4">
+            Ready to Transform Your PDFs?
+          </h2>
+          <p className="text-xl mb-8 text-blue-100">
+            Start extracting and organizing your PDF data in seconds.
+          </p>
+          <Link 
+            href="/dashboard/smart-pdf-parser" 
+            className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-block"
+          >
+            Get Started Now
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center">
+            <div className="text-xl font-bold">
+              Pandiver
+            </div>
+            <div className="text-gray-400">
+              © 2024 Pandiver. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

@@ -14,7 +14,7 @@ app = FastAPI(title="PDF Text Extraction API", version="1.0.0")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js development server
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Next.js development server (both ports)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

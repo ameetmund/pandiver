@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "../styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Pandiver - PDF Text Extraction & Table Builder",
-  description: "Upload PDFs, extract text blocks, and build tables with drag-and-drop interface",
+  title: "Pandiver - Smart PDF Parser",
+  description: "Transform PDFs into structured data with our Smart PDF Parser. Extract, organize, and export data from PDF files with an intuitive drag-and-drop interface.",
 };
 
 export default function RootLayout({
