@@ -1,24 +1,64 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import pdfplumber
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import pandas as pd
 import tempfile
 import os
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+import jwt
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
+import uuid
 
 app = FastAPI(title="PDF Text Extraction API", version="1.0.0")
+
+# Security configuration
+SECRET_KEY = "your-secret-key-here"  # In production, use environment variable
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Security scheme
+security = HTTPBearer()
+
+# In-memory user storage (replace with database in production)
+users_db = {}
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Next.js development server (both ports)
+    allow_origins=["http://localhost:3000"],  # Next.js development server on port 3000
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Pydantic models
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class User(BaseModel):
+    id: str
+    name: str
+    email: str
+    created_at: datetime
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: User
 
 class TextBlock(BaseModel):
     text: str
@@ -35,12 +75,150 @@ class ExportData(BaseModel):
     filename: str
     format: str
 
+# Authentication helper functions
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user_id
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+def get_current_user(user_id: str = Depends(verify_token)):
+    user = users_db.get(user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+# Authentication endpoints
+@app.post("/auth/signup", response_model=Token)
+async def signup(user_data: UserCreate):
+    # Check if user already exists
+    for user in users_db.values():
+        if user["email"] == user_data.email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+    
+    # Create new user
+    user_id = str(uuid.uuid4())
+    hashed_password = get_password_hash(user_data.password)
+    
+    new_user = {
+        "id": user_id,
+        "name": user_data.name,
+        "email": user_data.email,
+        "password": hashed_password,
+        "created_at": datetime.utcnow()
+    }
+    
+    users_db[user_id] = new_user
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user_id}, expires_delta=access_token_expires
+    )
+    
+    # Return token and user info
+    user_response = User(
+        id=user_id,
+        name=new_user["name"],
+        email=new_user["email"],
+        created_at=new_user["created_at"]
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_response
+    }
+
+@app.post("/auth/login", response_model=Token)
+async def login(user_credentials: UserLogin):
+    # Find user by email
+    user = None
+    user_id = None
+    for uid, u in users_db.items():
+        if u["email"] == user_credentials.email:
+            user = u
+            user_id = uid
+            break
+    
+    if not user or not verify_password(user_credentials.password, user["password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user_id}, expires_delta=access_token_expires
+    )
+    
+    # Return token and user info
+    user_response = User(
+        id=user_id,
+        name=user["name"],
+        email=user["email"],
+        created_at=user["created_at"]
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_response
+    }
+
+@app.get("/auth/me", response_model=User)
+async def get_current_user_info(current_user: dict = Depends(get_current_user)):
+    return User(
+        id=current_user["id"],
+        name=current_user["name"],
+        email=current_user["email"],
+        created_at=current_user["created_at"]
+    )
+
 @app.get("/")
 async def root():
     return {"message": "PDF Text Extraction API"}
 
+# Protected PDF processing endpoints
 @app.post("/upload-pdf/", response_model=List[TextBlock])
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     """
     Upload a PDF file and extract text blocks with coordinates
     """
@@ -48,7 +226,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="File must be a PDF")
     
     try:
-        print(f"Processing PDF file: {file.filename}, size: {file.size} bytes")
+        print(f"Processing PDF file: {file.filename}, size: {file.size} bytes for user: {current_user['email']}")
         
         # Save uploaded file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
@@ -104,19 +282,15 @@ async def upload_pdf(file: UploadFile = File(...)):
                 grouped_blocks = group_text_blocks(raw_blocks)
                 text_blocks.extend(grouped_blocks)
         
-        print(f"Successfully extracted {len(text_blocks)} text blocks")
-        
-        # Clean up temporary file
+        # Clean up temp file
         os.unlink(tmp_file_path)
         
+        print(f"Successfully processed PDF: {len(text_blocks)} text blocks extracted")
         return text_blocks
-    
+        
     except Exception as e:
         print(f"Error processing PDF: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        # Clean up temporary file in case of error
+        # Clean up temp file if it exists
         if 'tmp_file_path' in locals():
             try:
                 os.unlink(tmp_file_path)
@@ -221,31 +395,47 @@ def should_group_blocks(block1: TextBlock, block2: TextBlock) -> bool:
     return should_group
 
 @app.post("/export-data/")
-async def export_data(export_data: ExportData):
+async def export_data(export_data: ExportData, current_user: dict = Depends(get_current_user)):
     """
-    Export table data to CSV or XLSX format
+    Export table data to Excel or CSV format
     """
     try:
+        print(f"Exporting data for user: {current_user['email']}")
+        
         # Create DataFrame from the data
         df = pd.DataFrame(export_data.data)
         
-        # Create temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{export_data.format}') as tmp_file:
-            if export_data.format.lower() == 'csv':
-                df.to_csv(tmp_file.name, index=False, header=False)
-            elif export_data.format.lower() == 'xlsx':
+        # Create temporary file for export
+        if export_data.format.lower() == 'xlsx':
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
                 df.to_excel(tmp_file.name, index=False, header=False)
-            else:
-                raise HTTPException(status_code=400, detail="Format must be 'csv' or 'xlsx'")
+                tmp_file_path = tmp_file.name
             
-            # Return file response
-            return FileResponse(
-                tmp_file.name,
-                media_type='application/octet-stream',
-                filename=f"{export_data.filename}.{export_data.format}"
-            )
-    
+            filename = f"{export_data.filename}.xlsx"
+            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            
+        elif export_data.format.lower() == 'csv':
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='w') as tmp_file:
+                df.to_csv(tmp_file.name, index=False, header=False)
+                tmp_file_path = tmp_file.name
+            
+            filename = f"{export_data.filename}.csv"
+            media_type = "text/csv"
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported format. Use 'xlsx' or 'csv'")
+        
+        print(f"Export file created: {tmp_file_path}")
+        
+        # Return file response
+        return FileResponse(
+            path=tmp_file_path,
+            media_type=media_type,
+            filename=filename,
+            background=None  # File will be cleaned up automatically
+        )
+        
     except Exception as e:
+        print(f"Error exporting data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error exporting data: {str(e)}")
 
 if __name__ == "__main__":

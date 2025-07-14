@@ -4,178 +4,181 @@ import React, { useState } from 'react';
 
 interface ExportDataProps {
   tableData: string[][];
-  columnHeaders?: string[];
+  columnHeaders: string[];
 }
 
 export default function ExportData({ tableData, columnHeaders }: ExportDataProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string>('');
-  const [filename, setFilename] = useState<string>('exported_data');
 
-  const handleExport = async (format: 'csv' | 'xlsx') => {
+  const handleExport = async (format: 'xlsx' | 'csv') => {
     if (!tableData || tableData.length === 0) {
-      setExportStatus('❌ No data to export. Please add some content to the table first.');
-      return;
-    }
-
-    // Check if table has any content
-    const hasContent = tableData.some(row => 
-      row.some(cell => cell.trim().length > 0)
-    );
-
-    if (!hasContent) {
-      setExportStatus('❌ Table is empty. Please add some content before exporting.');
+      setExportStatus('No data to export');
       return;
     }
 
     setIsExporting(true);
-    setExportStatus(`📤 Exporting as ${format.toUpperCase()}...`);
+    setExportStatus(`Exporting as ${format.toUpperCase()}...`);
 
     try {
-      // Include headers in the data if they exist
-      const dataWithHeaders = columnHeaders && columnHeaders.length > 0 
+      // Get authentication token
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
+      // Prepare data with headers
+      const exportData = columnHeaders.length > 0 
         ? [columnHeaders, ...tableData]
         : tableData;
-      
-      const exportData = {
-        data: dataWithHeaders,
-        filename: filename || 'exported_data',
-        format: format
-      };
 
       const response = await fetch('http://localhost:8000/export-data/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(exportData),
+        body: JSON.stringify({
+          data: exportData,
+          filename: `exported_data_${new Date().toISOString().split('T')[0]}`,
+          format: format
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        }
+        throw new Error(`Export failed: ${response.statusText}`);
       }
 
       // Handle file download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${filename}.${format}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `exported_data_${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
       window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
-      setExportStatus(`✅ Successfully exported as ${filename}.${format}`);
-      
+      setExportStatus(`✅ Successfully exported as ${format.toUpperCase()}`);
     } catch (error) {
       console.error('Export error:', error);
-      setExportStatus(`❌ Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setExportStatus(`❌ ${error instanceof Error ? error.message : 'Export failed'}`);
     } finally {
       setIsExporting(false);
-      
-      // Clear status after 5 seconds
-      setTimeout(() => {
-        setExportStatus('');
-      }, 5000);
     }
-  };
-
-  const getDataPreview = () => {
-    if (!tableData || tableData.length === 0) {
-      return 'No data available';
-    }
-
-    const headerCount = columnHeaders && columnHeaders.length > 0 ? 1 : 0;
-    const dataRowCount = tableData.length;
-    const totalRowCount = headerCount + dataRowCount;
-    const columnCount = tableData[0]?.length || 0;
-    
-    const totalCells = totalRowCount * columnCount;
-    const filledCells = tableData.reduce((count, row) => 
-      count + row.filter(cell => cell.trim().length > 0).length, 0
-    ) + (columnHeaders ? columnHeaders.filter(h => h.trim().length > 0).length : 0);
-
-    const headersText = headerCount > 0 ? ` (${headerCount} header + ${dataRowCount} data rows)` : '';
-    return `${totalRowCount} rows${headersText} × ${columnCount} columns (${filledCells}/${totalCells} cells filled)`;
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-semibold mb-4">📁 Export Data</h2>
+    <div className="bg-white rounded-2xl shadow-lg border border-[#0D0D0C]/10 p-8">
+      <h2 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-6">
+        📊 Export Data
+      </h2>
       
-      <div className="space-y-4">
-        {/* Filename Input */}
+      <div className="space-y-6">
         <div>
-          <label htmlFor="filename" className="block text-sm font-medium text-gray-700 mb-2">
-            Filename (without extension)
-          </label>
-          <input
-            id="filename"
-            type="text"
-            value={filename}
-            onChange={(e) => setFilename(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
-            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter filename"
-            disabled={isExporting}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Only letters, numbers, hyphens, and underscores allowed
+          <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal mb-4">
+            Export your organized data to Excel or CSV format for further analysis.
           </p>
-        </div>
-
-        {/* Data Preview */}
-        <div className="p-3 bg-gray-50 rounded border">
-          <p className="text-sm text-gray-600">
-            <strong>Data Preview:</strong> {getDataPreview()}
-          </p>
-        </div>
-
-        {/* Export Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleExport('csv')}
-            disabled={isExporting}
-            className={`flex-1 py-2 px-4 rounded font-medium ${
-              isExporting
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
-            }`}
-          >
-            {isExporting ? 'Exporting...' : '📄 Export as CSV'}
-          </button>
           
-          <button
-            onClick={() => handleExport('xlsx')}
-            disabled={isExporting}
-            className={`flex-1 py-2 px-4 rounded font-medium ${
-              isExporting
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
-            }`}
-          >
-            {isExporting ? 'Exporting...' : '📊 Export as Excel'}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={() => handleExport('xlsx')}
+              disabled={isExporting || !tableData || tableData.length === 0}
+              className="flex-1 px-6 py-3 text-[#FFFFFF] font-bold text-base bg-[#00C7BE] rounded-[20px] hover:bg-[#086C67] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>{isExporting ? 'Exporting...' : 'Export to Excel'}</span>
+            </button>
+            
+            <button
+              onClick={() => handleExport('csv')}
+              disabled={isExporting || !tableData || tableData.length === 0}
+              className="flex-1 px-6 py-3 text-[#0D0D0C] font-bold text-base bg-transparent border border-[#086C67] rounded-[20px] hover:bg-[#086C67] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>{isExporting ? 'Exporting...' : 'Export to CSV'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Status Message */}
         {exportStatus && (
-          <div className={`p-4 rounded border ${
-            exportStatus.includes('✅') 
+          <div className={`p-4 rounded-xl border ${
+            exportStatus.includes('Successfully') 
               ? 'bg-green-50 border-green-200 text-green-700' 
-              : exportStatus.includes('❌')
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-blue-50 border-blue-200 text-blue-700'
+              : exportStatus.includes('❌') 
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-[#F9FEFE] border-[#00C7BE]/20 text-[#0D0D0C]'
           }`}>
-            {exportStatus}
+            <p className="text-[14px] leading-[21px] font-['Hind'] font-medium">
+              {exportStatus}
+            </p>
           </div>
         )}
 
-        {/* Export Info */}
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>• CSV files can be opened in Excel, Google Sheets, or any text editor</p>
-          <p>• Excel files (.xlsx) preserve formatting and can be opened in Microsoft Excel</p>
-          <p>• Files will be downloaded to your default download folder</p>
+        {/* Data Summary */}
+        <div className="border-t border-[#0D0D0C]/10 pt-6">
+          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-3">
+            📋 Data Summary
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-[#F9FEFE] border border-[#00C7BE]/20 rounded-xl p-4 text-center">
+              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium">
+                {tableData ? tableData.length : 0}
+              </div>
+              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Hind'] font-normal">
+                Rows
+              </div>
+            </div>
+            <div className="bg-[#F9FEFE] border border-[#00C7BE]/20 rounded-xl p-4 text-center">
+              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium">
+                {columnHeaders.length || (tableData && tableData[0] ? tableData[0].length : 0)}
+              </div>
+              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Hind'] font-normal">
+                Columns
+              </div>
+            </div>
+            <div className="bg-[#F9FEFE] border border-[#00C7BE]/20 rounded-xl p-4 text-center">
+              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium">
+                {tableData ? tableData.reduce((acc, row) => acc + row.filter(cell => cell.trim() !== '').length, 0) : 0}
+              </div>
+              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Hind'] font-normal">
+                Filled Cells
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Export Instructions */}
+        <div className="border-t border-[#0D0D0C]/10 pt-6">
+          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-3">
+            💡 Export Tips
+          </h3>
+          <ul className="space-y-2 text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span><strong>Excel (XLSX):</strong> Best for complex data analysis and formatting</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span><strong>CSV:</strong> Universal format, compatible with all spreadsheet applications</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span>Column headers will be included automatically if defined</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span>Files are automatically named with today's date</span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>

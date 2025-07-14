@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-interface TextBlock {
+export interface TextBlock {
   text: string;
   x0: number;
   y0: number;
@@ -14,7 +14,7 @@ interface TextBlock {
 }
 
 interface PDFUploaderProps {
-  onTextBlocksExtracted: (textBlocks: TextBlock[], pdfFile: File) => void;
+  onTextBlocksExtracted: (textBlocks: TextBlock[], file: File) => void;
 }
 
 export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps) {
@@ -45,15 +45,27 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
     setUploadStatus('Uploading and processing PDF...');
 
     try {
+      // Get authentication token
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
       const formData = new FormData();
       formData.append('file', selectedFile);
 
       const response = await fetch('http://localhost:8000/upload-pdf/', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -71,55 +83,92 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-semibold mb-4">📄 Upload PDF</h2>
+    <div className="bg-white rounded-2xl shadow-lg border border-[#0D0D0C]/10 p-8">
+      <h2 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-6">
+        📄 Upload PDF File
+      </h2>
       
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <label htmlFor="pdf-upload" className="block text-sm font-medium text-gray-700 mb-2">
-            Select PDF file
+          <label className="block text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-4">
+            Select PDF File
           </label>
-          <input
-            id="pdf-upload"
-            type="file"
-            accept=".pdf"
-            onChange={handleFileSelect}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            disabled={isUploading}
-          />
+          <div className="flex items-center space-x-4">
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handleFileSelect}
+              disabled={isUploading}
+              className="flex-1 px-4 py-3 border border-[#0D0D0C]/20 rounded-xl focus:ring-2 focus:ring-[#00C7BE] focus:border-[#00C7BE] transition-colors text-[#0D0D0C] bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <button
+              onClick={handleUpload}
+              disabled={!selectedFile || isUploading}
+              className="px-6 py-3 text-[#FFFFFF] font-bold text-base bg-[#00C7BE] rounded-[20px] hover:bg-[#086C67] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? 'Processing...' : 'Upload & Extract'}
+            </button>
+          </div>
         </div>
 
         {selectedFile && (
-          <div className="p-3 bg-gray-50 rounded border">
-            <p className="text-sm text-gray-600">
-              <strong>Selected:</strong> {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+          <div className="p-4 bg-[#F9FEFE] border border-[#00C7BE]/20 rounded-xl">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-[#00C7BE] rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-medium">
+                  {selectedFile.name}
+                </p>
+                <p className="text-[#0D0D0C]/60 text-[12px] leading-[18px] font-['Hind'] font-normal">
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {uploadStatus && (
+          <div className={`p-4 rounded-xl border ${
+            uploadStatus.includes('Success') 
+              ? 'bg-green-50 border-green-200 text-green-700' 
+              : uploadStatus.includes('Error') 
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-[#F9FEFE] border-[#00C7BE]/20 text-[#0D0D0C]'
+          }`}>
+            <p className="text-[14px] leading-[21px] font-['Hind'] font-medium">
+              {uploadStatus}
             </p>
           </div>
         )}
 
-        <button
-          onClick={handleUpload}
-          disabled={!selectedFile || isUploading}
-          className={`w-full py-2 px-4 rounded font-medium ${
-            !selectedFile || isUploading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
-          }`}
-        >
-          {isUploading ? 'Processing...' : 'Upload & Extract Text'}
-        </button>
-
-        {uploadStatus && (
-          <div className={`p-4 rounded border ${
-            uploadStatus.includes('✅') 
-              ? 'bg-green-50 border-green-200 text-green-700' 
-              : uploadStatus.includes('❌')
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-blue-50 border-blue-200 text-blue-700'
-          }`}>
-            {uploadStatus}
-          </div>
-        )}
+        {/* Instructions */}
+        <div className="border-t border-[#0D0D0C]/10 pt-6">
+          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-3">
+            📝 Instructions
+          </h3>
+          <ul className="space-y-2 text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span>Select a PDF file from your device</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span>Click "Upload & Extract" to process the file</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span>Wait for text blocks to be extracted automatically</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="text-[#00C7BE] mt-1">•</span>
+              <span>Use the PDF viewer to select and organize text blocks</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
