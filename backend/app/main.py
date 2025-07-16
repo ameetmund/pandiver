@@ -25,6 +25,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base, User as UserModel, UserTable
 from .tasks import parse_statement
+from .pdf_processor import get_pdf_info
 import unicodedata
 
 app = FastAPI()
@@ -260,6 +261,54 @@ async def get_statement_status(
         raise HTTPException(
             status_code=500,
             detail=f"Error checking job status: {str(e)}"
+        )
+
+@app.post("/statement/analyze")
+async def analyze_pdf_structure(
+    file: UploadFile = File(...),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Quick analysis of PDF structure (digital vs scanned pages).
+    For testing the digital/scanned detector.
+    """
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are allowed"
+        )
+    
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Save temporarily for analysis
+        temp_filename = f"analyze_{uuid.uuid4()}.pdf"
+        temp_filepath = os.path.join(tempfile.gettempdir(), temp_filename)
+        
+        with open(temp_filepath, "wb") as temp_file:
+            temp_file.write(content)
+        
+        # Analyze PDF
+        pdf_info = get_pdf_info(temp_filepath)
+        
+        # Clean up temp file
+        os.unlink(temp_filepath)
+        
+        return {
+            "filename": file.filename,
+            "analysis": pdf_info,
+            "message": f"Analysis complete: {pdf_info['digital_pages']} digital pages, {pdf_info['scanned_pages']} scanned pages"
+        }
+        
+    except Exception as e:
+        # Clean up temp file if it exists
+        if 'temp_filepath' in locals() and os.path.exists(temp_filepath):
+            os.unlink(temp_filepath)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error analyzing PDF: {str(e)}"
         )
 
 @app.get("/")

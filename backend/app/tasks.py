@@ -3,6 +3,7 @@ import tempfile
 from typing import Dict, Any
 from celery import current_task
 from .celery_app import celery_app
+from .pdf_processor import get_pdf_info, is_digital
 
 @celery_app.task(bind=True)
 def parse_statement(self, file_path: str) -> Dict[str, Any]:
@@ -22,29 +23,32 @@ def parse_statement(self, file_path: str) -> Dict[str, Any]:
             meta={'message': 'Starting PDF analysis...', 'progress': 10}
         )
         
-        # TODO: Implement actual parsing logic in subsequent tasks
-        # For now, just return a placeholder result
-        
+        # Analyze PDF structure (digital vs scanned)
         current_task.update_state(
             state='PROGRESS', 
-            meta={'message': 'Analyzing document structure...', 'progress': 50}
+            meta={'message': 'Analyzing document structure...', 'progress': 30}
         )
         
-        # Simulate processing time
-        import time
-        time.sleep(2)
+        pdf_info = get_pdf_info(file_path)
         
         current_task.update_state(
             state='PROGRESS',
-            meta={'message': 'Extracting transactions...', 'progress': 80}
+            meta={'message': f'Found {pdf_info["total_pages"]} pages ({pdf_info["digital_pages"]} digital, {pdf_info["scanned_pages"]} scanned)', 'progress': 60}
         )
         
-        # Placeholder result structure
+        # TODO: Implement word extraction in next task
+        current_task.update_state(
+            state='PROGRESS',
+            meta={'message': 'Ready for word extraction...', 'progress': 80}
+        )
+        
+        # Result with PDF analysis
         result = {
             'status': 'completed',
             'file_path': file_path,
-            'transactions_count': 0,
-            'message': 'PDF processing completed. Awaiting parser implementation.',
+            'pdf_info': pdf_info,
+            'transactions_count': 0,  # Will be filled in later tasks
+            'message': f'PDF analysis completed. Found {pdf_info["total_pages"]} pages.',
             'progress': 100
         }
         
