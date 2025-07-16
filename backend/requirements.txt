@@ -8,4 +8,15 @@ python-multipart
 PyJWT==2.8.0
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
-email-validator==2.1.0 
+email-validator==2.1.0
+sqlalchemy==2.0.*
+
+# Celery and Redis for background processing
+celery==5.3.*
+redis==5.0.*
+
+# Smart Bank Statement parsing dependencies
+pdf2image==1.17.*
+python-doctr[torch]==0.8.*
+xlsxwriter==3.2.*
+pillow>=9.0.0 

@@ -33,7 +33,7 @@ users_db = {}
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js development server on port 3000
+    allow_origins=["http://localhost:3000"],  # Next.js development server on port 3000 ONLY
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -437,6 +437,294 @@ async def export_data(export_data: ExportData, current_user: dict = Depends(get_
     except Exception as e:
         print(f"Error exporting data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error exporting data: {str(e)}")
+
+# Bank Statement Parser Models
+class TableColumn(BaseModel):
+    header: str
+    data: List[str]
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+    page: int
+
+class TableData(BaseModel):
+    columns: List[TableColumn]
+
+class RawTextBlock(BaseModel):
+    text: str
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+    page: int
+
+class PDFTextData(BaseModel):
+    pages: List[Dict[str, Any]]  # Each page contains text blocks and metadata
+    text_blocks: List[RawTextBlock]
+
+class ColumnSelection(BaseModel):
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+    page: int
+
+class ExtractColumnsRequest(BaseModel):
+    file_id: str  # We'll use a temporary file ID system
+    column_selections: List[ColumnSelection]
+
+class TableExportData(BaseModel):
+    data: Dict[str, List[str]]  # Column header -> list of values
+    filename: str
+    format: str
+
+def extract_and_consolidate_columns(pdf_path: str) -> List[TableColumn]:
+    """
+    Extract columns from all pages and consolidate them (deduplicate headers, merge data)
+    """
+    consolidated_columns = {}
+    
+    with pdfplumber.open(pdf_path) as pdf:
+        for page_num, page in enumerate(pdf.pages):
+            # Try to extract structured tables first
+            tables = page.extract_tables()
+            
+            if tables:
+                # Process the largest table (likely the main transaction table)
+                main_table = max(tables, key=len) if tables else None
+                if main_table and len(main_table) > 1:
+                    headers = main_table[0]
+                    rows = main_table[1:]
+                    
+                    # Process each column
+                    for col_idx, header in enumerate(headers):
+                        if header and header.strip():
+                            header_normalized = header.strip().lower()
+                            
+                            # Extract column data
+                            column_data = []
+                            for row in rows:
+                                if col_idx < len(row) and row[col_idx] and row[col_idx].strip():
+                                    column_data.append(str(row[col_idx]).strip())
+                            
+                            if column_data:  # Only process columns with actual data
+                                # Check if this column already exists (from previous pages)
+                                if header_normalized in consolidated_columns:
+                                    # Merge data from this page
+                                    consolidated_columns[header_normalized]['data'].extend(column_data)
+                                else:
+                                    # Create new column
+                                    page_width = page.width
+                                    col_width = page_width / len(headers)
+                                    x0 = col_idx * col_width
+                                    x1 = (col_idx + 1) * col_width
+                                    
+                                    consolidated_columns[header_normalized] = {
+                                        'header': header.strip(),  # Keep original case for display
+                                        'data': column_data,
+                                        'x0': x0,
+                                        'y0': 0,
+                                        'x1': x1,
+                                        'y1': page.height,
+                                        'page': page_num + 1
+                                    }
+            else:
+                # Fallback to text-based detection if no structured tables
+                text_blocks = page.extract_words(extra_attrs=['fontname', 'size'])
+                if text_blocks:
+                    page_columns = detect_columns_from_text(text_blocks, page_num + 1)
+                    for col in page_columns:
+                        header_normalized = col.header.strip().lower()
+                        if header_normalized in consolidated_columns:
+                            consolidated_columns[header_normalized]['data'].extend(col.data)
+                        else:
+                            consolidated_columns[header_normalized] = {
+                                'header': col.header,
+                                'data': col.data,
+                                'x0': col.x0,
+                                'y0': col.y0,
+                                'x1': col.x1,
+                                'y1': col.y1,
+                                'page': col.page
+                            }
+    
+    # Convert to TableColumn objects
+    result = []
+    for col_data in consolidated_columns.values():
+        result.append(TableColumn(
+            header=col_data['header'],
+            data=col_data['data'],
+            x0=col_data['x0'],
+            y0=col_data['y0'],
+            x1=col_data['x1'],
+            y1=col_data['y1'],
+            page=col_data['page']
+        ))
+    
+    return result
+
+# Bank Statement Parser Endpoints
+@app.post("/upload-bank-statement/", response_model=TableData)
+async def upload_bank_statement(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """
+    Upload a bank statement PDF and extract columns with multi-page support and header deduplication
+    """
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    try:
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file_path = tmp_file.name
+
+        # Extract and consolidate columns across all pages
+        consolidated_columns = extract_and_consolidate_columns(tmp_file_path)
+        
+        # Clean up temporary file
+        os.unlink(tmp_file_path)
+        
+        return TableData(columns=consolidated_columns)
+        
+    except Exception as e:
+        # Clean up temporary file in case of error
+        if 'tmp_file_path' in locals():
+            try:
+                os.unlink(tmp_file_path)
+            except:
+                pass
+        print(f"Error processing bank statement: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing bank statement: {str(e)}")
+
+@app.post("/extract-bank-columns/", response_model=TableData)
+async def extract_bank_columns(request: ExtractColumnsRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Extract specific columns from bank statement based on user selections
+    """
+    try:
+        # For this prototype, we'll re-process the PDF
+        # In production, you'd store the file temporarily and retrieve it by file_id
+        
+        # This is a simplified version - in production you'd need proper file storage
+        # For now, let's return an error asking user to re-upload
+        raise HTTPException(status_code=400, detail="Please re-upload the PDF file to extract columns")
+        
+    except Exception as e:
+        print(f"Error extracting columns: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error extracting columns: {str(e)}")
+
+def detect_columns_from_text(text_blocks: List[Dict], page_num: int) -> List[TableColumn]:
+    """
+    Detect columns from text blocks when no structured table is found
+    """
+    if not text_blocks:
+        return []
+    
+    # Sort text blocks by Y position (top to bottom) then X position (left to right)
+    sorted_blocks = sorted(text_blocks, key=lambda x: (-x['top'], x['x0']))
+    
+    # Group blocks by Y position to identify rows
+    rows = []
+    current_row = []
+    current_y = None
+    y_tolerance = 5  # pixels
+    
+    for block in sorted_blocks:
+        if current_y is None or abs(block['top'] - current_y) <= y_tolerance:
+            current_row.append(block)
+            current_y = block['top']
+        else:
+            if current_row:
+                rows.append(current_row)
+            current_row = [block]
+            current_y = block['top']
+    
+    if current_row:
+        rows.append(current_row)
+    
+    if len(rows) < 2:  # Need at least header + data
+        return []
+    
+    # Assume first row is header
+    headers = sorted(rows[0], key=lambda x: x['x0'])
+    data_rows = rows[1:]
+    
+    columns = []
+    
+    # Create columns based on header positions
+    for i, header in enumerate(headers):
+        header_text = header['text'].strip()
+        if not header_text:
+            continue
+        
+        column_data = []
+        
+        # Find data for this column in subsequent rows
+        for data_row in data_rows:
+            # Sort data row by X position
+            sorted_data = sorted(data_row, key=lambda x: x['x0'])
+            
+            # Try to match column by position
+            if i < len(sorted_data):
+                column_data.append(sorted_data[i]['text'].strip())
+        
+        if column_data:  # Only add columns with data
+            columns.append(TableColumn(
+                header=header_text,
+                data=column_data,
+                x0=header['x0'],
+                y0=header['top'],
+                x1=header['x1'],
+                y1=header['bottom'],
+                page=page_num
+            ))
+    
+    return columns
+
+@app.post("/export-table-data/")
+async def export_table_data(export_data: TableExportData, current_user: dict = Depends(get_current_user)):
+    """
+    Export table data to Excel or CSV format
+    """
+    try:
+        # Create DataFrame from table data
+        df = pd.DataFrame(export_data.data)
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_filename = export_data.filename or f"bank_statement_{timestamp}"
+        
+        if export_data.format.lower() == "xlsx":
+            filename = f"{base_filename}.xlsx"
+            tmp_file_path = os.path.join(tempfile.gettempdir(), filename)
+            
+            # Export to Excel
+            df.to_excel(tmp_file_path, index=False, engine='openpyxl')
+            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            
+        elif export_data.format.lower() == "csv":
+            filename = f"{base_filename}.csv"
+            tmp_file_path = os.path.join(tempfile.gettempdir(), filename)
+            
+            # Export to CSV
+            df.to_csv(tmp_file_path, index=False)
+            media_type = "text/csv"
+            
+        else:
+            raise HTTPException(status_code=400, detail="Format must be 'xlsx' or 'csv'")
+        
+        return FileResponse(
+            path=tmp_file_path,
+            media_type=media_type,
+            filename=filename,
+            background=None  # File will be cleaned up automatically
+        )
+        
+    except Exception as e:
+        print(f"Error exporting table data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error exporting table data: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

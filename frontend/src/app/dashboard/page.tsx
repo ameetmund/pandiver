@@ -30,6 +30,14 @@ const features: Feature[] = [
     href: '/dashboard/smart-pdf-parser',
     isActive: true
   },
+  {
+    id: 'bank-statement-parser',
+    title: 'Bank Statement Parser',
+    description: 'Extract structured data from bank statements, invoices, and tabular documents. Select entire columns and export to Excel or CSV.',
+    icon: '🏦',
+    href: '/dashboard/bank-statement-parser',
+    isActive: true
+  },
   // Future features can be added here
   {
     id: 'document-analyzer',

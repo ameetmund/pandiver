@@ -64,6 +64,23 @@ export default function Home() {
                           </div>
                         </div>
                       </Link>
+                      <Link
+                        href="/dashboard/bank-statement-parser"
+                        className="block px-4 py-3 text-[#0D0D0C] hover:bg-[#F9FEFE] hover:text-[#00C7BE] transition-colors"
+                        onClick={() => setIsProductDropdownOpen(false)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-[#00C7BE] rounded-lg flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">Bank Statement Parser</div>
+                            <div className="text-xs text-gray-500">Extract tabular data from statements</div>
+                          </div>
+                        </div>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -157,6 +174,26 @@ export default function Home() {
                           <div>
                             <div className="font-medium text-sm">Smart PDF Parser</div>
                             <div className="text-xs text-gray-500">Extract and organize PDF data</div>
+                          </div>
+                        </div>
+                      </Link>
+                      <Link
+                        href="/dashboard/bank-statement-parser"
+                        className="block py-2 text-[#0D0D0C] hover:text-[#00C7BE] transition-colors"
+                        onClick={() => {
+                          setIsProductDropdownOpen(false);
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-[#00C7BE] rounded flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">Bank Statement Parser</div>
+                            <div className="text-xs text-gray-500">Extract tabular data from statements</div>
                           </div>
                         </div>
                       </Link>
