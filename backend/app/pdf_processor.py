@@ -268,4 +268,168 @@ def extract_all_words(file_path: str) -> List[Dict[str, Any]]:
         return all_words
         
     except Exception as e:
-        raise Exception(f"Error extracting all words: {str(e)}") 
+        raise Exception(f"Error extracting all words: {str(e)}")
+
+def cluster_words_into_rows(words: List[Dict[str, Any]], tolerance: float = 2.0) -> List[List[Dict[str, Any]]]:
+    """
+    Cluster word boxes into rows where mid-Y differs ≤ tolerance points.
+    
+    Args:
+        words: List of word dictionaries with x0, y0, x1, y1 coordinates
+        tolerance: Maximum Y difference to consider words in same row (default 2.0)
+        
+    Returns:
+        List of rows, where each row is a list of words sorted by x-coordinate
+    """
+    if not words:
+        return []
+    
+    try:
+        # Calculate mid-Y for each word
+        words_with_midy = []
+        for word in words:
+            mid_y = (word.get('y0', 0) + word.get('y1', 0)) / 2
+            words_with_midy.append({
+                **word,
+                'mid_y': mid_y
+            })
+        
+        # Sort by mid-Y to group similar Y values together
+        words_with_midy.sort(key=lambda w: w['mid_y'])
+        
+        # Group words into rows
+        rows = []
+        current_row = []
+        current_row_y = None
+        
+        for word in words_with_midy:
+            word_y = word['mid_y']
+            
+            if current_row_y is None or abs(word_y - current_row_y) <= tolerance:
+                # Add to current row
+                current_row.append(word)
+                # Update row Y to average of all words in row
+                if current_row_y is None:
+                    current_row_y = word_y
+                else:
+                    current_row_y = sum(w['mid_y'] for w in current_row) / len(current_row)
+            else:
+                # Start new row
+                if current_row:
+                    # Sort current row by x-coordinate before adding
+                    current_row.sort(key=lambda w: w.get('x0', 0))
+                    rows.append(current_row)
+                
+                current_row = [word]
+                current_row_y = word_y
+        
+        # Add the last row
+        if current_row:
+            current_row.sort(key=lambda w: w.get('x0', 0))
+            rows.append(current_row)
+        
+        # Sort rows by Y coordinate (top to bottom)
+        rows.sort(key=lambda row: row[0]['mid_y'] if row else 0)
+        
+        return rows
+        
+    except Exception as e:
+        raise Exception(f"Error clustering words into rows: {str(e)}")
+
+def get_page_rows(words: List[Dict[str, Any]], page_num: int, tolerance: float = 2.0) -> List[List[Dict[str, Any]]]:
+    """
+    Get rows for a specific page.
+    
+    Args:
+        words: List of all word dictionaries
+        page_num: Page number to filter for
+        tolerance: Y tolerance for row clustering
+        
+    Returns:
+        List of rows for the specified page
+    """
+    try:
+        # Filter words for the specific page
+        page_words = [w for w in words if w.get('page', 1) == page_num]
+        
+        # Cluster into rows
+        return cluster_words_into_rows(page_words, tolerance)
+        
+    except Exception as e:
+        raise Exception(f"Error getting rows for page {page_num}: {str(e)}")
+
+def get_all_page_rows(words: List[Dict[str, Any]], tolerance: float = 2.0) -> Dict[int, List[List[Dict[str, Any]]]]:
+    """
+    Get rows organized by page number.
+    
+    Args:
+        words: List of all word dictionaries
+        tolerance: Y tolerance for row clustering
+        
+    Returns:
+        Dictionary mapping page numbers to their rows
+    """
+    try:
+        # Get all unique page numbers
+        page_numbers = sorted(set(w.get('page', 1) for w in words))
+        
+        # Get rows for each page
+        all_rows = {}
+        for page_num in page_numbers:
+            all_rows[page_num] = get_page_rows(words, page_num, tolerance)
+        
+        return all_rows
+        
+    except Exception as e:
+        raise Exception(f"Error getting all page rows: {str(e)}")
+
+def analyze_row_structure(rows: List[List[Dict[str, Any]]]) -> Dict[str, Any]:
+    """
+    Analyze the structure of rows for debugging and optimization.
+    
+    Args:
+        rows: List of word rows
+        
+    Returns:
+        Dictionary with row analysis statistics
+    """
+    try:
+        if not rows:
+            return {
+                "total_rows": 0,
+                "total_words": 0,
+                "avg_words_per_row": 0,
+                "min_words_per_row": 0,
+                "max_words_per_row": 0
+            }
+        
+        words_per_row = [len(row) for row in rows]
+        total_words = sum(words_per_row)
+        
+        analysis = {
+            "total_rows": len(rows),
+            "total_words": total_words,
+            "avg_words_per_row": total_words / len(rows) if rows else 0,
+            "min_words_per_row": min(words_per_row),
+            "max_words_per_row": max(words_per_row),
+            "words_per_row_distribution": words_per_row[:20],  # First 20 rows
+            "sample_rows": []
+        }
+        
+        # Add sample rows (first 5 rows with text preview)
+        for i, row in enumerate(rows[:5]):
+            row_text = " ".join(word.get('text', '') for word in row)
+            analysis["sample_rows"].append({
+                "row_index": i,
+                "word_count": len(row),
+                "text_preview": row_text[:100],  # First 100 chars
+                "y_range": {
+                    "min_y": min(w.get('y0', 0) for w in row) if row else 0,
+                    "max_y": max(w.get('y1', 0) for w in row) if row else 0
+                }
+            })
+        
+        return analysis
+        
+    except Exception as e:
+        raise Exception(f"Error analyzing row structure: {str(e)}") 

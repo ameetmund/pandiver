@@ -25,7 +25,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base, User as UserModel, UserTable
 from .tasks import parse_statement
-from .pdf_processor import get_pdf_info, extract_all_words
+from .pdf_processor import get_pdf_info, extract_all_words, get_all_page_rows, analyze_row_structure
 import unicodedata
 
 app = FastAPI()
@@ -373,6 +373,88 @@ async def extract_words_from_pdf(
         raise HTTPException(
             status_code=500,
             detail=f"Error extracting words: {str(e)}"
+        )
+
+@app.post("/statement/cluster-rows")
+async def cluster_pdf_rows(
+    file: UploadFile = File(...),
+    tolerance: float = 2.0,
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Extract words and cluster them into rows for testing row clustering.
+    Shows how words are grouped into horizontal rows based on Y coordinates.
+    """
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are allowed"
+        )
+    
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Save temporarily for analysis
+        temp_filename = f"cluster_{uuid.uuid4()}.pdf"
+        temp_filepath = os.path.join(tempfile.gettempdir(), temp_filename)
+        
+        with open(temp_filepath, "wb") as temp_file:
+            temp_file.write(content)
+        
+        # Extract all words
+        all_words = extract_all_words(temp_filepath)
+        
+        # Cluster into rows
+        all_page_rows = get_all_page_rows(all_words, tolerance=tolerance)
+        
+        # Clean up temp file
+        os.unlink(temp_filepath)
+        
+        # Analyze structure for each page
+        page_analyses = {}
+        total_rows = 0
+        
+        for page_num, rows in all_page_rows.items():
+            analysis = analyze_row_structure(rows)
+            page_analyses[str(page_num)] = analysis
+            total_rows += len(rows)
+        
+        # Sample rows for display (first 3 rows from first page)
+        sample_rows = []
+        first_page_rows = all_page_rows.get(1, [])
+        for i, row in enumerate(first_page_rows[:3]):
+            row_text = " ".join(word.get('text', '') for word in row)
+            sample_rows.append({
+                "row_index": i,
+                "word_count": len(row),
+                "text": row_text,
+                "y_range": {
+                    "min_y": min(w.get('y0', 0) for w in row) if row else 0,
+                    "max_y": max(w.get('y1', 0) for w in row) if row else 0,
+                    "mid_y": sum((w.get('y0', 0) + w.get('y1', 0)) / 2 for w in row) / len(row) if row else 0
+                }
+            })
+        
+        return {
+            "filename": file.filename,
+            "tolerance_used": tolerance,
+            "total_words": len(all_words),
+            "total_rows": total_rows,
+            "pages_processed": len(all_page_rows),
+            "page_analyses": page_analyses,
+            "sample_rows": sample_rows,
+            "message": f"Row clustering complete: {len(all_words)} words clustered into {total_rows} rows across {len(all_page_rows)} pages"
+        }
+        
+    except Exception as e:
+        # Clean up temp file if it exists
+        if 'temp_filepath' in locals() and os.path.exists(temp_filepath):
+            os.unlink(temp_filepath)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error clustering rows: {str(e)}"
         )
 
 @app.get("/")
