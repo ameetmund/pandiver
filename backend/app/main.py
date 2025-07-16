@@ -25,7 +25,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base, User as UserModel, UserTable
 from .tasks import parse_statement
-from .pdf_processor import get_pdf_info
+from .pdf_processor import get_pdf_info, extract_all_words
 import unicodedata
 
 app = FastAPI()
@@ -309,6 +309,70 @@ async def analyze_pdf_structure(
         raise HTTPException(
             status_code=500,
             detail=f"Error analyzing PDF: {str(e)}"
+        )
+
+@app.post("/statement/extract-words")
+async def extract_words_from_pdf(
+    file: UploadFile = File(...),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Extract words from PDF for testing word extraction capabilities.
+    Shows both digital PDF word extraction and OCR for scanned pages.
+    """
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are allowed"
+        )
+    
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Save temporarily for analysis
+        temp_filename = f"extract_{uuid.uuid4()}.pdf"
+        temp_filepath = os.path.join(tempfile.gettempdir(), temp_filename)
+        
+        with open(temp_filepath, "wb") as temp_file:
+            temp_file.write(content)
+        
+        # Extract all words
+        all_words = extract_all_words(temp_filepath)
+        
+        # Clean up temp file
+        os.unlink(temp_filepath)
+        
+        # Group words by page for easier analysis
+        words_by_page = {}
+        for word in all_words:
+            page_num = word.get('page', 1)
+            if page_num not in words_by_page:
+                words_by_page[page_num] = []
+            words_by_page[page_num].append(word)
+        
+        return {
+            "filename": file.filename,
+            "total_words": len(all_words),
+            "pages_processed": len(words_by_page),
+            "words_by_page": {
+                str(page): {
+                    "word_count": len(words),
+                    "sample_words": words[:10]  # First 10 words as sample
+                }
+                for page, words in words_by_page.items()
+            },
+            "message": f"Word extraction complete: {len(all_words)} words from {len(words_by_page)} pages"
+        }
+        
+    except Exception as e:
+        # Clean up temp file if it exists
+        if 'temp_filepath' in locals() and os.path.exists(temp_filepath):
+            os.unlink(temp_filepath)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error extracting words: {str(e)}"
         )
 
 @app.get("/")
