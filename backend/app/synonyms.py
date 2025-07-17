@@ -300,9 +300,10 @@ POSITIVE_INDICATORS = [
     r'[0-9.,]+\s*\+'                                # 123.45+
 ]
 
-# Compiled regex patterns for performance
+# Compiled regex patterns for performance  
 DATE_REGEX = re.compile('|'.join(f'({pattern})' for pattern in DATE_PATTERNS), re.IGNORECASE)
-NUMBER_REGEX = re.compile('|'.join(f'({pattern})' for pattern in NUMBER_PATTERNS))
+# Fix: Use non-capturing groups to avoid tuple returns from findall()
+NUMBER_REGEX = re.compile('|'.join(f'(?:{pattern})' for pattern in NUMBER_PATTERNS))
 CURRENCY_REGEX = re.compile('|'.join(f'({pattern})' for pattern in CURRENCY_PATTERNS), re.IGNORECASE)
 NEGATIVE_REGEX = re.compile('|'.join(f'({pattern})' for pattern in NEGATIVE_INDICATORS), re.IGNORECASE)
 POSITIVE_REGEX = re.compile('|'.join(f'({pattern})' for pattern in POSITIVE_INDICATORS), re.IGNORECASE)
@@ -414,17 +415,27 @@ def detect_field_type(text: str) -> List[str]:
     
     return detected_types
 
-def normalize_number(num_str: str) -> Optional[float]:
+def normalize_number(num_str) -> Optional[float]:
     """
     Normalize a number string to float, handling international formats.
     
     Args:
-        num_str: Number string to normalize
+        num_str: Number string to normalize (can be string, tuple, or other)
         
     Returns:
         Normalized float value or None if invalid
     """
     if not num_str:
+        return None
+    
+    # Handle various input types (string, tuple, etc.)
+    if isinstance(num_str, tuple):
+        # Join non-empty parts of tuple
+        num_str = ''.join(str(part) for part in num_str if part)
+    elif not isinstance(num_str, str):
+        num_str = str(num_str)
+    
+    if not num_str.strip():
         return None
     
     # Remove currency symbols and extra spaces

@@ -26,6 +26,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from .models import Base, User as UserModel, UserTable
 from .tasks import parse_statement
 from .pdf_processor import get_pdf_info, extract_all_words, get_all_page_rows, analyze_row_structure
+from .export_utils import StatementExporter
+from .bank_parsers import bank_parser_manager
 import unicodedata
 
 app = FastAPI()
@@ -1114,8 +1116,7 @@ async def smart_extract_bank_statement(file: UploadFile = File(...)):
     try:
         print(f"[Smart Extract] Starting universal extraction for file: {file.filename}")
         
-        # Import the universal parser
-        from .universal_parser import UniversalBankStatementParser
+        # Use the existing bank_parser_manager (imported at top)
         
         pdf_bytes = await file.read()
         all_words = []
@@ -1160,15 +1161,19 @@ async def smart_extract_bank_statement(file: UploadFile = File(...)):
         
         print(f"[Smart Extract] Total words extracted: {len(all_words)}")
         
-        # Use the UniversalBankStatementParser for intelligent parsing
-        print(f"[Smart Extract] Using UniversalBankStatementParser...")
+        # Use the Bank-Specific Parser Manager for intelligent parsing
+        print(f"[Smart Extract] Using Bank-Specific Parser Manager...")
         
-        parser = UniversalBankStatementParser()
-        formatted_transactions = parser.parse_statement(all_words, page_width)
+        # Convert words to rows format expected by bank parser
+        from .universal_parser import words_to_rows
+        all_page_rows = words_to_rows(all_words)
+        print(f"[Smart Extract] Created {len(all_page_rows)} rows for bank detection")
+        
+        formatted_transactions = bank_parser_manager.detect_bank_and_parse(all_page_rows)
         
         # If no transactions found, provide helpful error message
         if not formatted_transactions:
-            print("[Smart Extract] No transactions found by universal parser")
+            print("[Smart Extract] No transactions found by bank-specific parser")
             return {
                 "transactions": [],
                 "summary": {
@@ -1419,3 +1424,328 @@ async def extract_pdf_tables_faithful(file: UploadFile = File(...)):
         return {"tables": output_tables}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error extracting tables: {str(e)}")
+
+
+@app.post("/export-transactions-excel")
+async def export_transactions_excel(
+    transactions: List[Dict[str, Any]] = Body(...),
+    bank_name: str = Body("Bank"),
+    statement_period: str = Body(""),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Export transactions to Excel format.
+    
+    Args:
+        transactions: List of transaction dictionaries
+        bank_name: Name of the bank for the header
+        statement_period: Statement period string
+        
+    Returns:
+        Excel file as StreamingResponse
+    """
+    try:
+        exporter = StatementExporter()
+        
+        # Generate Excel data
+        excel_data = exporter.to_excel(
+            transactions=transactions,
+            bank_name=bank_name,
+            statement_period=statement_period
+        )
+        
+        # Generate filename
+        filename = exporter.get_export_filename(bank_name, 'xlsx', statement_period)
+        
+        # Create streaming response
+        def generate():
+            yield excel_data
+        
+        return StreamingResponse(
+            generate(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error exporting to Excel: {str(e)}")
+
+
+@app.post("/export-transactions-csv")
+async def export_transactions_csv(
+    transactions: List[Dict[str, Any]] = Body(...),
+    bank_name: str = Body("Bank"), 
+    statement_period: str = Body(""),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Export transactions to CSV format.
+    
+    Args:
+        transactions: List of transaction dictionaries
+        bank_name: Name of the bank for the header
+        statement_period: Statement period string
+        
+    Returns:
+        CSV file as StreamingResponse
+    """
+    try:
+        exporter = StatementExporter()
+        
+        # Generate CSV data
+        csv_data = exporter.to_csv(transactions=transactions)
+        
+        # Generate filename
+        filename = exporter.get_export_filename(bank_name, 'csv', statement_period)
+        
+        # Create streaming response
+        def generate():
+            yield csv_data.encode('utf-8')
+        
+        return StreamingResponse(
+            generate(),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error exporting to CSV: {str(e)}")
+
+
+@app.get("/export-sample")
+async def export_sample(format_type: str = "excel"):
+    """
+    Generate sample export for testing purposes.
+    
+    Args:
+        format_type: 'excel' or 'csv'
+        
+    Returns:
+        Sample export file
+    """
+    try:
+        # Sample transaction data
+        sample_transactions = [
+            {'Date': '01/06/2025', 'Description': 'Opening Balance', 'Debit': '0.00', 'Credit': '0.00', 'Balance': '5000.00'},
+            {'Date': '02/06/2025', 'Description': 'ATM Withdrawal - HDFC ATM', 'Debit': '500.00', 'Credit': '0.00', 'Balance': '4500.00'},
+            {'Date': '03/06/2025', 'Description': 'Salary Credit - Company XYZ', 'Debit': '0.00', 'Credit': '5000.00', 'Balance': '9500.00'},
+            {'Date': '04/06/2025', 'Description': 'Online Purchase - Amazon', 'Debit': '250.75', 'Credit': '0.00', 'Balance': '9249.25'},
+            {'Date': '05/06/2025', 'Description': 'Interest Credit', 'Debit': '0.00', 'Credit': '15.50', 'Balance': '9264.75'}
+        ]
+        
+        exporter = StatementExporter()
+        
+        if format_type.lower() == "excel":
+            # Generate Excel
+            excel_data = exporter.to_excel(
+                transactions=sample_transactions,
+                bank_name="Sample Bank",
+                statement_period="June 2025"
+            )
+            
+            filename = "Sample_Bank_Statement_June_2025.xlsx"
+            
+            def generate():
+                yield excel_data
+            
+            return StreamingResponse(
+                generate(),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        
+        elif format_type.lower() == "csv":
+            # Generate CSV
+            csv_data = exporter.to_csv(transactions=sample_transactions)
+            
+            filename = "Sample_Bank_Statement_June_2025.csv"
+            
+            def generate():
+                yield csv_data.encode('utf-8')
+            
+            return StreamingResponse(
+                generate(),
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        
+        else:
+            raise HTTPException(status_code=400, detail="Invalid format_type. Use 'excel' or 'csv'")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating sample export: {str(e)}")
+
+@app.post("/bank-specific-extract")
+async def bank_specific_extract(file: UploadFile = File(...)):
+    """Template-based bank statement parser using regex patterns from Claude guide"""
+    try:
+        print(f"[Template Extract] Starting template-based extraction for file: {file.filename}")
+        
+        pdf_bytes = await file.read()
+        all_text = ""
+        
+        # Extract text from PDF
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            total_pages = len(pdf.pages)
+            print(f"[Template Extract] Processing {total_pages} pages")
+            
+            for page_num, pdf_page in enumerate(pdf.pages):
+                print(f"[Template Extract] Processing page {page_num + 1}/{total_pages}")
+                
+                if is_digital_pdf(pdf_page):
+                    print(f"[Template Extract] Page {page_num + 1} is digital, using pdfplumber")
+                    text = pdf_page.extract_text()
+                    if text:
+                        all_text += text + "\n"
+                        print(f"[Template Extract] Extracted text from digital PDF page.")
+                else:
+                    print(f"[Template Extract] Page {page_num + 1} is scanned, skipping for now")
+        
+        print(f"[Template Extract] Total text length: {len(all_text)} characters")
+        
+        # Debug: Print first 500 characters of extracted text
+        print(f"[Template Extract] DEBUG - First 500 chars of text:")
+        print(repr(all_text[:500]))
+        
+        if not all_text.strip():
+            return {"success": False, "error": "No text extracted from PDF", "transactions": []}
+        
+        # Phase 1: Bank Detection using Claude guide patterns
+        def detect_bank(text):
+            bank_patterns = {
+                'HDFC': r'HDFC BANK LIMITED',
+                'ICICI': r'ICICI BANK',
+                'IDFC': r'IDFC FIRST BANK'
+            }
+            for bank, pattern in bank_patterns.items():
+                if re.search(pattern, text, re.IGNORECASE):
+                    return bank
+            return None
+        
+        detected_bank = detect_bank(all_text)
+        print(f"[Template Extract] Detected bank: {detected_bank}")
+        
+        if not detected_bank:
+            return {"success": False, "error": "Could not detect bank type", "transactions": []}
+        
+        # Phase 2: Template-based parsing with Claude guide patterns
+        templates = {
+            'HDFC': {
+                'date_pattern': r'(\d{2}/\d{2}/\d{4})',
+                'amount_pattern': r'(\d+,?\d*\.\d{2})',
+                'transaction_start': r'Date\s+Narration',
+                'transaction_pattern': r'(\d{2}/\d{2}/\d{4})\s+(.+?)\s+(\w+)\s+(\d{2}/\d{2}/\d{4})\s+(\d+\.\d{2})\s+(\d+\.\d{2})\s+(\d+\.\d{2})'
+            },
+            'ICICI': {
+                'transaction_pattern': r'(\d{2}-\d{2}-\d{4})\s+(\w+)\s+(.+?)\s+(\d+,?\d*\.\d{2})?\s+(\d+,?\d*\.\d{2})?\s+(\d+,?\d*\.\d{2})'
+            },
+            'IDFC': {
+                'transaction_pattern': r'(\d{2}/\d{2}/\d{4})\s+(.+?)\s+(\d+,?\d*\.\d{2})\s+(\d+,?\d*\.\d{2})\s+(\d+,?\d*\.\d{2})'
+            }
+        }
+        
+        # Phase 3: Extract transactions using bank-specific patterns
+        def extract_transactions(text, bank_type):
+            transactions = []
+            if bank_type not in templates:
+                return transactions
+                
+            pattern = templates[bank_type]['transaction_pattern']
+            matches = re.findall(pattern, text, re.MULTILINE)
+            
+            print(f"[Template Extract] Found {len(matches)} transaction matches for {bank_type}")
+            
+            for i, match in enumerate(matches):
+                try:
+                    if bank_type == 'HDFC':
+                        transaction = {
+                            'Date': match[0],
+                            'Narration': match[1],
+                            'Chq_Ref_No': match[2],
+                            'Value_Date': match[3],
+                            'Withdrawal_Amount': match[4],
+                            'Deposit_Amount': match[5],
+                            'Closing_Balance': match[6]
+                        }
+                    elif bank_type == 'ICICI':
+                        transaction = {
+                            'Date': match[0],
+                            'Mode': match[1],
+                            'Particulars': match[2],
+                            'Deposits': match[3] if match[3] else '0.00',
+                            'Withdrawals': match[4] if match[4] else '0.00',
+                            'Balance': match[5]
+                        }
+                    elif bank_type == 'IDFC':
+                        transaction = {
+                            'Date_and_Time': match[0],
+                            'Transaction_Details': match[1],
+                            'Withdrawals_INR': match[2],
+                            'Deposits_INR': match[3],
+                            'Balance_INR': match[4]
+                        }
+                    
+                    transactions.append(transaction)
+                    print(f"[Template Extract] Transaction {i+1}: {transaction}")
+                    
+                except Exception as e:
+                    print(f"[Template Extract] Error parsing transaction {i+1}: {e}")
+                    continue
+            
+            return transactions
+        
+        transactions = extract_transactions(all_text, detected_bank)
+        
+        # Phase 4: Standardize output
+        def standardize_output(transactions, bank_type):
+            standardized = []
+            for txn in transactions:
+                try:
+                    if bank_type == 'HDFC':
+                        standardized.append({
+                            'date': txn['Date'],
+                            'description': txn['Narration'],
+                            'debit': txn['Withdrawal_Amount'],
+                            'credit': txn['Deposit_Amount'],
+                            'balance': txn['Closing_Balance'],
+                            'reference': txn['Chq_Ref_No']
+                        })
+                    elif bank_type == 'ICICI':
+                        standardized.append({
+                            'date': txn['Date'],
+                            'description': txn['Particulars'],
+                            'debit': txn['Withdrawals'],
+                            'credit': txn['Deposits'],
+                            'balance': txn['Balance'],
+                            'mode': txn['Mode']
+                        })
+                    elif bank_type == 'IDFC':
+                        standardized.append({
+                            'date': txn['Date_and_Time'],
+                            'description': txn['Transaction_Details'],
+                            'debit': txn['Withdrawals_INR'],
+                            'credit': txn['Deposits_INR'],
+                            'balance': txn['Balance_INR']
+                        })
+                except Exception as e:
+                    print(f"[Template Extract] Error standardizing transaction: {e}")
+                    continue
+            
+            return standardized
+        
+        standardized_transactions = standardize_output(transactions, detected_bank)
+        
+        print(f"[Template Extract] Successfully extracted {len(standardized_transactions)} transactions from {detected_bank} statement")
+        
+        return {
+            "success": True,
+            "bank_type": detected_bank,
+            "transactions": standardized_transactions,
+            "total_transactions": len(standardized_transactions)
+        }
+        
+    except Exception as e:
+        print(f"[Template Extract] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "error": str(e), "transactions": []}

@@ -1,246 +1,268 @@
-# universal_parser.py - Universal bank statement parser
+"""
+Universal Bank Statement Parser
+
+A robust parser that can handle bank statements from various international banks
+with different layouts, languages, and formats. This implements Task 5 of the
+smart PDF parser project.
+
+Key Features:
+- Smart header detection with flexible synonym matching
+- Intelligent column band management with merging
+- Flexible transaction row detection
+- Support for RTL layouts
+- Robust number parsing with international formats
+- Comprehensive fallback parsing
+"""
 
 import re
-from typing import List, Dict, Any, Optional, Tuple
 from collections import defaultdict
-import statistics
+from typing import List, Dict, Any, Optional, NamedTuple
 from .synonyms import (
-    HEADER_SYNONYMS, normalize_header, normalize_number, extract_date, 
-    extract_currency, DATE_REGEX, NUMBER_REGEX, NEGATIVE_REGEX, POSITIVE_REGEX
+    normalize_header, extract_date, NUMBER_REGEX, DATE_REGEX,
+    normalize_number, NEGATIVE_REGEX
 )
 
+
 class ColumnBand:
-    """Represents a column band with its boundaries and field type"""
+    """Represents a column in the bank statement with field type and position."""
+    
     def __init__(self, field_name: str, x0: float, x1: float):
         self.field_name = field_name
         self.x0 = x0
         self.x1 = x1
-        self.center = (x0 + x1) / 2
-    
+        
+    @property
+    def center(self) -> float:
+        return (self.x0 + self.x1) / 2
+        
+    @property
+    def width(self) -> float:
+        return self.x1 - self.x0
+        
     def contains_word(self, word: Dict[str, Any]) -> bool:
-        """Check if a word falls within this column band"""
+        """Check if a word falls within this column band."""
         word_center = (word.get('x0', 0) + word.get('x1', 0)) / 2
         return self.x0 <= word_center <= self.x1
-    
+        
+    def overlaps_with(self, other: 'ColumnBand') -> bool:
+        """Check if this band overlaps with another."""
+        return not (self.x1 < other.x0 or other.x1 < self.x0)
+        
     def __repr__(self):
         return f"ColumnBand({self.field_name}, {self.x0:.1f}-{self.x1:.1f})"
 
+
 class UniversalBankStatementParser:
-    """Universal parser for bank statements from any bank, country, or format"""
+    """Universal parser for bank statements from various international banks."""
     
     def __init__(self):
         self.column_bands: List[ColumnBand] = []
-        self.page_width = 0
-        self.is_rtl = False
-        self.transactions = []
-        self.current_transaction = None
-        self.previous_balance = None
+        self.transactions: List[Dict[str, Any]] = []
+        self.page_width: float = 0
+        self.is_rtl: bool = False
+        self.previous_balance: Optional[float] = None
         
-    def cluster_words_by_rows(self, words: List[Dict[str, Any]], y_tolerance: float = 2.0) -> List[List[Dict[str, Any]]]:
+    def cluster_words_by_rows(self, words: List[Dict[str, Any]], tolerance: float = 2.0) -> List[List[Dict[str, Any]]]:
         """
         Cluster words into rows based on Y-coordinate proximity.
         
         Args:
-            words: List of word dictionaries with position information
-            y_tolerance: Maximum Y difference to consider words in same row
+            words: List of word dictionaries with x0, y0, x1, y1 coordinates
+            tolerance: Y-coordinate tolerance for grouping (pixels)
             
         Returns:
             List of rows, each containing words in that row
         """
         if not words:
             return []
-        
-        # Sort words by Y coordinate (top to bottom)
-        sorted_words = sorted(words, key=lambda w: w.get('y0', w.get('top', 0)))
+            
+        # Sort by Y coordinate (top to bottom)
+        sorted_words = sorted(words, key=lambda w: w.get('y0', 0))
         
         rows = []
         current_row = [sorted_words[0]]
-        current_y = sorted_words[0].get('y0', sorted_words[0].get('top', 0))
+        current_y = sorted_words[0].get('y0', 0)
         
         for word in sorted_words[1:]:
-            word_y = word.get('y0', word.get('top', 0))
+            word_y = word.get('y0', 0)
             
-            if abs(word_y - current_y) <= y_tolerance:
-                # Same row
+            # Check if word belongs to current row (within tolerance)
+            if abs(word_y - current_y) <= tolerance:
                 current_row.append(word)
             else:
-                # New row
+                # Start new row
                 if current_row:
-                    rows.append(sorted(current_row, key=lambda w: w.get('x0', 0)))
+                    # Sort current row by X coordinate (left to right)
+                    current_row.sort(key=lambda w: w.get('x0', 0))
+                    rows.append(current_row)
+                    
                 current_row = [word]
                 current_y = word_y
-        
+                
         # Add the last row
         if current_row:
-            rows.append(sorted(current_row, key=lambda w: w.get('x0', 0)))
-        
+            current_row.sort(key=lambda w: w.get('x0', 0))
+            rows.append(current_row)
+            
         return rows
-    
-    def detect_header_row_and_columns(self, rows: List[List[Dict[str, Any]]]) -> Optional[int]:
+        
+    def detect_header_row(self, rows: List[List[Dict[str, Any]]]) -> Optional[int]:
         """
-        Detect the header row and establish column bands with VERY strict criteria.
+        Detect the header row containing column names.
         
         Args:
             rows: List of word rows
             
         Returns:
-            Index of the header row, or None if not found
+            Index of header row, or None if not found
         """
-        header_row_idx = None
         best_score = 0
-        best_row_info = None
+        best_row_idx = None
         
-        # Look for the row with the most header synonyms
         for idx, row in enumerate(rows):
-            # Skip rows that are too early (likely document headers) or too late
-            if idx > len(rows) * 0.6:  # Don't look in the last 40% of document
+            if not row:
                 continue
                 
-            score = 0
+            # Create row text for analysis
             row_text = ' '.join(word.get('text', '') for word in row).lower()
             
-            # Count how many canonical field names we can detect
-            detected_fields = set()
-            valid_header_words = 0
-            total_words = 0
+            # Skip very short rows
+            if len(row_text.strip()) < 10:
+                continue
+                
+            # Count recognized field headers
+            score = 0
+            field_types = set()
             
             for word in row:
                 word_text = word.get('text', '').strip()
                 if not word_text:
                     continue
                     
-                total_words += 1
                 canonical = normalize_header(word_text)
                 if canonical:
-                    detected_fields.add(canonical)
-                    valid_header_words += 1
-                    score += 2  # Higher score for valid headers
-            
-            # ULTRA STRICT CRITERIA: Must have at least 4 valid header fields INCLUDING Date
-            if len(detected_fields) < 4 or 'Date' not in detected_fields:
-                continue
-                
-            # ULTRA STRICT CRITERIA: At least 70% of words should be valid headers
-            if total_words > 0 and (valid_header_words / total_words) < 0.7:
-                continue
-                
-            # MUST have essential fields for bank statements
-            essential_fields = {'Date', 'Balance'}
-            amount_fields = {'Debit', 'Credit', 'Amount', 'WithdrawalAmount', 'DepositAmount'}
-            desc_fields = {'Description', 'Particulars', 'Narration'}
-            
-            if not essential_fields.intersection(detected_fields):
-                continue  # Must have Date AND Balance
-                
-            if not amount_fields.intersection(detected_fields):
-                continue  # Must have at least one amount field
-                
-            if not desc_fields.intersection(detected_fields):
-                continue  # Must have description field
-            
-            # Bonus scoring for perfect combinations
-            if 'Date' in detected_fields:
-                score += 10  # Date is absolutely crucial
-            if 'Balance' in detected_fields:
-                score += 8   # Balance is crucial
-            if any(field in detected_fields for field in desc_fields):
-                score += 6   # Description is important
-            if any(field in detected_fields for field in amount_fields):
-                score += 6   # Amount fields are crucial
-            
-            # Perfect column count bonus
-            if 5 <= len(row) <= 7:  # Ideal bank statement column count
+                    score += 1
+                    field_types.add(canonical)
+                    
+            # Bonus for having essential fields
+            if 'Date' in field_types:
                 score += 5
-            elif len(row) > 10:     # Too many columns is very suspicious
-                score -= 10
+            if 'Description' in field_types or 'Particulars' in field_types:
+                score += 3
+            if 'Debit' in field_types or 'Credit' in field_types:
+                score += 3
+            if 'Balance' in field_types:
+                score += 2
+                
+            # Require minimum score and field diversity
+            if score >= 8 and len(field_types) >= 3:
+                if score > best_score:
+                    best_score = score
+                    best_row_idx = idx
+                    
+        if best_row_idx is not None:
+            print(f"[Universal Parser] Found header row at index {best_row_idx} (score: {best_score})")
             
-            # SEVERE PENALTY for rows with numbers (headers shouldn't have amounts)
-            number_count = sum(1 for word in row if NUMBER_REGEX.search(word.get('text', '')))
-            if number_count > 0:
-                score -= 15  # Any numbers in header row is very bad
-            
-            # SEVERE PENALTY for dates in header row (headers shouldn't contain transaction dates)
-            if DATE_REGEX.search(row_text):
-                score -= 15
-            
-            # PENALTY for email addresses, account numbers, or other non-header content
-            if '@' in row_text or re.search(r'\d{10,}', row_text):  # Long numbers like account IDs
-                score -= 10
-            
-            # Look for PERFECT header patterns only
-            perfect_header_keywords = ['date', 'description', 'particulars', 'balance', 'debit', 'credit', 'amount']
-            keyword_matches = sum(1 for keyword in perfect_header_keywords if keyword in row_text)
-            score += keyword_matches * 2
-            
-            # ULTRA STRICT CRITERIA: Must have minimum score of 30 and perfect conditions
-            if (score >= 30 and len(detected_fields) >= 4 and 
-                'Date' in detected_fields and score > best_score):
-                best_score = score
-                header_row_idx = idx
-                best_row_info = {
-                    'detected_fields': detected_fields,
-                    'score': score,
-                    'row_text': row_text,
-                    'valid_header_ratio': valid_header_words / total_words if total_words > 0 else 0
-                }
+        return best_row_idx
         
-        # If we found a potential header row, establish column bands
-        if header_row_idx is not None and best_row_info is not None:
-            print(f"[Universal Parser] Found header row at index {header_row_idx}")
-            print(f"[Universal Parser] Detected fields: {best_row_info['detected_fields']}")
-            print(f"[Universal Parser] Score: {best_row_info['score']}")
-            print(f"[Universal Parser] Valid header ratio: {best_row_info['valid_header_ratio']:.2f}")
-            print(f"[Universal Parser] Row text: {best_row_info['row_text']}")
-            
-            # Create column bands
-            self._establish_column_bands(rows[header_row_idx])
-            
-            # Validate column bands - reject if too many overlapping bands
-            if len(self.column_bands) > 8:  # Even stricter - max 8 bands
-                print(f"[Universal Parser] WARNING: Too many column bands ({len(self.column_bands)}), rejecting header")
-                self.column_bands = []
-                return None
-            
-            return header_row_idx
-        
-        print("[Universal Parser] No valid header row found with ultra-strict criteria - will use fallback")
-        return None
-    
-    def _establish_column_bands(self, header_row: List[Dict[str, Any]]):
+    def establish_column_bands(self, header_row: List[Dict[str, Any]]) -> List[ColumnBand]:
         """
-        Establish column bands based on header row positions.
+        Create column bands from header row words.
         
         Args:
             header_row: List of words in the header row
-        """
-        self.column_bands = []
-        
-        # Create column bands for each recognized header
-        for word in header_row:
-            word_text = word.get('text', '')
-            canonical = normalize_header(word_text)
             
+        Returns:
+            List of column bands
+        """
+        bands = []
+        
+        # Create initial bands for each recognized header
+        for word in header_row:
+            word_text = word.get('text', '').strip()
+            if not word_text:
+                continue
+                
+            canonical = normalize_header(word_text)
             if canonical:
                 x0 = word.get('x0', 0)
                 x1 = word.get('x1', 0)
                 
-                # Expand band to capture aligned content
-                band = ColumnBand(canonical, x0 - 5, x1 + 5)
-                self.column_bands.append(band)
+                # Expand band slightly for better capture
+                band = ColumnBand(canonical, x0 - 3, x1 + 3)
+                bands.append(band)
+                
+        # Sort by position
+        bands.sort(key=lambda b: b.x0)
         
-        # Sort bands by X position
-        self.column_bands.sort(key=lambda b: b.x0)
+        # Merge overlapping bands of same type
+        merged_bands = self.merge_column_bands(bands)
         
-        # Detect RTL layout
-        if self.column_bands:
-            # If Date column is on the right side, likely RTL
-            date_bands = [b for b in self.column_bands if b.field_name == 'Date']
-            if date_bands and self.page_width > 0:
-                date_band = date_bands[0]
-                if date_band.center > self.page_width * 0.7:
-                    self.is_rtl = True
-                    self.column_bands.reverse()
-    
+        print(f"[Universal Parser] Created {len(merged_bands)} column bands from {len(bands)} initial bands")
+        for band in merged_bands:
+            print(f"[Universal Parser] {band}")
+            
+        return merged_bands
+        
+    def merge_column_bands(self, bands: List[ColumnBand]) -> List[ColumnBand]:
+        """
+        Merge overlapping or closely positioned bands of the same field type.
+        
+        Args:
+            bands: List of column bands to merge
+            
+        Returns:
+            List of merged column bands
+        """
+        if not bands:
+            return []
+            
+        # Group by field type
+        field_groups = defaultdict(list)
+        for band in bands:
+            field_groups[band.field_name].append(band)
+            
+        merged_bands = []
+        
+        for field_name, field_bands in field_groups.items():
+            if len(field_bands) == 1:
+                merged_bands.append(field_bands[0])
+                continue
+                
+            # Sort by x0 position
+            field_bands.sort(key=lambda b: b.x0)
+            
+            # Merge closely positioned bands (within 50 pixels) - increased tolerance
+            current_group = [field_bands[0]]
+            
+            for band in field_bands[1:]:
+                last_band = current_group[-1]
+                
+                # If bands are close or overlapping, merge them
+                if band.x0 <= last_band.x1 + 50:
+                    current_group.append(band)
+                else:
+                    # Finalize current group and start new one
+                    if current_group:
+                        merged_band = self.create_merged_band(field_name, current_group)
+                        merged_bands.append(merged_band)
+                    current_group = [band]
+                    
+            # Process last group
+            if current_group:
+                merged_band = self.create_merged_band(field_name, current_group)
+                merged_bands.append(merged_band)
+                
+        # Sort final bands by position
+        merged_bands.sort(key=lambda b: b.x0)
+        return merged_bands
+        
+    def create_merged_band(self, field_name: str, bands: List[ColumnBand]) -> ColumnBand:
+        """Create a single merged band from multiple bands."""
+        min_x0 = min(band.x0 for band in bands)
+        max_x1 = max(band.x1 for band in bands)
+        return ColumnBand(field_name, min_x0, max_x1)
+        
     def assign_words_to_columns(self, row: List[Dict[str, Any]]) -> Dict[str, str]:
         """
         Assign words in a row to their respective column bands.
@@ -249,7 +271,7 @@ class UniversalBankStatementParser:
             row: List of words in the row
             
         Returns:
-            Dictionary mapping field names to text values
+            Dictionary mapping field names to concatenated text values
         """
         field_values = defaultdict(list)
         
@@ -258,28 +280,28 @@ class UniversalBankStatementParser:
             if not word_text:
                 continue
                 
-            # Find which column band this word belongs to
+            # Find best matching column band
             assigned = False
             for band in self.column_bands:
                 if band.contains_word(word):
                     field_values[band.field_name].append(word_text)
                     assigned = True
                     break
-            
-            # If not assigned to any band, add to description (most flexible field)
+                    
+            # If no band matches, add to Description (most flexible)
             if not assigned:
                 field_values['Description'].append(word_text)
-        
+                
         # Convert lists to joined strings
         result = {}
         for field, values in field_values.items():
             result[field] = ' '.join(values).strip()
-        
+            
         return result
-    
+        
     def is_transaction_row(self, field_values: Dict[str, str]) -> bool:
         """
-        Determine if a row represents a transaction.
+        Determine if a row represents a transaction using flexible criteria.
         
         Args:
             field_values: Dictionary of field values for the row
@@ -287,106 +309,141 @@ class UniversalBankStatementParser:
         Returns:
             True if this appears to be a transaction row
         """
-        # Must have a date and at least one number
-        has_date = False
-        has_number = False
+        score = 0
         
+        # Check for date (most important indicator)
         for field, value in field_values.items():
-            if field == 'Date' and value and extract_date(value):
-                has_date = True
-            if value and NUMBER_REGEX.search(value):
-                has_number = True
+            if not value or not value.strip():
+                continue
+                
+            # Date detection (flexible patterns)
+            if field == 'Date' and value:
+                if (extract_date(value) or 
+                    re.search(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', value) or
+                    re.search(r'\d{2,4}[/-]\d{1,2}[/-]\d{1,2}', value)):
+                    score += 5  # Date is crucial
+                    
+            # Amount fields
+            if field in ['Debit', 'Credit', 'Amount', 'Balance', 'Withdrawal', 'Deposit']:
+                if self.safe_extract_numbers(value):
+                    score += 3  # Amount fields are strong indicators
+                    
+            # Any numeric value
+            if self.safe_extract_numbers(value):
+                score += 1
+                
+            # Substantial description
+            if field in ['Description', 'Particulars', 'Narration'] and len(value.strip()) > 5:
+                score += 2
+                
+        # Accept if score indicates strong transaction likelihood
+        return score >= 6
         
-        return has_date and has_number
-    
-    def init_transaction(self, field_values: Dict[str, str]) -> Dict[str, Any]:
+    def safe_extract_numbers(self, text: str) -> List[str]:
         """
-        Initialize a transaction from field values.
+        Safely extract numbers from text, handling tuple results from regex.
+        
+        Args:
+            text: Text to extract numbers from
+            
+        Returns:
+            List of number strings
+        """
+        if not text:
+            return []
+            
+        try:
+            matches = NUMBER_REGEX.findall(text)
+            numbers = []
+            
+            for match in matches:
+                if isinstance(match, tuple):
+                    # Join non-empty parts of tuple
+                    number_str = ''.join(str(part) for part in match if part)
+                    if number_str.strip():
+                        numbers.append(number_str.strip())
+                else:
+                    numbers.append(str(match).strip())
+                    
+            return [n for n in numbers if n]
+        except Exception as e:
+            print(f"[Universal Parser] Warning: Error extracting numbers from '{text}': {e}")
+            return []
+            
+    def create_transaction(self, field_values: Dict[str, str]) -> Dict[str, Any]:
+        """
+        Create a standardized transaction from field values.
         
         Args:
             field_values: Dictionary of field values
             
         Returns:
-            Transaction dictionary with detected fields
+            Standardized transaction dictionary
         """
-        # Start with empty transaction and populate based on detected fields
-        transaction = {}
+        transaction = {
+            'Date': None,
+            'Description': '',
+            'Debit': None,
+            'Credit': None,
+            'Balance': None,
+            'Amount': None
+        }
         
-        # Directly map all detected fields to preserve original structure
-        for field_name, field_value in field_values.items():
-            if field_value and field_value.strip():
-                transaction[field_name] = field_value.strip()
-        
-        # Extract date from appropriate field
-        date_fields = ['Date', 'ValueDate']
-        for field in date_fields:
-            if field in field_values and field_values[field]:
-                date_extracted = extract_date(field_values[field])
-                if date_extracted:
-                    transaction[field] = date_extracted
-                    break
-        
-        # Extract amounts and determine debit/credit
-        numbers = []
+        # Process each field
         for field, value in field_values.items():
-            if value:
-                for match in NUMBER_REGEX.finditer(value):
-                    num_str = match.group()
-                    normalized = normalize_number(num_str)
-                    if normalized is not None:
-                        numbers.append({
-                            'value': normalized,
-                            'text': num_str,
-                            'field': field,
-                            'is_negative': NEGATIVE_REGEX.search(value) is not None
-                        })
-        
-        if numbers:
-            # Sort by absolute value (largest last)
-            numbers.sort(key=lambda x: abs(x['value']))
-            
-            # Balance is typically the largest number
-            if len(numbers) >= 1:
-                balance_num = numbers[-1]
-                transaction['Balance'] = balance_num['value']
-            
-            # Transaction amount is typically the second largest
-            if len(numbers) >= 2:
-                amount_num = numbers[-2]
-                amount = amount_num['value']
+            if not value or not value.strip():
+                continue
                 
-                # Determine if debit or credit
-                if self.previous_balance is not None and transaction['Balance'] is not None:
-                    # Use balance change to determine debit/credit
-                    balance_change = transaction['Balance'] - self.previous_balance
-                    if balance_change > 0:
-                        transaction['Credit'] = abs(amount)
-                    else:
-                        transaction['Debit'] = abs(amount)
-                    transaction['Amount'] = balance_change
-                elif amount_num['is_negative'] or any(field in amount_num['field'].lower() for field in ['debit', 'withdrawal', 'dr']):
-                    transaction['Debit'] = abs(amount)
-                    transaction['Amount'] = -abs(amount)
-                else:
-                    transaction['Credit'] = abs(amount)
-                    transaction['Amount'] = abs(amount)
+            value = value.strip()
             
-            # Handle single amount column scenarios
-            elif len(numbers) == 1 and self.previous_balance is not None and transaction['Balance'] is not None:
-                balance_change = transaction['Balance'] - self.previous_balance
-                if balance_change != 0:
-                    if balance_change > 0:
-                        transaction['Credit'] = abs(balance_change)
-                    else:
-                        transaction['Debit'] = abs(balance_change)
-                    transaction['Amount'] = balance_change
+            if field == 'Date':
+                parsed_date = extract_date(value)
+                if parsed_date:
+                    transaction['Date'] = parsed_date
+                else:
+                    transaction['Date'] = value  # Keep original if parsing fails
+                    
+            elif field in ['Description', 'Particulars', 'Narration']:
+                if transaction['Description']:
+                    transaction['Description'] += f" {value}"
+                else:
+                    transaction['Description'] = value
+                    
+            elif field in ['Debit', 'Withdrawal']:
+                normalized = normalize_number(value)
+                if normalized is not None and normalized > 0:
+                    transaction['Debit'] = normalized
+                    
+            elif field in ['Credit', 'Deposit']:
+                normalized = normalize_number(value)
+                if normalized is not None and normalized > 0:
+                    transaction['Credit'] = normalized
+                    
+            elif field == 'Balance':
+                normalized = normalize_number(value)
+                if normalized is not None:
+                    transaction['Balance'] = normalized
+                    
+            elif field == 'Amount':
+                normalized = normalize_number(value)
+                if normalized is not None:
+                    transaction['Amount'] = normalized
+                    
+        # Clean up description
+        transaction['Description'] = transaction['Description'].strip()
         
-        # Update previous balance for next transaction
-        if transaction['Balance'] is not None:
-            self.previous_balance = transaction['Balance']
-        
+        # Ensure at least one amount field is populated
+        if (transaction['Debit'] is None and 
+            transaction['Credit'] is None and 
+            transaction['Amount'] is not None):
+            # Determine if amount is debit or credit based on context
+            if transaction['Amount'] < 0:
+                transaction['Debit'] = abs(transaction['Amount'])
+            else:
+                transaction['Credit'] = transaction['Amount']
+                
         return transaction
-    
+        
     def parse_statement(self, all_words: List[Dict[str, Any]], page_width: float = 0) -> List[Dict[str, Any]]:
         """
         Parse bank statement from word list across all pages.
@@ -398,559 +455,151 @@ class UniversalBankStatementParser:
         Returns:
             List of transaction dictionaries
         """
-        print(f"[Universal Parser] Starting parse with {len(all_words)} words, page_width: {page_width}")
+        print(f"[Universal Parser] Starting parse with {len(all_words)} words")
         
         self.page_width = page_width
         self.transactions = []
-        self.current_transaction = None
-        self.previous_balance = None
         
         if not all_words:
-            print("[Universal Parser] ERROR: No words provided for parsing")
+            print("[Universal Parser] ERROR: No words provided")
             return []
-        
+            
         # Cluster words into rows
         print("[Universal Parser] Clustering words into rows...")
         rows = self.cluster_words_by_rows(all_words)
         
         if not rows:
-            print("[Universal Parser] ERROR: No rows found after clustering")
+            print("[Universal Parser] ERROR: No rows found")
             return []
-        
+            
         print(f"[Universal Parser] Found {len(rows)} rows")
         
-        # Log first few rows for debugging
-        for i, row in enumerate(rows[:10]):  # Show first 10 rows
-            row_text = ' '.join(word.get('text', '') for word in row)
-            print(f"[Universal Parser] Row {i}: {row_text}")
+        # Detect header row
+        header_idx = self.detect_header_row(rows)
         
-        # Detect header row and establish column bands
-        header_idx = self.detect_header_row_and_columns(rows)
-        
-        if header_idx is None or not self.column_bands:
-            print("[Universal Parser] No header row found or no column bands established, using fallback parsing")
-            fallback_transactions = self._parse_without_column_bands(rows)
+        if header_idx is None:
+            print("[Universal Parser] No header found, using fallback parsing")
+            return self.fallback_parse(rows)
             
-            if not fallback_transactions:
-                print("[Universal Parser] ERROR: Fallback parsing also found no transactions")
-                print("[Universal Parser] DEBUG: Analyzing content for clues...")
-                self._debug_content_analysis(rows)
-            else:
-                print(f"[Universal Parser] SUCCESS: Fallback parsing found {len(fallback_transactions)} transactions")
-                
-            return fallback_transactions
+        # Establish column bands
+        self.column_bands = self.establish_column_bands(rows[header_idx])
         
-        print(f"[Universal Parser] Using column-based parsing with {len(self.column_bands)} bands")
-        for band in self.column_bands:
-            print(f"[Universal Parser] Column band: {band}")
+        if not self.column_bands:
+            print("[Universal Parser] No column bands established, using fallback")
+            return self.fallback_parse(rows)
+            
+        # Validate reasonable number of bands
+        if len(self.column_bands) > 15:  # Increased from 10 to 15
+            print(f"[Universal Parser] Too many column bands ({len(self.column_bands)}), using fallback")
+            return self.fallback_parse(rows)
+            
+        # Process transaction rows
+        print(f"[Universal Parser] Processing transaction rows after header {header_idx}")
         
-        # Process rows after header
-        transaction_rows_processed = 0
         for row_idx in range(header_idx + 1, len(rows)):
             row = rows[row_idx]
             if not row:
                 continue
-            
+                
             # Assign words to columns
             field_values = self.assign_words_to_columns(row)
             
+            # Check if this is a transaction row
             if self.is_transaction_row(field_values):
-                transaction_rows_processed += 1
-                print(f"[Universal Parser] Processing transaction row {transaction_rows_processed}: {field_values}")
+                transaction = self.create_transaction(field_values)
+                self.transactions.append(transaction)
+                print(f"[Universal Parser] ✓ Transaction: {transaction.get('Date')} - {transaction.get('Description', '')[:50]}")
                 
-                # Finalize previous transaction if any
-                if self.current_transaction:
-                    self.transactions.append(self.current_transaction)
-                
-                # Start new transaction
-                self.current_transaction = self.init_transaction(field_values)
-            else:
-                # Continue description of current transaction
-                if self.current_transaction and field_values.get('Description'):
-                    desc_text = field_values['Description']
-                    if desc_text and desc_text.strip():
-                        current_desc = self.current_transaction.get('Description', '')
-                        self.current_transaction['Description'] = f"{current_desc} {desc_text.strip()}".strip()
-        
-        # Add the last transaction
-        if self.current_transaction:
-            self.transactions.append(self.current_transaction)
-        
-        print(f"[Universal Parser] Final result: {len(self.transactions)} transactions found")
+        print(f"[Universal Parser] Extracted {len(self.transactions)} transactions using column-based parsing")
         
         if not self.transactions:
-            print("[Universal Parser] ERROR: Column-based parsing found no transactions")
-            print("[Universal Parser] DEBUG: Analyzing content for clues...")
-            self._debug_content_analysis(rows)
-        
+            print("[Universal Parser] Column parsing found no transactions, trying fallback")
+            return self.fallback_parse(rows)
+            
         return self.transactions
-    
-    def _parse_without_column_bands(self, rows: List[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+        
+    def fallback_parse(self, rows: List[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
         """
-        Enhanced fallback parsing method when column bands cannot be established.
-        Uses multiple intelligent heuristics to extract transactions.
+        Fallback parsing when column detection fails.
         
         Args:
             rows: List of word rows
             
         Returns:
-            List of transactions
+            List of transactions from fallback parsing
         """
-        print("[Universal Parser] Using enhanced fallback parsing method")
-        transactions = []
-        current_transaction = None
-        previous_balance = None
+        print("[Universal Parser] Using fallback parsing method")
         
-        # Phase 1: Identify potential transaction rows using multiple criteria
-        potential_transaction_rows = []
+        transactions = []
         
         for row_idx, row in enumerate(rows):
             if not row:
                 continue
                 
-            row_text = ' '.join(word.get('text', '') for word in row).strip()
+            # Create row text
+            row_text = ' '.join(word.get('text', '') for word in row)
             
-            # Skip obvious non-data rows
-            if not row_text or len(row_text) < 5:
-                continue
-            
-            # Multiple criteria for transaction detection
+            # Look for potential transaction indicators
             has_date = bool(DATE_REGEX.search(row_text))
-            numbers = NUMBER_REGEX.findall(row_text)
-            # Handle tuples from regex capturing groups
-            number_strings = []
-            for n in numbers:
-                if isinstance(n, tuple):
-                    # Join all non-empty parts of the tuple
-                    number_strings.extend([part for part in n if part])
-                else:
-                    number_strings.append(n)
-            has_meaningful_numbers = len(number_strings) >= 1 and any(float(normalize_number(n) or 0) > 0 for n in number_strings)
+            numbers = self.safe_extract_numbers(row_text)
+            has_meaningful_numbers = len(numbers) >= 1
             
-            # Transaction type indicators
-            transaction_keywords = [
-                'transfer', 'payment', 'deposit', 'withdrawal', 'cheque', 'check',
-                'atm', 'pos', 'online', 'mobile', 'upi', 'neft', 'rtgs', 'imps',
-                'salary', 'interest', 'charges', 'fee', 'refund', 'cashback',
-                'mir', 'int', 'paid', 'received', 'cr', 'dr', 'debit', 'credit'
-            ]
-            
-            lower_text = row_text.lower()
-            has_transaction_keyword = any(keyword in lower_text for keyword in transaction_keywords)
-            
-            # Bank-specific patterns that strongly indicate transactions
-            bank_patterns = [
-                r'\b\d{2}/\d{2}/\d{4}\b',  # Date patterns
-                r'\bmr\d+\b',  # Reference numbers like MR123
-                r'\bint\b',    # Interest
-                r'\bcr\b|\bdr\b',  # Credit/Debit indicators
-                r'\b\d+\.\d{2}\b',  # Monetary amounts
-                r'\b\d{10,}\b',    # Long reference numbers
-                r'\b\d+,\d+\.\d{2}\b'  # Formatted amounts like 100,501.22
-            ]
-            
-            has_bank_pattern = any(re.search(pattern, lower_text) for pattern in bank_patterns)
-            
-            # AGGRESSIVE TRANSACTION DETECTION - Score this row
-            score = 0
-            
-            # Date bonus (nice to have but not required)
-            if has_date:
-                score += 8
-            
-            # Multiple numbers is a strong indicator
-            if len(numbers) >= 2:
-                score += 10  # Multiple numbers likely means amounts + balance
-            elif len(numbers) >= 1:
-                score += 5
-            
-            # Transaction keywords
-            if has_transaction_keyword:
-                score += 8
-            
-            # Bank patterns (especially CR/DR and formatted amounts)
-            if has_bank_pattern:
-                score += 8
-            
-            # Multiple columns indicates structured data
-            if len(row) >= 4:
-                score += 5
-            elif len(row) >= 6:
-                score += 8  # Even better structure
-            
-            # SPECIAL PATTERNS for obvious transactions:
-            
-            # Pattern 1: Multiple decimal numbers (like "202.00 0.00 202.00")
-            decimal_numbers = [n for n in numbers if '.' in n]
-            if len(decimal_numbers) >= 2:
-                score += 15  # Very strong indicator
-            
-            # Pattern 2: CR/DR indicators with numbers
-            if re.search(r'\b(cr|dr)\b', lower_text) and len(numbers) >= 1:
-                score += 20  # Extremely strong indicator
-            
-            # Pattern 3: Long reference number + multiple amounts
-            if re.search(r'\b\d{10,}\b', row_text) and len(numbers) >= 2:
-                score += 15  # Account/ref number + amounts
-            
-            # Pattern 4: Formatted currency amounts (1,234.56 format)
-            if re.search(r'\b\d{1,3}(,\d{3})*\.\d{2}\b', row_text):
-                score += 12  # Well-formatted amounts
-            
-            # Penalty for obvious non-transaction content
-            non_transaction_indicators = [
-                'statement', 'period', 'customer', 'account summary', 'branch', 'address',
-                'ifsc', 'page', 'continued', 'total', 'opening', 'closing', 'summary',
-                'consolidated', 'important', 'notification', 'abbreviation'
-            ]
-            
-            penalty_hits = sum(1 for indicator in non_transaction_indicators if indicator in lower_text)
-            score -= penalty_hits * 3
-            
-            # VERY LOW THRESHOLD - we want to catch everything that might be a transaction
-            if score >= 8:  # Much lower threshold than before
-                potential_transaction_rows.append({
-                    'row_idx': row_idx,
-                    'row': row,
-                    'row_text': row_text,
-                    'score': score,
-                    'has_date': has_date,
-                    'numbers': numbers,
-                    'decimal_count': len(decimal_numbers),
-                    'has_cr_dr': bool(re.search(r'\b(cr|dr)\b', lower_text))
-                })
-        
-        print(f"[Universal Parser] Found {len(potential_transaction_rows)} potential transaction rows")
-        
-        # Show top scoring rows for debugging
-        potential_transaction_rows.sort(key=lambda x: x['score'], reverse=True)
-        for i, info in enumerate(potential_transaction_rows[:5]):  # Show top 5
-            print(f"[Universal Parser] Potential transaction {i+1} (score {info['score']}): {info['row_text'][:100]}")
-        
-        # Phase 2: Process potential transaction rows
-        for transaction_info in potential_transaction_rows:
-            row = transaction_info['row']
-            row_text = transaction_info['row_text']
-            
-            # Parse this row as a transaction
-            transaction = self._parse_row_intelligently(row, row_text, previous_balance)
-            
-            # Validate the transaction has essential fields
-            if self._validate_transaction(transaction):
-                transactions.append(transaction)
-                
-                # Update previous balance for calculations
-                if transaction.get('Balance') is not None:
-                    previous_balance = transaction['Balance']
+            # Simple transaction detection
+            if has_date and has_meaningful_numbers and len(row_text.strip()) > 10:
+                # Try to extract a basic transaction
+                transaction = self.extract_basic_transaction(row_text, row)
+                if transaction:
+                    transactions.append(transaction)
+                    print(f"[Universal Parser] ✓ Fallback transaction: {transaction.get('Date')} - {transaction.get('Description', '')[:50]}")
                     
-                print(f"[Universal Parser] Extracted transaction: Date={transaction.get('Date')}, "
-                      f"Amount={transaction.get('Amount')}, Balance={transaction.get('Balance')}")
-        
-        # Phase 3: Post-processing to improve transaction quality
-        transactions = self._post_process_transactions(transactions)
-        
-        print(f"[Universal Parser] Enhanced fallback parsing extracted {len(transactions)} transactions")
+        print(f"[Universal Parser] Fallback parsing extracted {len(transactions)} transactions")
         return transactions
-    
-    def _validate_transaction(self, transaction: Dict[str, Any]) -> bool:
+        
+    def extract_basic_transaction(self, row_text: str, row: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
-        Validate that a transaction has essential fields.
+        Extract a basic transaction from a row using pattern matching.
         
         Args:
-            transaction: Transaction dictionary
-            
-        Returns:
-            True if transaction is valid
-        """
-        # Must have either a date or meaningful description
-        has_date = bool(transaction.get('Date'))
-        has_description = bool(transaction.get('Description') and len(str(transaction['Description']).strip()) > 2)
-        
-        # Must have some amount information
-        has_amount = any([
-            transaction.get('Amount') is not None,
-            transaction.get('Debit') is not None,
-            transaction.get('Credit') is not None,
-            transaction.get('Balance') is not None
-        ])
-        
-        return (has_date or has_description) and has_amount
-    
-    def _post_process_transactions(self, transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Post-process transactions to improve data quality.
-        
-        Args:
-            transactions: List of raw transactions
-            
-        Returns:
-            List of improved transactions
-        """
-        if not transactions:
-            return transactions
-        
-        # Sort by date if possible
-        dated_transactions = []
-        undated_transactions = []
-        
-        for trans in transactions:
-            if trans.get('Date'):
-                try:
-                    # Try to parse the date for sorting
-                    date_obj = extract_date(trans['Date'])
-                    if date_obj:
-                        dated_transactions.append((date_obj, trans))
-                    else:
-                        undated_transactions.append(trans)
-                except:
-                    undated_transactions.append(trans)
-            else:
-                undated_transactions.append(trans)
-        
-        # Sort dated transactions
-        dated_transactions.sort(key=lambda x: x[0])
-        sorted_transactions = [trans for date_obj, trans in dated_transactions] + undated_transactions
-        
-        # Calculate running balances if missing
-        for i, trans in enumerate(sorted_transactions):
-            if trans.get('Balance') is None:
-                # Try to calculate based on previous balance and amount
-                if i > 0:
-                    prev_balance = sorted_transactions[i-1].get('Balance')
-                    amount = trans.get('Amount')
-                    if prev_balance is not None and amount is not None:
-                        trans['Balance'] = prev_balance + amount
-        
-        return sorted_transactions
-    
-    def _parse_row_intelligently(self, row: List[Dict[str, Any]], row_text: str, previous_balance: Optional[float]) -> Dict[str, Any]:
-        """
-        Intelligently parse a row to extract transaction fields.
-        
-        Args:
-            row: List of word dictionaries in the row
             row_text: Combined text of the row
-            previous_balance: Previous transaction balance for calculation
+            row: List of word dictionaries
             
         Returns:
-            Transaction dictionary
+            Transaction dictionary or None
         """
+        # Find date
+        date_match = DATE_REGEX.search(row_text)
+        if not date_match:
+            return None
+            
+        # Extract numbers
+        numbers = self.safe_extract_numbers(row_text)
+        if not numbers:
+            return None
+            
+        # Create basic transaction
         transaction = {
-            'Date': None,
-            'Description': '',
+            'Date': date_match.group(),
+            'Description': row_text.strip(),
             'Debit': None,
             'Credit': None,
             'Balance': None,
-            'Amount': None,
-            'Currency': extract_currency(row_text),
-            'ReferenceID': None,
-            'TransactionType': None,
-            'ValueDate': None
+            'Amount': None
         }
         
-        # Extract date
-        date_match = DATE_REGEX.search(row_text)
-        if date_match:
-            transaction['Date'] = date_match.group().strip()
-        
-        # Extract all numbers from the row
-        numbers = []
-        for match in NUMBER_REGEX.finditer(row_text):
-            num_str = match.group()
+        # Try to assign amounts (simple heuristic)
+        normalized_numbers = []
+        for num_str in numbers:
             normalized = normalize_number(num_str)
-            if normalized is not None and normalized != 0:
-                numbers.append({
-                    'value': normalized,
-                    'text': num_str,
-                    'start': match.start(),
-                    'end': match.end()
-                })
-        
-        # Sort numbers by their position in text and value
-        numbers.sort(key=lambda x: (x['start'], abs(x['value'])))
-        
-        # Intelligent number assignment based on position and context
-        if len(numbers) == 1:
-            # Single number - could be amount or balance
-            num = numbers[0]
-            if previous_balance is not None:
-                # Treat as balance, calculate amount
-                transaction['Balance'] = num['value']
-                amount_change = transaction['Balance'] - previous_balance
-                transaction['Amount'] = amount_change
-                if amount_change > 0:
-                    transaction['Credit'] = abs(amount_change)
-                else:
-                    transaction['Debit'] = abs(amount_change)
-            else:
-                # No previous balance context, treat as amount
-                transaction['Amount'] = num['value']
-                if num['value'] > 0:
-                    transaction['Credit'] = num['value']
-                else:
-                    transaction['Debit'] = abs(num['value'])
-                    
-        elif len(numbers) == 2:
-            # Two numbers - likely amount and balance
-            first_num, second_num = numbers[0], numbers[1]
-            
-            # Heuristic: larger number is usually balance
-            if abs(second_num['value']) > abs(first_num['value']):
-                transaction['Amount'] = first_num['value']
-                transaction['Balance'] = second_num['value']
-            else:
-                transaction['Amount'] = second_num['value']
-                transaction['Balance'] = first_num['value']
-            
-            # Determine debit/credit
-            amount = transaction['Amount']
-            if amount > 0:
-                transaction['Credit'] = amount
-            else:
-                transaction['Debit'] = abs(amount)
+            if normalized is not None:
+                normalized_numbers.append(normalized)
                 
-        elif len(numbers) >= 3:
-            # Multiple numbers - try to identify patterns
-            # Usually: [potential ref], amount, balance (or) debit, credit, balance
+        if normalized_numbers:
+            # Use largest number as main amount
+            main_amount = max(normalized_numbers)
+            transaction['Amount'] = main_amount
             
-            # Take the largest as balance (usually last or second to last)
-            balance_candidates = sorted(numbers, key=lambda x: abs(x['value']), reverse=True)
-            transaction['Balance'] = balance_candidates[0]['value']
-            
-            # Remove balance from consideration
-            remaining_numbers = [n for n in numbers if n != balance_candidates[0]]
-            
-            if remaining_numbers:
-                # Use context clues to determine debit/credit
-                context_text = row_text.lower()
+            # If multiple numbers, try to infer balance
+            if len(normalized_numbers) > 1:
+                transaction['Balance'] = normalized_numbers[-1]  # Often last number
                 
-                # Look for debit/credit indicators
-                debit_indicators = ['dr', 'debit', 'withdrawal', 'paid', 'transfer to', 'sent']
-                credit_indicators = ['cr', 'credit', 'deposit', 'received', 'transfer from', 'salary']
-                
-                is_debit = any(indicator in context_text for indicator in debit_indicators)
-                is_credit = any(indicator in context_text for indicator in credit_indicators)
-                
-                if len(remaining_numbers) >= 2:
-                    # Could be separate debit/credit columns
-                    first_amt = remaining_numbers[0]['value']
-                    second_amt = remaining_numbers[1]['value']
-                    
-                    if first_amt > 0 and second_amt <= 0:
-                        transaction['Credit'] = first_amt
-                        transaction['Debit'] = abs(second_amt) if second_amt < 0 else None
-                    elif second_amt > 0 and first_amt <= 0:
-                        transaction['Credit'] = second_amt
-                        transaction['Debit'] = abs(first_amt) if first_amt < 0 else None
-                    else:
-                        # Both positive or both negative - use first as amount
-                        amount = first_amt
-                        transaction['Amount'] = amount
-                        if is_debit or amount < 0:
-                            transaction['Debit'] = abs(amount)
-                        else:
-                            transaction['Credit'] = abs(amount)
-                else:
-                    # Single amount
-                    amount = remaining_numbers[0]['value']
-                    transaction['Amount'] = amount
-                    if is_debit or amount < 0:
-                        transaction['Debit'] = abs(amount)
-                    else:
-                        transaction['Credit'] = abs(amount)
-        
-        # Extract description (everything that's not a number or date)
-        description_parts = []
-        temp_text = row_text
-        
-        # Remove date from description
-        if transaction['Date']:
-            temp_text = temp_text.replace(transaction['Date'], ' ')
-        
-        # Remove numbers from description
-        for num in numbers:
-            temp_text = temp_text.replace(num['text'], ' ')
-        
-        # Clean up description
-        description = re.sub(r'\s+', ' ', temp_text).strip()
-        transaction['Description'] = description
-        
-        # Try to extract reference ID from description
-        ref_patterns = [
-            r'ref[:\s]*([a-zA-Z0-9]+)',
-            r'utr[:\s]*([a-zA-Z0-9]+)',
-            r'txn[:\s]*([a-zA-Z0-9]+)',
-            r'id[:\s]*([a-zA-Z0-9]+)',
-            r'([0-9]{6,})',  # Long numbers could be reference
-        ]
-        
-        for pattern in ref_patterns:
-            ref_match = re.search(pattern, description.lower())
-            if ref_match:
-                transaction['ReferenceID'] = ref_match.group(1)
-                break
-        
         return transaction 
-
-    def _debug_content_analysis(self, rows: List[List[Dict[str, Any]]]):
-        """
-        Analyze content to provide debugging information when no transactions are found.
-        
-        Args:
-            rows: List of word rows
-        """
-        print("[Universal Parser] === CONTENT ANALYSIS DEBUG ===")
-        
-        date_rows = []
-        number_rows = []
-        potential_headers = []
-        
-        for i, row in enumerate(rows):
-            row_text = ' '.join(word.get('text', '') for word in row)
-            
-            # Check for dates
-            if DATE_REGEX.search(row_text):
-                date_rows.append((i, row_text))
-            
-            # Check for numbers
-            numbers = NUMBER_REGEX.findall(row_text)
-            if numbers:
-                number_rows.append((i, row_text, len(numbers)))
-            
-            # Check for potential headers
-            lower_text = row_text.lower()
-            header_keywords = ['date', 'description', 'amount', 'balance', 'debit', 'credit', 'particulars', 'narration']
-            if any(keyword in lower_text for keyword in header_keywords):
-                potential_headers.append((i, row_text))
-        
-        print(f"[Universal Parser] Found {len(date_rows)} rows with dates:")
-        for i, (row_idx, text) in enumerate(date_rows[:5]):  # Show first 5
-            print(f"  Row {row_idx}: {text}")
-        
-        print(f"[Universal Parser] Found {len(number_rows)} rows with numbers:")
-        for i, (row_idx, text, num_count) in enumerate(number_rows[:5]):  # Show first 5
-            print(f"  Row {row_idx} ({num_count} numbers): {text}")
-        
-        print(f"[Universal Parser] Found {len(potential_headers)} potential header rows:")
-        for i, (row_idx, text) in enumerate(potential_headers[:3]):  # Show first 3
-            print(f"  Row {row_idx}: {text}")
-        
-        # Analyze word distribution
-        total_words = sum(len(row) for row in rows)
-        avg_words_per_row = total_words / len(rows) if rows else 0
-        print(f"[Universal Parser] Total words: {total_words}, Avg per row: {avg_words_per_row:.1f}")
-        
-        # Check for common bank statement indicators
-        all_text = ' '.join(' '.join(word.get('text', '') for word in row) for row in rows).lower()
-        bank_indicators = ['bank', 'statement', 'account', 'transaction', 'balance', 'deposit', 'withdrawal']
-        found_indicators = [indicator for indicator in bank_indicators if indicator in all_text]
-        print(f"[Universal Parser] Bank statement indicators found: {found_indicators}")
-        
-        print("[Universal Parser] === END DEBUG ANALYSIS ===")
-        
-        return {
-            'date_rows': len(date_rows),
-            'number_rows': len(number_rows),
-            'potential_headers': len(potential_headers),
-            'bank_indicators': found_indicators
-        } 

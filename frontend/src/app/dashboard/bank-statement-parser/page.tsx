@@ -6,7 +6,10 @@ import Image from 'next/image';
 import { Document, Page, pdfjs } from 'react-pdf';
 pdfjs.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
 
-export default function BankStatementParser() {
+// Export as dynamic component to avoid SSR issues with DOMMatrix
+import dynamic from 'next/dynamic';
+
+function BankStatementParser() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
@@ -374,7 +377,7 @@ export default function BankStatementParser() {
       
       console.log('[Smart Extract] Starting smart extraction...');
       
-      const response = await fetch('http://localhost:8000/smart-extract-bank-statement', {
+      const response = await fetch('http://localhost:8000/bank-specific-extract', {
         method: 'POST',
         body: formData,
       });
@@ -1472,3 +1475,7 @@ export default function BankStatementParser() {
     </div>
   );
 } 
+
+export default dynamic(() => Promise.resolve(BankStatementParser), {
+  ssr: false
+}); 
