@@ -8,13 +8,36 @@
     · esmExternals
 
  ✓ Starting...
- ✓ Ready in 1396ms
+ ✓ Ready in 1321ms
  ○ Compiling / ...
- ✓ Compiled / in 1823ms (570 modules)
- GET / 200 in 1943ms
- ✓ Compiled in 99ms (275 modules)
- GET / 200 in 35ms
- ✓ Compiled /auth/login in 243ms (555 modules)
- ✓ Compiled /dashboard in 113ms (561 modules)
- ✓ Compiled /dashboard/smart-pdf-parser in 491ms (783 modules)
- GET /dashboard/smart-pdf-parser 200 in 290ms
+ ✓ Compiled / in 1809ms (570 modules)
+ GET / 200 in 1924ms
+ ✓ Compiled in 100ms (275 modules)
+ ✓ Compiled /dashboard in 265ms (555 modules)
+ GET /dashboard 200 in 333ms
+ ✓ Compiled /auth/login in 496ms (561 modules)
+ GET /auth/login 200 in 555ms
+ ○ Compiling /dashboard/bank-statement-parser ...
+ ✓ Compiled /dashboard/bank-statement-parser in 652ms (646 modules)
+Warning: Please use the `legacy` build in Node.js environments.
+ ⨯ ReferenceError: DOMMatrix is not defined
+    at __webpack_require__ (/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/frontend/.next/server/webpack-runtime.js:33:42)
+    at eval (./src/app/dashboard/bank-statement-parser/page.tsx:11:67)
+    at (ssr)/./src/app/dashboard/bank-statement-parser/page.tsx (/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/frontend/.next/server/app/dashboard/bank-statement-parser/page.js:162:1)
+    at Object.__webpack_require__ [as require] (/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/frontend/.next/server/webpack-runtime.js:33:42)
+    at JSON.parse (<anonymous>)
+digest: "1061415668"
+ GET /dashboard/bank-statement-parser 500 in 783ms
+ GET / 200 in 53ms
+ ✓ Compiled /auth/signup in 175ms (652 modules)
+Warning: Please use the `legacy` build in Node.js environments.
+ ⨯ ReferenceError: DOMMatrix is not defined
+    at __webpack_require__ (/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/frontend/.next/server/webpack-runtime.js:33:42)
+    at eval (./src/app/dashboard/bank-statement-parser/page.tsx:11:67)
+    at (ssr)/./src/app/dashboard/bank-statement-parser/page.tsx (/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/frontend/.next/server/app/dashboard/bank-statement-parser/page.js:162:1)
+    at Object.__webpack_require__ [as require] (/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/frontend/.next/server/webpack-runtime.js:33:42)
+    at JSON.parse (<anonymous>)
+digest: "1061415668"
+ GET /dashboard/bank-statement-parser 500 in 97ms
+ ○ Compiling /dashboard/smart-pdf-parser ...
+ ✓ Compiled /dashboard/smart-pdf-parser in 780ms (869 modules)

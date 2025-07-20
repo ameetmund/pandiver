@@ -1,84 +1,266 @@
-INFO:     Will watch for changes in these directories: ['/Users/ameetmund/Tech/Project/pdf-extraction-app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [42061] using StatReload
-INFO:     Started server process [42068]
+INFO:     Started server process [74401]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:64794 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64849 - "GET / HTTP/1.1" 200 OK
-Processing PDF file: 125517-revised-ay2024-25-ameetraj-mund-aljpm5769q-computation.pdf, size: 134681 bytes
-Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpgnf_gw1k.pdf
-PDF opened successfully, 9 pages found
-Page 1: extracted 211 words
-Page 2: extracted 153 words
-Page 3: extracted 183 words
-Page 4: extracted 127 words
-Page 5: extracted 141 words
-Page 6: extracted 131 words
-Page 7: extracted 202 words
-Page 8: extracted 202 words
-Page 9: extracted 114 words
-Successfully extracted 1464 text blocks
-INFO:     127.0.0.1:64853 - "POST /upload-pdf/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49439 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50136 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50237 - "GET / HTTP/1.1" 200 OK
-Processing PDF file: 125517-revised-ay2024-25-ameetraj-mund-aljpm5769q-computation.pdf, size: 134681 bytes
-Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpv3b20sge.pdf
-PDF opened successfully, 9 pages found
-Page 1: extracted 211 words
-Page 2: extracted 153 words
-Page 3: extracted 183 words
-Page 4: extracted 127 words
-Page 5: extracted 141 words
-Page 6: extracted 131 words
-Page 7: extracted 202 words
-Page 8: extracted 202 words
-Page 9: extracted 114 words
-Successfully extracted 1464 text blocks
-INFO:     127.0.0.1:50249 - "POST /upload-pdf/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50470 - "GET / HTTP/1.1" 200 OK
-Processing PDF file: 125517-revised-ay2024-25-ameetraj-mund-aljpm5769q-computation.pdf, size: 134681 bytes
-Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmphvxy7y74.pdf
-PDF opened successfully, 9 pages found
-Page 1: extracted 211 words
-Page 2: extracted 153 words
-Page 3: extracted 183 words
-Page 4: extracted 127 words
-Page 5: extracted 141 words
-Page 6: extracted 131 words
-Page 7: extracted 202 words
-Page 8: extracted 202 words
-Page 9: extracted 114 words
-Successfully extracted 1464 text blocks
-INFO:     127.0.0.1:50476 - "POST /upload-pdf/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50832 - "OPTIONS /export-data/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50834 - "POST /export-data/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51629 - "GET / HTTP/1.1" 200 OK
-Processing PDF file: ALJPM5769Q_24120100021478ICIC_DTAX_01122024_TaxPayer.pdf, size: 12108 bytes
-Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpebafpfgt.pdf
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:64585 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64600 - "POST /bank-specific-extract HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:64658 - "OPTIONS /auth/signup HTTP/1.1" 200 OK
+/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/backend/main.py:143: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "created_at": datetime.utcnow()
+/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/backend/main.py:88: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  expire = datetime.utcnow() + expires_delta
+INFO:     127.0.0.1:64658 - "POST /auth/signup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64658 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64662 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64658 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64662 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64662 - "OPTIONS /get-tables HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64662 - "GET /get-tables HTTP/1.1" 404 Not Found
+Processing universal bank statement: HDFC bank.pdf
+PDF opened successfully, 1 pages found
+Found 1 tables on page 1
+Successfully extracted 2 transactions
+INFO:     127.0.0.1:64667 - "POST /bank-specific-extract HTTP/1.1" 200 OK
+Processing universal bank statement: ICICI bank.pdf
+PDF opened successfully, 7 pages found
+No tables found on page 1, using text extraction
+No tables found on page 2, using text extraction
+Found 3 tables on page 3
+Found 2 tables on page 4
+Found 2 tables on page 5
+Found 3 tables on page 6
+Found 1 tables on page 7
+Successfully extracted 5 transactions
+INFO:     127.0.0.1:64675 - "POST /bank-specific-extract HTTP/1.1" 200 OK
+Processing universal bank statement: IDFC bank.pdf
+PDF opened successfully, 4 pages found
+Found 3 tables on page 1
+Found 2 tables on page 2
+No tables found on page 3, using text extraction
+Found 1 tables on page 4
+Successfully extracted 35 transactions
+INFO:     127.0.0.1:64682 - "POST /bank-specific-extract HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64930 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64931 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64930 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64931 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64931 - "OPTIONS /get-tables HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64931 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64959 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64961 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64961 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65008 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65010 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65010 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65063 - "POST /bank-specific-extract HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:65104 - "OPTIONS /auth/signup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65104 - "POST /auth/signup HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:65108 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65108 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65108 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65108 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65108 - "GET /get-tables HTTP/1.1" 404 Not Found
+Processing universal bank statement: ICICI bank.pdf
+PDF opened successfully, 7 pages found
+No tables found on page 1, using text extraction
+No tables found on page 2, using text extraction
+Found 3 tables on page 3
+Found 2 tables on page 4
+Found 2 tables on page 5
+Found 3 tables on page 6
+Found 1 tables on page 7
+Successfully extracted 5 transactions
+INFO:     127.0.0.1:65124 - "POST /bank-specific-extract HTTP/1.1" 200 OK
+Processing universal bank statement: IDFC bank.pdf
+PDF opened successfully, 4 pages found
+Found 3 tables on page 1
+Found 2 tables on page 2
+No tables found on page 3, using text extraction
+Found 1 tables on page 4
+Successfully extracted 35 transactions
+INFO:     127.0.0.1:65140 - "POST /bank-specific-extract HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65348 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65349 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65348 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65349 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65349 - "OPTIONS /get-tables HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65349 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65454 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65454 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65454 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49156 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49158 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49156 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49184 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49184 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49186 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49273 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49273 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49273 - "GET /get-tables HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50682 - "OPTIONS /auth/signup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50684 - "POST /auth/signup HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:50687 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50687 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50687 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50691 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50687 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50691 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50691 - "OPTIONS /get-tables HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50691 - "GET /get-tables HTTP/1.1" 404 Not Found
+Processing universal bank statement: ICICI bank.pdf
+PDF opened successfully, 7 pages found
+No tables found on page 1, using text extraction
+No tables found on page 2, using text extraction
+Found 3 tables on page 3
+Found 2 tables on page 4
+Found 2 tables on page 5
+Found 3 tables on page 6
+Found 1 tables on page 7
+Successfully extracted 5 transactions
+INFO:     127.0.0.1:50699 - "POST /bank-specific-extract HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50713 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50713 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50713 - "GET /get-tables HTTP/1.1" 404 Not Found
+Processing universal bank statement: HDFC bank.pdf
+PDF opened successfully, 1 pages found
+Found 1 tables on page 1
+Successfully extracted 2 transactions
+INFO:     127.0.0.1:50723 - "POST /bank-specific-extract HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50746 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50749 - "OPTIONS /upload-pdf/ HTTP/1.1" 200 OK
+Processing PDF file: ALJPM5769Q_24120100021478ICIC_DTAX_01122024_TaxPayer.pdf, size: 12108 bytes for user: ameetmund@gmail.com
+Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpcaru1cw_.pdf
 PDF opened successfully, 1 pages found
 Page 1: extracted 150 words
-Successfully extracted 150 text blocks
-INFO:     127.0.0.1:51651 - "POST /upload-pdf/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52649 - "GET / HTTP/1.1" 200 OK
-Processing PDF file: ALJPM5769Q_24120100021478ICIC_DTAX_01122024_TaxPayer.pdf, size: 12108 bytes
-Temporary file created: /var/folders/c6/vkcwkc494nv5q2c0pbd3d54c0000gn/T/tmpwxbx2w1j.pdf
-PDF opened successfully, 1 pages found
-Page 1: extracted 150 words
-Successfully extracted 150 text blocks
-INFO:     127.0.0.1:52660 - "POST /upload-pdf/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52778 - "OPTIONS /export-data/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52778 - "POST /export-data/ HTTP/1.1" 200 OK
-WARNING:  StatReload detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [42068]
-Fatal Python error: init_sys_streams: can't initialize sys standard streams
-Python runtime state: core initialized
-OSError: [Errno 9] Bad file descriptor
-
-Current thread 0x00000001e864cc00 (most recent call first):
-  <no Python frame>
-INFO:     Stopping reloader process [42061]
+📝 Grouping: 'PAYMENT' + 'ADVICE' (conservative)
+📦 Grouped 2 blocks: PAYMENT ADVICE...
+📝 Grouping: 'Merchant' + 'Name' (conservative)
+📦 Grouped 2 blocks: Merchant Name...
+📝 Grouping: 'Direct' + 'Tax(TIN' (conservative)
+📝 Grouping: 'Tax(TIN' + '2.0)' (conservative)
+📦 Grouped 3 blocks: Direct Tax(TIN 2.0)...
+📝 Grouping: 'Debit' + 'Account' (conservative)
+📝 Grouping: 'Account' + 'Name' (conservative)
+📦 Grouped 3 blocks: Debit Account Name...
+📝 Grouping: 'AMEXXXXJ' + 'MUND' (conservative)
+📦 Grouped 2 blocks: AMEXXXXJ MUND...
+📝 Grouping: 'Debit' + 'Account' (conservative)
+📝 Grouping: 'Account' + 'No' (conservative)
+📦 Grouped 3 blocks: Debit Account No...
+📝 Grouping: 'Bank' + 'Reference' (conservative)
+📝 Grouping: 'Reference' + 'No' (conservative)
+📦 Grouped 3 blocks: Bank Reference No...
+📝 Grouping: 'Assessment' + 'Year' (conservative)
+📦 Grouped 2 blocks: Assessment Year...
+📝 Grouping: 'Major' + 'Head' (conservative)
+📦 Grouped 2 blocks: Major Head...
+📝 Grouping: 'Minor' + 'Head' (conservative)
+📦 Grouped 2 blocks: Minor Head...
+📝 Grouping: 'Payment' + 'Mode' (conservative)
+📦 Grouped 2 blocks: Payment Mode...
+📝 Grouping: 'Basic' + 'Tax' (conservative)
+📝 Grouping: 'Tax' + 'Amount' (conservative)
+📦 Grouped 3 blocks: Basic Tax Amount...
+📝 Grouping: 'Surcharge' + 'Amount' (conservative)
+📦 Grouped 2 blocks: Surcharge Amount...
+📝 Grouping: 'Education' + 'Cess' (conservative)
+📝 Grouping: 'Cess' + 'Amount' (conservative)
+📦 Grouped 3 blocks: Education Cess Amount...
+📝 Grouping: 'Interest' + 'Amount' (conservative)
+📦 Grouped 2 blocks: Interest Amount...
+📝 Grouping: 'Penalty' + 'Amount' (conservative)
+📦 Grouped 2 blocks: Penalty Amount...
+📝 Grouping: 'Others' + 'Amount/Fees' (conservative)
+📝 Grouping: 'Amount/Fees' + 'u/s' (conservative)
+📝 Grouping: 'u/s' + '234' (conservative)
+📦 Grouped 4 blocks: Others Amount/Fees u/s 234...
+📝 Grouping: 'Total' + 'Amount' (conservative)
+📝 Grouping: 'Amount' + '(in' (conservative)
+📝 Grouping: '(in' + 'Rs.)' (conservative)
+📦 Grouped 4 blocks: Total Amount (in Rs.)...
+📝 Grouping: 'Total' + 'Amount' (conservative)
+📝 Grouping: 'Amount' + '(in' (conservative)
+📝 Grouping: '(in' + 'words)' (conservative)
+📦 Grouped 4 blocks: Total Amount (in words)...
+📝 Grouping: 'Rupees' + 'Twelve' (conservative)
+📝 Grouping: 'Twelve' + 'Thousand' (conservative)
+📝 Grouping: 'Thousand' + 'Nine' (conservative)
+📦 Grouped 4 blocks: Rupees Twelve Thousand Nine...
+📝 Grouping: 'Hundred' + 'Fifty' (conservative)
+📦 Grouped 2 blocks: Hundred Fifty...
+📝 Grouping: 'and' + 'Paise' (conservative)
+📝 Grouping: 'Paise' + 'Zero' (conservative)
+📝 Grouping: 'Zero' + 'Only.' (conservative)
+📦 Grouped 4 blocks: and Paise Zero Only....
+📝 Grouping: 'Challan' + 'Payment' (conservative)
+📝 Grouping: 'Payment' + 'Expiry' (conservative)
+📝 Grouping: 'Expiry' + 'Date' (conservative)
+📦 Grouped 4 blocks: Challan Payment Expiry Date...
+📝 Grouping: 'CIN' + 'No' (conservative)
+📦 Grouped 2 blocks: CIN No...
+📝 Grouping: 'Payment' + 'Date' (conservative)
+📝 Grouping: 'Date' + 'and' (conservative)
+📝 Grouping: 'and' + 'Time' (conservative)
+📦 Grouped 4 blocks: Payment Date and Time...
+📝 Grouping: '01/12/2024' + '16:00:04' (conservative)
+📦 Grouped 2 blocks: 01/12/2024 16:00:04...
+📝 Grouping: 'Transaction' + 'Status' (conservative)
+📦 Grouped 2 blocks: Transaction Status...
+📝 Grouping: 'Instrument' + 'Type' (conservative)
+📦 Grouped 2 blocks: Instrument Type...
+📝 Grouping: 'This' + 'is' (conservative)
+📝 Grouping: 'is' + 'a' (conservative)
+📝 Grouping: 'a' + 'computer' (conservative)
+📦 Grouped 4 blocks: This is a computer...
+📝 Grouping: 'generated' + 'receipt' (conservative)
+📝 Grouping: 'receipt' + 'hence' (conservative)
+📝 Grouping: 'hence' + 'does' (conservative)
+📦 Grouped 4 blocks: generated receipt hence does...
+📝 Grouping: 'not' + 'require' (conservative)
+📝 Grouping: 'require' + 'any' (conservative)
+📝 Grouping: 'any' + 'signature.' (conservative)
+📦 Grouped 4 blocks: not require any signature....
+📝 Grouping: 'Please' + 'note' (conservative)
+📝 Grouping: 'note' + 'this' (conservative)
+📝 Grouping: 'this' + 'is' (conservative)
+📦 Grouped 4 blocks: Please note this is...
+📝 Grouping: 'a' + 'payment' (conservative)
+📝 Grouping: 'payment' + 'advice.' (conservative)
+📝 Grouping: 'advice.' + 'Kindly' (conservative)
+📦 Grouped 4 blocks: a payment advice. Kindly...
+📝 Grouping: 'login' + 'to' (conservative)
+📝 Grouping: 'to' + 'e-Pay' (conservative)
+📝 Grouping: 'e-Pay' + 'Tax' (conservative)
+📦 Grouped 4 blocks: login to e-Pay Tax...
+📝 Grouping: 'services' + 'at' (conservative)
+📝 Grouping: 'at' + 'e-Filing' (conservative)
+📝 Grouping: 'e-Filing' + 'Portal' (conservative)
+📦 Grouped 4 blocks: services at e-Filing Portal...
+📝 Grouping: '“www.incometax.gov.in' + '>' (conservative)
+📝 Grouping: '>' + 'e-Pay' (conservative)
+📝 Grouping: 'e-Pay' + 'Tax' (conservative)
+📦 Grouped 4 blocks: “www.incometax.gov.in > e-Pay Tax...
+📝 Grouping: '>' + 'Payment' (conservative)
+📝 Grouping: 'Payment' + 'History' (conservative)
+📝 Grouping: 'History' + '>' (conservative)
+📝 Grouping: 'History' + 'Download”' (conservative)
+📦 Grouped 5 blocks: > Payment History > Download”...
+📝 Grouping: 'for' + 'downloading' (conservative)
+📝 Grouping: 'downloading' + 'challan.' (conservative)
+📝 Grouping: 'challan.' + 'Now,' (conservative)
+📦 Grouped 4 blocks: for downloading challan. Now,...
+📝 Grouping: 'ICICI' + 'Bank' (conservative)
+📦 Grouped 2 blocks: ICICI Bank...
+📝 Grouping: 'will' + 'only' (conservative)
+📝 Grouping: 'only' + 'provide' (conservative)
+📝 Grouping: 'provide' + 'payment' (conservative)
+📦 Grouped 4 blocks: will only provide payment...
+📝 Grouping: 'advice' + 'post' (conservative)
+📝 Grouping: 'post' + 'tax' (conservative)
+📝 Grouping: 'tax' + 'payment' (conservative)
+📦 Grouped 4 blocks: advice post tax payment...
+📝 Grouping: 'and' + 'not' (conservative)
+📝 Grouping: 'not' + 'challan.' (conservative)
+📦 Grouped 3 blocks: and not challan....
+Successfully processed PDF: 62 text blocks extracted
+INFO:     127.0.0.1:50749 - "POST /upload-pdf/ HTTP/1.1" 200 OK
