@@ -11,6 +11,15 @@ const nextConfig = {
         canvas: false,
         fs: false,
       };
+      
+      // Better PDF.js worker handling
+      config.module.rules.push({
+        test: /pdf\.worker\.(min\.)?js/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'static/worker/[hash][ext][query]',
+        },
+      });
     }
     
     // Handle PDF.js ES modules

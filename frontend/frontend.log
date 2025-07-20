@@ -1,13 +1,20 @@
 
-> frontend@0.1.0 dev
-> next dev
+> pandiver@0.1.0 dev
+> next dev -p 3000
 
- ⚠ Port 3000 is in use, trying 3001 instead.
   ▲ Next.js 14.2.5
-  - Local:        http://localhost:3001
+  - Local:        http://localhost:3000
   - Experiments (use with caution):
     · esmExternals
 
  ✓ Starting...
- ✓ Ready in 1576ms
-[?25h
+ ✓ Ready in 1396ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1823ms (570 modules)
+ GET / 200 in 1943ms
+ ✓ Compiled in 99ms (275 modules)
+ GET / 200 in 35ms
+ ✓ Compiled /auth/login in 243ms (555 modules)
+ ✓ Compiled /dashboard in 113ms (561 modules)
+ ✓ Compiled /dashboard/smart-pdf-parser in 491ms (783 modules)
+ GET /dashboard/smart-pdf-parser 200 in 290ms

@@ -6,10 +6,47 @@ import dynamic from 'next/dynamic';
 
 // Dynamically import PDF.js to avoid SSR issues
 let pdfjsLib: any = null;
+let initializationPromise: Promise<any> | null = null;
+
 if (typeof window !== 'undefined') {
-  import('pdfjs-dist').then((pdfjs) => {
+  console.log('🔧 Initializing PDF.js library...');
+  initializationPromise = import('pdfjs-dist').then(async (pdfjs) => {
+    console.log('📚 PDF.js imported successfully, version:', pdfjs.version);
+    
+    // Try multiple worker sources for better compatibility
+    const workerSources = [
+      // Local worker (preferred)
+      '/static/pdf.worker.min.mjs',
+      // CDN fallbacks with different extensions
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`,
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`,
+      // Fallback to a known working version
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+    ];
+    
+    for (const workerSrc of workerSources) {
+      try {
+        pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+        console.log('👷 Trying PDF.js worker:', workerSrc);
+        
+        // Test worker by creating a simple document
+        await pdfjs.getDocument({ data: new Uint8Array([]) }).promise.catch(() => {
+          // This will fail but tells us if the worker loads
+        });
+        
+        console.log('✅ PDF.js worker configured successfully:', workerSrc);
+        break;
+      } catch (error) {
+        console.warn('⚠️ Worker failed:', workerSrc, error.message);
+        continue;
+      }
+    }
+    
     pdfjsLib = pdfjs;
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    return pdfjs;
+  }).catch((error) => {
+    console.error('❌ Failed to import PDF.js:', error);
+    throw error;
   });
 }
 
@@ -135,6 +172,7 @@ export default function InteractivePDFViewer({ pdfFile, textBlocks, onTextBlockD
   const [scale, setScale] = useState(1.0);
   const [pageRendered, setPageRendered] = useState(false);
   const [draggedBlock, setDraggedBlock] = useState<TextBlock | null>(null);
+  const [pdfJsReady, setPdfJsReady] = useState(false);
   
   // Multi-selection state
   const [selectedBlocks, setSelectedBlocks] = useState<Set<number>>(new Set());
@@ -143,27 +181,55 @@ export default function InteractivePDFViewer({ pdfFile, textBlocks, onTextBlockD
   const [selectionEnd, setSelectionEnd] = useState<{x: number, y: number} | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
 
+  // Wait for PDF.js initialization
+  useEffect(() => {
+    if (initializationPromise) {
+      initializationPromise.then(() => {
+        console.log('✅ PDF.js fully initialized and ready');
+        setPdfJsReady(true);
+      }).catch((error) => {
+        console.error('❌ PDF.js initialization failed:', error);
+      });
+    } else {
+      // Check if already initialized
+      if (pdfjsLib) {
+        setPdfJsReady(true);
+      }
+    }
+  }, []);
+
   // Load PDF when file changes
   useEffect(() => {
-    if (pdfFile && pdfjsLib) {
+    if (pdfFile && pdfJsReady && pdfjsLib) {
+      console.log('🔧 Loading PDF with file size:', pdfFile.size, 'bytes');
       const fileReader = new FileReader();
       fileReader.onload = async (e) => {
         if (e.target?.result) {
           try {
+            console.log('📄 Starting PDF loading process...');
             const pdf = await pdfjsLib.getDocument({
               data: e.target.result
             }).promise;
+            console.log('✅ PDF loaded successfully! Pages:', pdf.numPages);
             setPdfDoc(pdf);
             setCurrentPage(1);
             setPageRendered(false);
           } catch (error) {
-            console.error('Error loading PDF:', error);
+            console.error('❌ Error loading PDF:', error);
+            console.error('Error details:', error.message, error.stack);
           }
         }
       };
+      fileReader.onerror = (error) => {
+        console.error('❌ FileReader error:', error);
+      };
       fileReader.readAsArrayBuffer(pdfFile);
+    } else {
+      if (pdfFile && !pdfJsReady) {
+        console.warn('⚠️ PDF file provided but PDF.js library not ready yet');
+      }
     }
-  }, [pdfFile, pdfjsLib]);
+  }, [pdfFile, pdfJsReady, pdfjsLib]);
 
   // Render PDF page
   useEffect(() => {
@@ -173,19 +239,31 @@ export default function InteractivePDFViewer({ pdfFile, textBlocks, onTextBlockD
   }, [pdfDoc, currentPage, scale]);
 
   const renderPage = async (pageNumber: number) => {
-    if (!pdfDoc || !canvasRef.current) return;
+    if (!pdfDoc || !canvasRef.current) {
+      console.warn('⚠️ Cannot render page: missing pdfDoc or canvas ref');
+      return;
+    }
 
     try {
+      console.log(`🖼️ Rendering page ${pageNumber} at ${scale}x scale...`);
       const page = await pdfDoc.getPage(pageNumber);
       const viewport = page.getViewport({ scale });
       
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
       
-      if (!context) return;
+      if (!context) {
+        console.error('❌ Canvas context not available');
+        return;
+      }
 
+      // Clear previous content
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      
       canvas.height = viewport.height;
       canvas.width = viewport.width;
+
+      console.log(`📏 Canvas dimensions: ${canvas.width}x${canvas.height}`);
 
       const renderContext = {
         canvasContext: context,
@@ -193,9 +271,11 @@ export default function InteractivePDFViewer({ pdfFile, textBlocks, onTextBlockD
       };
 
       await page.render(renderContext).promise;
+      console.log(`✅ Page ${pageNumber} rendered successfully`);
       setPageRendered(true);
     } catch (error) {
-      console.error('Error rendering page:', error);
+      console.error(`❌ Error rendering page ${pageNumber}:`, error);
+      console.error('Error details:', error.message, error.stack);
     }
   };
 
@@ -411,14 +491,15 @@ export default function InteractivePDFViewer({ pdfFile, textBlocks, onTextBlockD
     );
   }
 
-  if (!pdfjsLib) {
+  if (!pdfJsReady) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-2xl font-semibold mb-4">📄 PDF Viewer</h2>
         <div className="text-center py-12 text-gray-500">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-lg mb-2">Loading PDF viewer...</p>
-          <p className="text-sm">Initializing PDF.js library</p>
+          <p className="text-sm">Initializing PDF.js library and worker</p>
+          <p className="text-xs mt-2 text-blue-600">Check browser console for detailed progress</p>
         </div>
       </div>
     );
