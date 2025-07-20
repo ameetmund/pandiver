@@ -396,15 +396,14 @@ function BankStatementParser() {
         // Set the smart extraction result
         setSmartExtractionResult(data);
         
-        // Auto-populate the table with bank statement format
-        const headers = ['Date', 'Particulars', 'Deposits', 'Withdrawals', 'Balance'];
-        const rows = data.transactions.map((txn: any) => [
-          txn.Date || '',
-          txn.Particulars || '',
-          txn.Deposits?.toString() || '',
-          txn.Withdrawals?.toString() || '',
-          txn.Balance?.toString() || ''
-        ]);
+        // Extract headers dynamically from the first transaction
+        const firstTransaction = data.transactions[0];
+        const headers = Object.keys(firstTransaction);
+        
+        // Create rows using the actual transaction data
+        const rows = data.transactions.map((txn: any) => 
+          headers.map(header => txn[header]?.toString() || '')
+        );
         
         setTableHeaders(headers);
         setTableRows(rows);

@@ -1696,52 +1696,29 @@ async def bank_specific_extract(file: UploadFile = File(...)):
         
         transactions = extract_transactions(all_text, detected_bank)
         
-        # Phase 4: Standardize output
-        def standardize_output(transactions, bank_type):
-            standardized = []
+        # Phase 4: Preserve original headers (no standardization)
+        def preserve_original_output(transactions, bank_type):
+            """Return transactions with original bank-specific headers preserved"""
+            preserved = []
             for txn in transactions:
                 try:
-                    if bank_type == 'HDFC':
-                        standardized.append({
-                            'date': txn['Date'],
-                            'description': txn['Narration'],
-                            'debit': txn['Withdrawal_Amount'],
-                            'credit': txn['Deposit_Amount'],
-                            'balance': txn['Closing_Balance'],
-                            'reference': txn['Chq_Ref_No']
-                        })
-                    elif bank_type == 'ICICI':
-                        standardized.append({
-                            'date': txn['Date'],
-                            'description': txn['Particulars'],
-                            'debit': txn['Withdrawals'],
-                            'credit': txn['Deposits'],
-                            'balance': txn['Balance'],
-                            'mode': txn['Mode']
-                        })
-                    elif bank_type == 'IDFC':
-                        standardized.append({
-                            'date': txn['Date_and_Time'],
-                            'description': txn['Transaction_Details'],
-                            'debit': txn['Withdrawals_INR'],
-                            'credit': txn['Deposits_INR'],
-                            'balance': txn['Balance_INR']
-                        })
+                    # Keep the original field names exactly as they appear in the PDF
+                    preserved.append(txn)
                 except Exception as e:
-                    print(f"[Template Extract] Error standardizing transaction: {e}")
+                    print(f"[Template Extract] Error preserving transaction: {e}")
                     continue
             
-            return standardized
+            return preserved
         
-        standardized_transactions = standardize_output(transactions, detected_bank)
+        preserved_transactions = preserve_original_output(transactions, detected_bank)
         
-        print(f"[Template Extract] Successfully extracted {len(standardized_transactions)} transactions from {detected_bank} statement")
+        print(f"[Template Extract] Successfully extracted {len(preserved_transactions)} transactions from {detected_bank} statement")
         
         return {
             "success": True,
             "bank_type": detected_bank,
-            "transactions": standardized_transactions,
-            "total_transactions": len(standardized_transactions)
+            "transactions": preserved_transactions,
+            "total_transactions": len(preserved_transactions)
         }
         
     except Exception as e:

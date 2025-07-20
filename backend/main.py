@@ -491,15 +491,22 @@ def extract_and_consolidate_columns(pdf_path: str) -> List[TableColumn]:
             tables = page.extract_tables()
             
             if tables:
-                # Process the largest table (likely the main transaction table)
-                main_table = max(tables, key=len) if tables else None
-                if main_table and len(main_table) > 1:
-                    headers = main_table[0]
-                    rows = main_table[1:]
-                    
-                    # Process each column
-                    for col_idx, header in enumerate(headers):
-                        if header and header.strip():
+                print(f"Found {len(tables)} tables on page {page_num + 1}")
+                # Process all tables, not just the largest one
+                for table_idx, table in enumerate(tables):
+                    if table and len(table) > 1:
+                        headers = table[0]
+                        rows = table[1:]
+                        
+                        print(f"Table {table_idx + 1}: {len(headers)} headers, {len(rows)} rows")
+                        
+                        # Process each column, including empty headers with indices
+                        for col_idx, header in enumerate(headers):
+                            # Handle empty or None headers by creating a placeholder
+                            if not header or not header.strip():
+                                header = f"Column_{col_idx + 1}"
+                                print(f"Empty header at column {col_idx + 1}, using placeholder: {header}")
+                            
                             header_normalized = header.strip().lower()
                             
                             # Extract column data
@@ -508,27 +515,26 @@ def extract_and_consolidate_columns(pdf_path: str) -> List[TableColumn]:
                                 if col_idx < len(row) and row[col_idx] and row[col_idx].strip():
                                     column_data.append(str(row[col_idx]).strip())
                             
-                            if column_data:  # Only process columns with actual data
-                                # Check if this column already exists (from previous pages)
-                                if header_normalized in consolidated_columns:
-                                    # Merge data from this page
-                                    consolidated_columns[header_normalized]['data'].extend(column_data)
-                                else:
-                                    # Create new column
-                                    page_width = page.width
-                                    col_width = page_width / len(headers)
-                                    x0 = col_idx * col_width
-                                    x1 = (col_idx + 1) * col_width
-                                    
-                                    consolidated_columns[header_normalized] = {
-                                        'header': header.strip(),  # Keep original case for display
-                                        'data': column_data,
-                                        'x0': x0,
-                                        'y0': 0,
-                                        'x1': x1,
-                                        'y1': page.height,
-                                        'page': page_num + 1
-                                    }
+                            # Check if this column already exists (from previous pages)
+                            if header_normalized in consolidated_columns:
+                                # Merge data from this page
+                                consolidated_columns[header_normalized]['data'].extend(column_data)
+                            else:
+                                # Create new column (even if column_data is empty to preserve headers)
+                                page_width = page.width
+                                col_width = page_width / len(headers) if headers else page_width
+                                x0 = col_idx * col_width
+                                x1 = (col_idx + 1) * col_width
+                                
+                                consolidated_columns[header_normalized] = {
+                                    'header': header.strip(),  # Keep original case for display
+                                    'data': column_data,  # May be empty but header is preserved
+                                    'x0': x0,
+                                    'y0': 0,
+                                    'x1': x1,
+                                    'y1': page.height,
+                                    'page': page_num + 1
+                                }
             else:
                 # Fallback to text-based detection if no structured tables
                 text_blocks = page.extract_words(extra_attrs=['fontname', 'size'])
@@ -656,8 +662,9 @@ def detect_columns_from_text(text_blocks: List[Dict], page_num: int) -> List[Tab
     # Create columns based on header positions
     for i, header in enumerate(headers):
         header_text = header['text'].strip()
+        # Handle empty headers by creating placeholder
         if not header_text:
-            continue
+            header_text = f"Column_{i + 1}"
         
         column_data = []
         
@@ -668,18 +675,20 @@ def detect_columns_from_text(text_blocks: List[Dict], page_num: int) -> List[Tab
             
             # Try to match column by position
             if i < len(sorted_data):
-                column_data.append(sorted_data[i]['text'].strip())
+                cell_data = sorted_data[i]['text'].strip()
+                if cell_data:  # Only add non-empty cell data
+                    column_data.append(cell_data)
         
-        if column_data:  # Only add columns with data
-            columns.append(TableColumn(
-                header=header_text,
-                data=column_data,
-                x0=header['x0'],
-                y0=header['top'],
-                x1=header['x1'],
-                y1=header['bottom'],
-                page=page_num
-            ))
+        # Add column even if no data (preserve header structure)
+        columns.append(TableColumn(
+            header=header_text,
+            data=column_data,  # May be empty but header is preserved
+            x0=header['x0'],
+            y0=header['top'],
+            x1=header['x1'],
+            y1=header['bottom'],
+            page=page_num
+        ))
     
     return columns
 

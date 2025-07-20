@@ -23,6 +23,48 @@ from .synonyms import (
 )
 
 
+def words_to_rows(words: List[Dict[str, Any]], y_tolerance: float = 2.0) -> List[List[Dict[str, Any]]]:
+    """
+    Convert list of words to rows by grouping words with similar Y coordinates.
+    
+    Args:
+        words: List of word dictionaries with x0, y0, x1, y1, text keys
+        y_tolerance: Tolerance for grouping words into same row
+        
+    Returns:
+        List of rows, where each row is a list of words
+    """
+    if not words:
+        return []
+    
+    # Group words by Y coordinate
+    y_groups = defaultdict(list)
+    
+    for word in words:
+        y_pos = word.get('y0', 0)
+        
+        # Find existing group within tolerance
+        matched_y = None
+        for existing_y in y_groups.keys():
+            if abs(y_pos - existing_y) <= y_tolerance:
+                matched_y = existing_y
+                break
+        
+        if matched_y is not None:
+            y_groups[matched_y].append(word)
+        else:
+            y_groups[y_pos] = [word]
+    
+    # Convert to list of rows sorted by Y position (top to bottom)
+    rows = []
+    for y_pos in sorted(y_groups.keys()):
+        # Sort words in each row by X position (left to right)
+        row_words = sorted(y_groups[y_pos], key=lambda w: w.get('x0', 0))
+        rows.append(row_words)
+    
+    return rows
+
+
 class ColumnBand:
     """Represents a column in the bank statement with field type and position."""
     
