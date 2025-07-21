@@ -12,9 +12,9 @@ import openpyxl
 import json
 import re
 import collections
-from pdf2image import convert_from_bytes
-from doctr.io import DocumentFile
-from doctr.models import ocr_predictor
+# from pdf2image import convert_from_bytes  # Optional dependency for OCR
+# from doctr.io import DocumentFile  # Optional dependency for OCR
+# from doctr.models import ocr_predictor  # Optional dependency for OCR
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, EmailStr
 import jwt
@@ -24,9 +24,9 @@ import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from .models import Base, User as UserModel, UserTable
-from .tasks import parse_statement
+# from .tasks import parse_statement  # Optional celery dependency
 from .pdf_processor import get_pdf_info, extract_all_words, get_all_page_rows, analyze_row_structure
-from .export_utils import StatementExporter
+# from .export_utils import StatementExporter  # Optional dependency
 from .bank_parsers import bank_parser_manager
 import unicodedata
 
@@ -659,7 +659,7 @@ async def detect_tables(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/export")
+# @app.post("/export")
 async def export_table(request: Request):
     data = await request.json()
     df = pd.DataFrame(data.get("table", []))
@@ -1247,7 +1247,7 @@ async def smart_extract_bank_statement(file: UploadFile = File(...)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error in smart extraction: {str(e)}")
 
-@app.post("/export-excel")
+# @app.post("/export-excel")
 async def export_excel(data: dict):
     try:
         headers = data.get("headers", [])
@@ -1426,7 +1426,7 @@ async def extract_pdf_tables_faithful(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Error extracting tables: {str(e)}")
 
 
-@app.post("/export-transactions-excel")
+# @app.post("/export-transactions-excel")
 async def export_transactions_excel(
     transactions: List[Dict[str, Any]] = Body(...),
     bank_name: str = Body("Bank"),
@@ -1471,7 +1471,7 @@ async def export_transactions_excel(
         raise HTTPException(status_code=500, detail=f"Error exporting to Excel: {str(e)}")
 
 
-@app.post("/export-transactions-csv")
+# @app.post("/export-transactions-csv")
 async def export_transactions_csv(
     transactions: List[Dict[str, Any]] = Body(...),
     bank_name: str = Body("Bank"), 

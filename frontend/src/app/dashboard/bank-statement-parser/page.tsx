@@ -9,6 +9,60 @@ pdfjs.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
 // Export as dynamic component to avoid SSR issues with DOMMatrix
 import dynamic from 'next/dynamic';
 
+// Helper function to calculate summary statistics from transaction data
+const calculateSummary = (result: any) => {
+  if (!result || !result.transactions) {
+    return { total_deposits: 0, total_withdrawals: 0, final_balance: 0, date_range: null };
+  }
+
+  let totalDeposits = 0;
+  let totalWithdrawals = 0;
+  let finalBalance = 0;
+  const dates: string[] = [];
+
+  result.transactions.forEach((transaction: any) => {
+    // Extract dates for date range
+    if (transaction.Date) {
+      dates.push(transaction.Date);
+    }
+
+    // Parse amounts and calculate totals
+    const parseAmount = (value: string | number) => {
+      if (!value) return 0;
+      const str = value.toString().replace(/[₹,\s]/g, '');
+      return parseFloat(str) || 0;
+    };
+
+    // Check for deposit/credit amounts
+    if (transaction.Deposit_Amount || transaction['Deposit Amount'] || transaction.Credit) {
+      totalDeposits += parseAmount(transaction.Deposit_Amount || transaction['Deposit Amount'] || transaction.Credit);
+    }
+
+    // Check for withdrawal/debit amounts  
+    if (transaction.Withdrawal_Amount || transaction['Withdrawal Amount'] || transaction.Debit) {
+      totalWithdrawals += parseAmount(transaction.Withdrawal_Amount || transaction['Withdrawal Amount'] || transaction.Debit);
+    }
+
+    // Get final balance from last transaction
+    if (transaction.Balance || transaction['Closing Balance']) {
+      finalBalance = parseAmount(transaction.Balance || transaction['Closing Balance']);
+    }
+  });
+
+  // Calculate date range
+  const dateRange = dates.length > 0 ? {
+    start: dates[0],
+    end: dates[dates.length - 1]
+  } : null;
+
+  return {
+    total_deposits: totalDeposits,
+    total_withdrawals: totalWithdrawals,
+    final_balance: finalBalance,
+    date_range: dateRange
+  };
+};
+
 function BankStatementParser() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -45,7 +99,16 @@ function BankStatementParser() {
   
   // Smart Bank Statement Mode
   const [isSmartMode, setIsSmartMode] = useState(false);
-  const [smartExtractionResult, setSmartExtractionResult] = useState<{transactions: any[], summary: any} | null>(null);
+  const [smartExtractionResult, setSmartExtractionResult] = useState<{
+    success: boolean;
+    parser_version: string;
+    total_pages: number;
+    transaction_pages: number[];
+    total_transactions: number;
+    headers: string[];
+    transactions: any[];
+    metadata: any;
+  } | null>(null);
 
   // Table state
   const [tableHeaders, setTableHeaders] = useState<string[]>([]);
@@ -1152,32 +1215,32 @@ function BankStatementParser() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{smartExtractionResult.summary.total_transactions}</div>
+                <div className="text-2xl font-bold text-blue-600">{smartExtractionResult.total_transactions}</div>
                 <div className="text-sm text-gray-600">Transactions Found</div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
-                  ₹{smartExtractionResult.summary.total_deposits?.toLocaleString() || '0'}
+                  ₹{calculateSummary(smartExtractionResult).total_deposits?.toLocaleString() || '0'}
                 </div>
                 <div className="text-sm text-gray-600">Total Deposits</div>
               </div>
               <div className="bg-red-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-red-600">
-                  ₹{smartExtractionResult.summary.total_withdrawals?.toLocaleString() || '0'}
+                  ₹{calculateSummary(smartExtractionResult).total_withdrawals?.toLocaleString() || '0'}
                 </div>
                 <div className="text-sm text-gray-600">Total Withdrawals</div>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-purple-600">
-                  ₹{smartExtractionResult.summary.final_balance?.toLocaleString() || '0'}
+                  ₹{calculateSummary(smartExtractionResult).final_balance?.toLocaleString() || '0'}
                 </div>
                 <div className="text-sm text-gray-600">Final Balance</div>
               </div>
             </div>
             
-            {smartExtractionResult.summary.date_range && (
+            {calculateSummary(smartExtractionResult).date_range && (
               <div className="text-sm text-gray-600 mb-4">
-                <span className="font-medium">Statement Period:</span> {smartExtractionResult.summary.date_range.start} to {smartExtractionResult.summary.date_range.end}
+                <span className="font-medium">Statement Period:</span> {calculateSummary(smartExtractionResult).date_range?.start} to {calculateSummary(smartExtractionResult).date_range?.end}
               </div>
             )}
             
