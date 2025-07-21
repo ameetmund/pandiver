@@ -1726,3 +1726,54 @@ async def bank_specific_extract(file: UploadFile = File(...)):
         import traceback
         traceback.print_exc()
         return {"success": False, "error": str(e), "transactions": []}
+
+@app.post("/intelligent-bank-extract")
+async def intelligent_bank_extract(file: UploadFile = File(...)):
+    """
+    V2025.07.21.01: Intelligent Universal Bank Statement Parser
+    
+    Features:
+    - Multi-page transaction extraction (ALL transactions from ALL pages)
+    - Adaptive header mapping (preserves original headers exactly)
+    - Zero truncation (complete field values preserved)
+    - Works with any bank statement format (ICICI, IDFC, HDFC, etc.)
+    - Smart transaction detection using AI patterns
+    """
+    try:
+        from .intelligent_parser import parse_bank_statement_intelligent
+        
+        print(f"[Intelligent Parser V2025.07.21.01] Processing: {file.filename}")
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file_path = tmp_file.name
+        
+        # Use intelligent parser
+        results = parse_bank_statement_intelligent(tmp_file_path)
+        
+        # Clean up temp file
+        os.unlink(tmp_file_path)
+        
+        print(f"[Intelligent Parser] Success: {results['total_transactions']} transactions from {results['total_pages']} pages")
+        
+        return results
+        
+    except Exception as e:
+        print(f"[Intelligent Parser] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Clean up temp file on error
+        if 'tmp_file_path' in locals():
+            try:
+                os.unlink(tmp_file_path)
+            except:
+                pass
+                
+        return {
+            "success": False, 
+            "error": str(e), 
+            "parser_version": "V2025.07.21.01_Intelligent"
+        }
