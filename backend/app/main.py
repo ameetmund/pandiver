@@ -1777,3 +1777,107 @@ async def intelligent_bank_extract(file: UploadFile = File(...)):
             "error": str(e), 
             "parser_version": "V2025.07.21.01_Intelligent"
         }
+
+
+@app.post("/exact-table-extract")
+async def exact_table_extract(file: UploadFile = File(...)):
+    """
+    V2025.07.22.01: Exact Table Extractor
+    
+    Following ChatGPT's successful approach:
+    - Extract only transaction tables with exact layout preservation
+    - Use exact column headers and formatting as seen in PDF
+    - No standardization or generalization
+    - Maintain row order and cell structure precisely
+    - Handle multiline descriptions properly
+    """
+    try:
+        from .exact_table_extractor import extract_exact_tables
+        
+        print(f"[Exact Table Extractor V2025.07.22.01] Processing: {file.filename}")
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file_path = tmp_file.name
+        
+        # Use exact table extractor
+        results = extract_exact_tables(tmp_file_path)
+        
+        # Clean up temp file
+        os.unlink(tmp_file_path)
+        
+        print(f"[Exact Table Extractor] Success: {results['total_transactions']} transactions from {results['tables_extracted']} tables")
+        
+        return results
+        
+    except Exception as e:
+        print(f"[Exact Table Extractor] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Clean up temp file on error
+        if 'tmp_file_path' in locals():
+            try:
+                os.unlink(tmp_file_path)
+            except:
+                pass
+                
+        return {
+            "success": False, 
+            "error": str(e), 
+            "parser_version": "V2025.07.22.01_ExactTable"
+        }
+
+
+@app.post("/visual-table-extract")
+async def visual_table_extract(file: UploadFile = File(...)):
+    """
+    V2025.07.22.01: Visual Table Extractor
+    
+    Implementing visually-guided header detection strategy:
+    - Visual layout scanning with line-by-line text extraction
+    - Keyword-based header detection (3+ keywords from global categories)
+    - Works for any bank, any country, any layout without templates
+    - Preserves exact column headers and structure
+    - Handles both table-based and text-based layouts
+    """
+    try:
+        from .intelligent_parser import parse_bank_statement_intelligent
+        
+        print(f"[Intelligent Parser V2025.07.21.01 - BASELINE] Processing: {file.filename}")
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_file_path = tmp_file.name
+        
+        # Use intelligent parser (V2025.07.20.01 baseline)
+        results = parse_bank_statement_intelligent(tmp_file_path)
+        
+        # Clean up temp file
+        os.unlink(tmp_file_path)
+        
+        print(f"[Intelligent Parser] Success: {results['total_transactions']} transactions from {results['total_pages']} pages")
+        
+        return results
+        
+    except Exception as e:
+        print(f"[Visual Table Extractor] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Clean up temp file on error
+        if 'tmp_file_path' in locals():
+            try:
+                os.unlink(tmp_file_path)
+            except:
+                pass
+                
+        return {
+            "success": False, 
+            "error": str(e), 
+            "parser_version": "V2025.07.21.01_Intelligent_Baseline"
+        }

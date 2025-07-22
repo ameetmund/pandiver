@@ -440,7 +440,7 @@ function BankStatementParser() {
       
       console.log('[Smart Extract] Starting smart extraction...');
       
-      const response = await fetch('http://localhost:8000/intelligent-bank-extract', {
+      const response = await fetch('http://localhost:8000/bank-specific-extract', {
         method: 'POST',
         body: formData,
       });
@@ -453,27 +453,28 @@ function BankStatementParser() {
       }
       
       const data = await response.json();
-      console.log('[Smart Extract V2025.07.21.01] Success:', data);
+      console.log('[Smart Extract] Success:', data);
       
-      if (data.success && data.transactions && data.transactions.length > 0) {
+      if (data.transactions && data.transactions.length > 0) {
         // Set the smart extraction result
         setSmartExtractionResult(data);
         
-        // Use the headers provided by the intelligent parser (preserves original PDF headers)
-        const headers = data.headers || Object.keys(data.transactions[0]).filter(key => !key.startsWith('_'));
-        
-        // Create rows using the actual transaction data (skip metadata fields)
-        const rows = data.transactions.map((txn: any) => 
-          headers.map((header: string) => txn[header]?.toString() || '')
-        );
+        // Auto-populate the table with bank statement format
+        const headers = ['Date', 'Particulars', 'Deposits', 'Withdrawals', 'Balance'];
+        const rows = data.transactions.map((txn: any) => [
+          txn.Date || '',
+          txn.Particulars || '',
+          txn.Deposits || txn.Deposit_Amount || '',
+          txn.Withdrawals || txn.Withdrawal_Amount || '',
+          txn.Balance || txn.Closing_Balance || ''
+        ]);
         
         setTableHeaders(headers);
         setTableRows(rows);
         
-        console.log(`[Smart Extract V2025.07.21.01] Successfully extracted ${data.total_transactions} transactions from ${data.total_pages} pages`);
-        console.log(`[Smart Extract V2025.07.21.01] Original headers preserved: ${headers.join(', ')}`);
+        console.log(`[Smart Extract] Successfully extracted ${data.transactions.length} transactions`);
       } else {
-        setError(data.error || 'No transactions found in the bank statement. Please try manual mode.');
+        setError('No transactions found in the bank statement. Please try manual mode.');
       }
       
       setIsLoading(false);
