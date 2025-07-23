@@ -44,22 +44,22 @@ function DroppableHeader({ headerText, columnIndex, onHeaderChange, onHeaderRemo
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: 'textBlock',
     drop: (item: any) => {
-      console.log('🎯 Dropping into header:', columnIndex, 'Item type:', item.type || 'single');
+      // console.log('🎯 Dropping into header:', columnIndex, 'Item type:', item.type || 'single');
       
       // Handle multiple blocks for headers - show choice dialog like cells
       if (item.type === 'multipleBlocks' && item.blocks) {
-        console.log('📦 Multi-block drop on header:', item.blocks.length, 'blocks - showing choice dialog');
+        // console.log('📦 Multi-block drop on header:', item.blocks.length, 'blocks - showing choice dialog');
         
         // Use special "header" rowId to indicate this is a header drop
         onMultiBlockDrop('header-' + columnIndex, columnIndex, item.blocks);
         return;
       } else {
         // Handle single block
-        console.log('📄 Single block drop on header:', item.text?.substring(0, 30) + '...');
+        // console.log('📄 Single block drop on header:', item.text?.substring(0, 30) + '...');
         const newHeaderText = (item.text || '').trim();
         
         // Set the header text (replace existing)
-        console.log('📝 Setting header text:', newHeaderText);
+        // console.log('📝 Setting header text:', newHeaderText);
         onHeaderChange(columnIndex, newHeaderText);
       }
     },
@@ -72,7 +72,7 @@ function DroppableHeader({ headerText, columnIndex, onHeaderChange, onHeaderRemo
   return (
     <th 
       ref={drop as any}
-      className={`border border-gray-300 p-2 min-w-[150px] transition-all duration-200 ${
+      className={`border border-gray-300 p-2 min-w-[150px] ${
         isOver && canDrop 
           ? 'bg-blue-100 border-blue-500 border-dashed shadow-lg' 
           : canDrop 
@@ -124,8 +124,8 @@ function ChoiceDialog({ isOpen, blocksCount, onChoice, onCancel }: ChoiceDialogP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[9999]" style={{ pointerEvents: 'auto' }}>
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl relative z-[10000]">
         <h3 className="text-lg font-semibold mb-4">📊 How to place {blocksCount} blocks?</h3>
         
         <p className="text-gray-600 mb-6">
@@ -135,7 +135,7 @@ function ChoiceDialog({ isOpen, blocksCount, onChoice, onCancel }: ChoiceDialogP
         <div className="space-y-3">
           <button
             onClick={() => onChoice('rows')}
-            className="w-full p-4 bg-blue-50 border-2 border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+            className="w-full p-4 bg-blue-50 border-2 border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300"
           >
             <div className="text-left">
               <div className="font-semibold text-blue-800">📝 Add as Rows</div>
@@ -145,7 +145,7 @@ function ChoiceDialog({ isOpen, blocksCount, onChoice, onCancel }: ChoiceDialogP
           
           <button
             onClick={() => onChoice('columns')}
-            className="w-full p-4 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-colors"
+            className="w-full p-4 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300"
           >
             <div className="text-left">
               <div className="font-semibold text-green-800">📊 Add as Columns</div>
@@ -156,7 +156,7 @@ function ChoiceDialog({ isOpen, blocksCount, onChoice, onCancel }: ChoiceDialogP
         
         <button
           onClick={onCancel}
-          className="w-full mt-4 p-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:border-gray-400 transition-colors"
+          className="w-full mt-4 p-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:border-gray-400"
         >
           Cancel
         </button>
@@ -177,17 +177,17 @@ function DroppableCell({ cell, rowId, columnIndex, onCellContentChange, onMultiB
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: 'textBlock',
     drop: (item: any) => {
-      console.log('🎯 Dropping into cell:', cell.id, 'Item type:', item.type || 'single');
+      // console.log('🎯 Dropping into cell:', cell.id, 'Item type:', item.type || 'single');
       
       // Handle multiple blocks - show choice dialog
       if (item.type === 'multipleBlocks' && item.blocks) {
-        console.log('📦 Multi-block drop:', item.blocks.length, 'blocks - showing choice dialog');
+        // console.log('📦 Multi-block drop:', item.blocks.length, 'blocks - showing choice dialog');
         onMultiBlockDrop(rowId, columnIndex, item.blocks);
         return;
       } 
       
       // Handle single block
-      console.log('📄 Single block drop:', item.text?.substring(0, 30) + '...');
+      // console.log('📄 Single block drop:', item.text?.substring(0, 30) + '...');
       const newText = (item.text || '').trim();
       
       // Add to existing content (avoid duplication)
@@ -198,11 +198,11 @@ function DroppableCell({ cell, rowId, columnIndex, onCellContentChange, onMultiB
         newContent = `${existingContent}\n${newText}`;
       } else if (existingContent && existingContent.includes(newText)) {
         // Text already exists, don't add again
-        console.log('📝 Text already exists, skipping duplication');
+        // console.log('📝 Text already exists, skipping duplication');
         return;
       }
         
-      console.log('📝 New content for cell:', cell.id, 'Length:', newContent.length);
+      // console.log('📝 New content for cell:', cell.id, 'Length:', newContent.length);
       onCellContentChange(rowId, cell.id, newContent);
     },
     collect: (monitor) => ({
@@ -214,9 +214,9 @@ function DroppableCell({ cell, rowId, columnIndex, onCellContentChange, onMultiB
   return (
     <td 
       ref={drop as any}
-      className={`border-2 border-gray-300 p-1 transition-all duration-200 relative ${
+      className={`border-2 border-gray-300 p-1 relative ${
         isOver && canDrop 
-          ? 'bg-blue-100 border-blue-500 border-dashed shadow-lg transform scale-105' 
+          ? 'bg-blue-100 border-blue-500 border-dashed shadow-md' 
           : canDrop 
           ? 'bg-green-50 border-green-400 border-dashed' 
           : cell.content
@@ -231,7 +231,7 @@ function DroppableCell({ cell, rowId, columnIndex, onCellContentChange, onMultiB
       <textarea
         value={cell.content}
         onChange={(e) => onCellContentChange(rowId, cell.id, e.target.value)}
-        className="w-full min-h-[80px] p-3 text-sm resize-none border-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium"
+        className="w-full min-h-[80px] p-3 text-sm resize-none border-none focus:outline-none bg-white text-gray-900 font-medium"
         placeholder={isOver ? "🎯 Drop text block(s) here!" : "Enter text or drag single/multiple text blocks here"}
         style={{
           lineHeight: '1.4',
@@ -301,45 +301,42 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
     const headerCount = columnHeaders.length;
     
     if (headerCount > 0 && rows.length > 0) {
-      setRows(prevRows => {
-        const updatedRows = prevRows.map(row => {
-          // If row has too few cells, add missing ones
-          if (row.cells.length < headerCount) {
-            const missingCells = Array(headerCount - row.cells.length).fill(null).map(() => ({
-              id: generateId(),
-              content: '',
-              textBlocks: []
-            }));
-            return {
-              ...row,
-              cells: [...row.cells, ...missingCells]
-            };
-          }
-          // If row has too many cells, remove extra ones
-          else if (row.cells.length > headerCount) {
-            return {
-              ...row,
-              cells: row.cells.slice(0, headerCount)
-            };
-          }
-          // Row has correct number of cells
-          return row;
-        });
-        
-        // Update parent data if changes were made
-        const hasChanges = updatedRows.some((row, index) => 
-          !prevRows[index] || row.cells.length !== prevRows[index].cells.length
-        );
-        
-        if (hasChanges) {
+      const needsUpdate = rows.some(row => row.cells.length !== headerCount);
+      
+      if (needsUpdate) {
+        setRows(prevRows => {
+          const updatedRows = prevRows.map(row => {
+            // If row has too few cells, add missing ones
+            if (row.cells.length < headerCount) {
+              const missingCells = Array(headerCount - row.cells.length).fill(null).map(() => ({
+                id: generateId(),
+                content: '',
+                textBlocks: []
+              }));
+              return {
+                ...row,
+                cells: [...row.cells, ...missingCells]
+              };
+            }
+            // If row has too many cells, remove extra ones
+            else if (row.cells.length > headerCount) {
+              return {
+                ...row,
+                cells: row.cells.slice(0, headerCount)
+              };
+            }
+            // Row has correct number of cells
+            return row;
+          });
+          
+          // Update parent data since we made changes
           updateParentData(updatedRows);
-          console.log('🔧 Fixed row structure to match header count:', headerCount);
-        }
-        
-        return updatedRows;
-      });
+          
+          return updatedRows;
+        });
+      }
     }
-  }, [columnHeaders.length, generateId, updateParentData]);
+  }, [columnHeaders.length, rows.length, generateId, updateParentData]);
 
   const addRow = () => {
     const newRow: TableRow = {
@@ -407,7 +404,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
   };
 
   const updateCellContent = (rowId: string, cellId: string, content: string) => {
-    console.log('🔧 updateCellContent called:', { rowId, cellId, content: content.substring(0, 50) + '...' });
+    // console.log('🔧 updateCellContent called:', { rowId, cellId, content: content.substring(0, 50) + '...' });
     
     setRows(prevRows => {
       const updatedRows = prevRows.map(row => {
@@ -416,7 +413,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
             ...row,
             cells: row.cells.map(cell => {
               if (cell.id === cellId) {
-                console.log('✅ Updating cell:', cell.id, 'with content:', content.substring(0, 50) + '...');
+                // console.log('✅ Updating cell:', cell.id, 'with content:', content.substring(0, 50) + '...');
                 return { ...cell, content };
               }
               return cell;
@@ -426,10 +423,10 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
         return row;
       });
       
-      // Log all cell contents for debugging
-      console.log('📋 All cell contents after update:', 
-        updatedRows[0].cells.map(cell => ({ id: cell.id, content: cell.content.substring(0, 20) + '...' }))
-      );
+      // // Log all cell contents for debugging
+      // console.log('📋 All cell contents after update:', 
+      //   updatedRows[0].cells.map(cell => ({ id: cell.id, content: cell.content.substring(0, 20) + '...' }))
+      // );
       
       updateParentData(updatedRows);
       return updatedRows;
@@ -443,7 +440,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
   };
 
   const handleMultiBlockDrop = (targetRowId: string, columnIndex: number, blocks: TextBlock[]) => {
-    console.log('📚 Multi-block drop handler:', { targetRowId, columnIndex, blocksCount: blocks.length });
+    // console.log('📚 Multi-block drop handler:', { targetRowId, columnIndex, blocksCount: blocks.length });
     
     // Always reset dialog state first, then show
     setShowChoiceDialog(false);
@@ -453,7 +450,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
     setTimeout(() => {
       setPendingPlacement({ blocks, targetRowId, columnIndex });
       setShowChoiceDialog(true);
-      console.log('🎯 Choice dialog opened for', blocks.length, 'blocks');
+      // console.log('🎯 Choice dialog opened for', blocks.length, 'blocks');
     }, 50);
   };
 
@@ -461,7 +458,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
     if (!pendingPlacement) return;
     
     const { blocks, targetRowId, columnIndex } = pendingPlacement;
-    console.log('📍 Placement choice:', choice, 'for', blocks.length, 'blocks');
+    // console.log('📍 Placement choice:', choice, 'for', blocks.length, 'blocks');
     
     // Check if this is a header drop
     if (targetRowId.startsWith('header-')) {
@@ -490,7 +487,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
   };
 
   const placeBlocksAsHeaderRows = (columnIndex: number, blocks: TextBlock[]) => {
-    console.log('📝 Placing', blocks.length, 'blocks as header rows in column', columnIndex);
+    // console.log('📝 Placing', blocks.length, 'blocks as header rows in column', columnIndex);
     
     // Combine all block texts into one header (like stacking them vertically)
     const combinedText = blocks.map(block => block.text.trim()).join(' | ');
@@ -500,14 +497,14 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
       const newHeaders = [...prevHeaders];
       if (columnIndex < newHeaders.length) {
         newHeaders[columnIndex] = combinedText;
-        console.log('📝 Set header', columnIndex, 'to:', combinedText);
+        // console.log('📝 Set header', columnIndex, 'to:', combinedText);
       }
       return newHeaders;
     });
   };
 
   const placeBlocksAsHeaderColumns = (startColumnIndex: number, blocks: TextBlock[]) => {
-    console.log('📝 Placing', blocks.length, 'blocks as header columns starting at', startColumnIndex);
+    // console.log('📝 Placing', blocks.length, 'blocks as header columns starting at', startColumnIndex);
     
     // Add columns if needed
     const columnsNeeded = startColumnIndex + blocks.length;
@@ -544,7 +541,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
           const headerIndex = startColumnIndex + blockIndex;
           if (headerIndex < newHeaders.length) {
             newHeaders[headerIndex] = block.text.trim();
-            console.log('📝 Set header', headerIndex, 'to:', block.text.trim());
+            // console.log('📝 Set header', headerIndex, 'to:', block.text.trim());
           }
         });
         
@@ -556,7 +553,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
           const headerIndex = startColumnIndex + blockIndex;
           if (headerIndex < updatedHeaders.length) {
             updatedHeaders[headerIndex] = block.text.trim();
-            console.log('📝 Set header', headerIndex, 'to:', block.text.trim());
+            // console.log('📝 Set header', headerIndex, 'to:', block.text.trim());
           }
         });
         return updatedHeaders;
@@ -603,7 +600,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
           }
           // If text already exists, don't add it again
           
-          console.log('📝 Row placement - Cell content:', row.cells[columnIndex].content);
+          // console.log('📝 Row placement - Cell content:', row.cells[columnIndex].content);
         }
       });
       
@@ -660,7 +657,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
             }
             // If text already exists, don't add it again
             
-            console.log('📝 Column placement - Cell content:', targetRow.cells[cellIndex].content);
+            // console.log('📝 Column placement - Cell content:', targetRow.cells[cellIndex].content);
           }
         });
         
@@ -685,7 +682,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
             }
             // If text already exists, don't add it again
             
-            console.log('📝 Existing column placement - Cell content:', targetRow.cells[cellIndex].content);
+            // console.log('📝 Existing column placement - Cell content:', targetRow.cells[cellIndex].content);
           }
         });
         
@@ -718,7 +715,7 @@ export default function DataTable({ onDataChange, onHeadersChange }: DataTablePr
     // Notify parent about header reset
     onHeadersChange?.(defaultHeaders);
     
-    console.log('🧹 Table cleared - reset to default structure');
+    // console.log('🧹 Table cleared - reset to default structure');
   };
 
   return (

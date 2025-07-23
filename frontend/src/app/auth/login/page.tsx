@@ -31,13 +31,24 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
+      console.log('✅ Login successful:', data);
       
       // Store token and user info in localStorage
       localStorage.setItem('accessToken', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      console.log('💾 Stored auth data in localStorage');
       
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Redirect to dashboard with a small delay to ensure state is updated
+      console.log('🔄 Redirecting to dashboard...');
+      setTimeout(() => {
+        // Try window.location as fallback if router.push fails
+        try {
+          router.push('/dashboard');
+        } catch (routerError) {
+          console.warn('Router push failed, using window.location:', routerError);
+          window.location.href = '/dashboard';
+        }
+      }, 100);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
     } finally {
