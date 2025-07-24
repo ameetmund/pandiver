@@ -4,17 +4,24 @@ import io
 import numpy as np
 from PIL import Image
 
-# OCR and image processing imports
+# OCR and image processing imports - temporarily disabled to avoid WeasyPrint issues
 try:
     from pdf2image import convert_from_bytes
-    from doctr.io import DocumentFile
-    from doctr.models import ocr_predictor
     PDF2IMAGE_AVAILABLE = True
-    DOCTR_AVAILABLE = True
+    print("✅ pdf2image loaded successfully")
 except ImportError as e:
     PDF2IMAGE_AVAILABLE = False
+    print(f"Warning: pdf2image not available: {e}")
+
+# Temporarily disable doctr to avoid WeasyPrint dependency issues
+try:
+    # from doctr.io import DocumentFile
+    # from doctr.models import ocr_predictor
+    DOCTR_AVAILABLE = False  # Temporarily disabled
+    print("ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues")
+except ImportError as e:
     DOCTR_AVAILABLE = False
-    print(f"Warning: OCR dependencies not available: {e}")
+    print(f"Warning: doctr not available: {e}")
 
 def is_digital(page) -> bool:
     """

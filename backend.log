@@ -1,0 +1,19 @@
+INFO:     Will watch for changes in these directories: ['/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [32478] using StatReload
+INFO:     Started server process [32481]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:54475 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54475 - "POST /auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:54482 - "OPTIONS /auth/signup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54482 - "POST /auth/signup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54486 - "OPTIONS /upload-pdf/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54486 - "POST /upload-pdf/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54507 - "OPTIONS /export-data/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54507 - "POST /export-data/ HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [32481]
+INFO:     Stopping reloader process [32478]

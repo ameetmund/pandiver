@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF.js Test</title>
+</head>
+<body>
+    <h1>PDF.js Loading Test</h1>
+    <div id="status">Loading...</div>
+    
+    <script>
+        console.log('Starting PDF.js test...');
+        
+        // Test CDN loading
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = () => {
+            console.log('PDF.js CDN script loaded');
+            const status = document.getElementById('status');
+            
+            if (window.pdfjsLib) {
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                status.innerHTML = `✅ PDF.js loaded successfully! Version: ${window.pdfjsLib.version}`;
+                console.log('PDF.js initialized successfully, version:', window.pdfjsLib.version);
+            } else {
+                status.innerHTML = '❌ PDF.js loaded but not available on window';
+                console.error('PDF.js loaded but not available on window');
+            }
+        };
+        script.onerror = () => {
+            console.error('Failed to load PDF.js from CDN');
+            document.getElementById('status').innerHTML = '❌ Failed to load PDF.js from CDN';
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

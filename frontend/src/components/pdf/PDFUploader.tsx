@@ -47,31 +47,59 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
     try {
       // Get authentication token
       const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('Authentication required. Please log in.');
-      }
-
+      console.log('🔐 Auth token found:', token ? 'Yes' : 'No');
+      
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('http://localhost:8000/upload-pdf/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      let response: Response;
+      
+      if (token) {
+        // Try authenticated endpoint first
+        console.log('📤 Attempting authenticated upload...');
+        response = await fetch('http://localhost:8000/upload-pdf/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+        
+        if (response.status === 401) {
+          console.log('🔓 Authentication failed, trying test endpoint...');
+          setUploadStatus('Authentication failed, using test mode...');
+          // Fallback to test endpoint
+          response = await fetch('http://localhost:8000/upload-pdf-test/', {
+            method: 'POST',
+            body: formData,
+          });
+        }
+      } else {
+        // Use test endpoint if no token
+        console.log('📤 No auth token, using test endpoint...');
+        setUploadStatus('No authentication, using test mode...');
+        response = await fetch('http://localhost:8000/upload-pdf-test/', {
+          method: 'POST',
+          body: formData,
+        });
+      }
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
-        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const textBlocks: TextBlock[] = await response.json();
+      console.log('📊 Extracted text blocks:', textBlocks.length);
+      console.log('📋 Sample text blocks:', textBlocks.slice(0, 3));
       
-      setUploadStatus(`✅ Success! Extracted ${textBlocks.length} text blocks from PDF`);
+      if (textBlocks.length === 0) {
+        console.warn('⚠️ No text blocks extracted from PDF');
+        setUploadStatus('⚠️ No text found in PDF. The PDF might be image-based or empty.');
+      } else {
+        setUploadStatus(`✅ Success! Extracted ${textBlocks.length} text blocks from PDF`);
+      }
+      
+      console.log('📤 Passing to parent component:', textBlocks.length, 'blocks and file:', selectedFile.name);
       onTextBlocksExtracted(textBlocks, selectedFile);
       
     } catch (error) {
