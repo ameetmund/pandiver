@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDrop } from 'react-dnd';
-import { TextBlock } from './pdf/InteractivePDFViewer';
+import { DragTypes } from './DraggableTextBlock';
+import { TextBlock } from './PDFViewer';
 
 interface TableCell {
   content: string;
@@ -183,26 +184,9 @@ const TableCell: React.FC<TableCellProps> = ({
   onBlockDrop,
 }) => {
   const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'textBlock',
-    drop: (item: any) => {
-      console.log('🎯 Table cell drop:', item);
-      
-      // Handle multi-block drops
-      if (item.type === 'multipleBlocks' && item.blocks) {
-        const combinedText = item.blocks.map((block: TextBlock) => block.text).join(' ');
-        onBlockDrop(rowIndex, colIndex, combinedText, item.blocks[0]);
-        console.log('📦 Multi-block dropped:', combinedText);
-      } 
-      // Handle single block drops (both new format and legacy format)
-      else if (item.text) {
-        onBlockDrop(rowIndex, colIndex, item.text, item);
-        console.log('📄 Single block dropped:', item.text);
-      }
-      // Legacy format compatibility
-      else if (item.block) {
-        onBlockDrop(rowIndex, colIndex, item.block.text, item.block);
-        console.log('📄 Legacy block dropped:', item.block.text);
-      }
+    accept: DragTypes.TEXT_BLOCK,
+    drop: (item: { block: TextBlock }) => {
+      onBlockDrop(rowIndex, colIndex, item.block.text, item.block);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
