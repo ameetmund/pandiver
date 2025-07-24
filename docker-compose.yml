@@ -1,0 +1,82 @@
+# ============================================
+# PANDIVER DOCKER COMPOSE CONFIGURATION
+# Complete containerized Smart PDF Parser
+# ============================================
+
+version: '3.8'
+
+services:
+  # Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: pandiver-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./pandiver.db
+      - JWT_SECRET_KEY=your-super-secret-jwt-key-change-this-in-production
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_MINUTES=1440
+      - ALLOWED_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
+      - HOST=0.0.0.0
+      - PORT=8000
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+    volumes:
+      - ./backend/pandiver.db:/app/pandiver.db
+      - ./backend/uploads:/app/uploads
+      - ./backend/temp:/app/temp
+      - ./backend/logs:/app/logs
+    networks:
+      - pandiver-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: pandiver-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_TIMEOUT=30000
+      - NEXT_PUBLIC_APP_NAME=Pandiver - Smart PDF Parser
+      - NEXT_PUBLIC_APP_VERSION=2025.07.24.02
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - pandiver-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  pandiver-network:
+    driver: bridge
+    name: pandiver-network
+
+volumes:
+  backend-data:
+    name: pandiver-backend-data
+  frontend-node-modules:
+    name: pandiver-frontend-modules
