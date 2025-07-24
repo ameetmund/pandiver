@@ -1,0 +1,21 @@
+
+> pandiver@0.1.0 dev
+> next dev -p 3000
+
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3000
+  - Experiments (use with caution):
+    · esmExternals
+
+ ✓ Starting...
+ ✓ Ready in 1916ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1649ms (570 modules)
+ GET / 200 in 1795ms
+ ✓ Compiled in 85ms (275 modules)
+ ✓ Compiled /auth/login in 184ms (555 modules)
+ ✓ Compiled /auth/signup in 118ms (561 modules)
+ ✓ Compiled /dashboard in 132ms (567 modules)
+ ○ Compiling /dashboard/smart-pdf-parser ...
+ ✓ Compiled /dashboard/smart-pdf-parser in 661ms (790 modules)
+[?25h

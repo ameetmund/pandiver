@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { TextBlock } from '../components/PDFViewer';
+import { TextBlock } from '../components/pdf/InteractivePDFViewer';
 
 interface UseTextBlocksReturn {
   textBlocks: TextBlock[];

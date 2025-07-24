@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Authentication</title>
+</head>
+<body>
+    <h1>Test Authentication</h1>
+    <div id="result"></div>
+    
+    <h3>Test Signup</h3>
+    <button onclick="testSignup()">Test Signup</button>
+    
+    <h3>Test Login</h3>
+    <button onclick="testLogin()">Test Login</button>
+
+    <script>
+        async function testSignup() {
+            try {
+                const response = await fetch('http://localhost:8000/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        name: 'Test User HTML', 
+                        email: 'testhtml@example.com', 
+                        password: 'testpassword123' 
+                    }),
+                });
+
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<pre>Signup: ' + JSON.stringify(data, null, 2) + '</pre>';
+                
+                if (data.access_token) {
+                    localStorage.setItem('accessToken', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<pre>Signup Error: ' + error.message + '</pre>';
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch('http://localhost:8000/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: 'testhtml@example.com', 
+                        password: 'testpassword123' 
+                    }),
+                });
+
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<pre>Login: ' + JSON.stringify(data, null, 2) + '</pre>';
+                
+                if (data.access_token) {
+                    localStorage.setItem('accessToken', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<pre>Login Error: ' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>

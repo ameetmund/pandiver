@@ -1,0 +1,26 @@
+🚀 Starting Smart PDF Parser Application...
+================================================
+[0;34m📁 Project directory: /Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new[0m
+[0;34m🔧 Setting up Backend (Port 8000)...[0m
+[1;33m📦 Installing Python dependencies...[0m
+✅ All Python dependencies verified
+[0;32m🚀 Starting Backend Server on port 8000...[0m
+[0;32m✅ Backend Server running (PID: 31789)[0m
+[0;34m🔧 Setting up Frontend (Port 3000)...[0m
+[0;32m🚀 Starting Frontend Server on port 3000...[0m
+[0;32m✅ Frontend Server running (PID: 31811)[0m
+
+[0;32m🎉 Smart PDF Parser is Ready![0m
+================================================
+[0;34m🌐 Application:[0m     http://localhost:3000
+[0;34m📊 Backend API:[0m     http://localhost:8000
+[0;34m📋 API Docs:[0m        http://localhost:8000/docs
+
+[1;33m📝 View Logs:[0m
+   Backend:  tail -f /Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/backend.log
+   Frontend: tail -f /Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/frontend.log
+
+[1;33m🛑 To stop:[0m Run ./stop.sh or press Ctrl+C
+
+[0;34mPress Ctrl+C to stop both servers...[0m
+./start.sh: line 156: 31789 Killed: 9               nohup python -m uvicorn app.main:app --reload --port 8000 --host 0.0.0.0 > ../backend.log 2>&1  (wd: ~/Tech/Project/pandiver-new.git/pandiver-new/backend)
