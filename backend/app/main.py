@@ -29,8 +29,22 @@ from .pdf_processor import get_pdf_info, extract_all_words, get_all_page_rows, a
 # from .export_utils import StatementExporter  # Optional dependency
 from .bank_parsers import bank_parser_manager
 import unicodedata
+import sys
+import os
+# Add the backend directory to the path to import our enhanced parsers
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pattern_rule_applicator import PatternRuleApplicator, ExtractionResult
+from enhanced_bank_parser_v2 import EnhancedTransactionDetector, PatternRule, EnhancedPatternRuleManager
+
+# Import extraction endpoints
+from .manual_endpoints import router as manual_router
+from .user_controlled_endpoints import router as user_controlled_router
 
 app = FastAPI()
+
+# Include extraction routes
+app.include_router(manual_router, prefix="/manual", tags=["Manual Bank Statement Parser"])
+app.include_router(user_controlled_router, prefix="/user-controlled", tags=["User Controlled Column Detection"])
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./pandiver.db'
@@ -1777,3 +1791,320 @@ async def intelligent_bank_extract(file: UploadFile = File(...)):
             "error": str(e), 
             "parser_version": "V2025.07.21.01_Intelligent"
         }
+
+# Enhanced Transaction Extraction Endpoints
+
+@app.post("/detect-transaction-pages")
+async def detect_transaction_pages(
+    file: UploadFile = File(...),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Detect transaction pages using enhanced parser v2.0
+    Returns first transaction page with pattern analysis
+    """
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are allowed"
+        )
+    
+    try:
+        # Save uploaded file temporarily
+        temp_filename = f"detect_{uuid.uuid4()}.pdf"
+        temp_filepath = os.path.join(tempfile.gettempdir(), temp_filename)
+        
+        with open(temp_filepath, "wb") as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+        
+        # Use enhanced detector
+        detector = EnhancedTransactionDetector()
+        detection_result = detector.detect_first_transaction_page(temp_filepath)
+        
+        # Clean up temp file
+        os.unlink(temp_filepath)
+        
+        return {
+            "filename": file.filename,
+            "detection_result": detection_result,
+            "message": "Transaction page detection complete"
+        }
+        
+    except Exception as e:
+        # Clean up temp file if it exists
+        if 'temp_filepath' in locals() and os.path.exists(temp_filepath):
+            os.unlink(temp_filepath)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error detecting transaction pages: {str(e)}"
+        )
+
+@app.post("/extract-complete-transactions")
+async def extract_complete_transactions(
+    file: UploadFile = File(...),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Complete transaction extraction workflow using pattern rule applicator
+    Detects structure, generates pattern rules, and extracts from all pages
+    """
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are allowed"
+        )
+    
+    try:
+        # Save uploaded file temporarily
+        temp_filename = f"extract_{uuid.uuid4()}.pdf"
+        temp_filepath = os.path.join(tempfile.gettempdir(), temp_filename)
+        
+        with open(temp_filepath, "wb") as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+        
+        # Use pattern rule applicator for complete workflow
+        applicator = PatternRuleApplicator()
+        extraction_result = applicator.generate_and_apply_pattern_rule(temp_filepath)
+        
+        # Clean up temp file
+        os.unlink(temp_filepath)
+        
+        # Convert ExtractionResult to JSON-serializable format
+        result_dict = {
+            "filename": file.filename,
+            "success": extraction_result.success,
+            "total_transactions": extraction_result.total_transactions,
+            "transactions": extraction_result.transactions,
+            "pages_processed": extraction_result.pages_processed,
+            "pattern_rule_used": extraction_result.pattern_rule_used,
+            "extraction_summary": extraction_result.extraction_summary,
+            "errors": extraction_result.errors,
+            "message": f"Extraction complete: {extraction_result.total_transactions} transactions from {len(extraction_result.pages_processed)} pages"
+        }
+        
+        return result_dict
+        
+    except Exception as e:
+        # Clean up temp file if it exists
+        if 'temp_filepath' in locals() and os.path.exists(temp_filepath):
+            os.unlink(temp_filepath)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error extracting transactions: {str(e)}"
+        )
+
+@app.post("/apply-custom-pattern")
+async def apply_custom_pattern(
+    file: UploadFile = File(...),
+    pattern_name: str = Form(...),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Apply a saved custom pattern rule to extract transactions
+    """
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are allowed"
+        )
+    
+    try:
+        # Load the saved pattern
+        pattern_manager = EnhancedPatternRuleManager()
+        pattern_rule = pattern_manager.get_pattern(pattern_name)
+        
+        if not pattern_rule:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Pattern '{pattern_name}' not found"
+            )
+        
+        # Save uploaded file temporarily
+        temp_filename = f"custom_{uuid.uuid4()}.pdf"
+        temp_filepath = os.path.join(tempfile.gettempdir(), temp_filename)
+        
+        with open(temp_filepath, "wb") as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+        
+        # Apply the custom pattern (simplified version)
+        applicator = PatternRuleApplicator()
+        
+        # First detect to get basic structure
+        detector = EnhancedTransactionDetector()
+        detection_result = detector.detect_first_transaction_page(temp_filepath)
+        
+        if not detection_result['success']:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not detect transaction pages in the PDF"
+            )
+        
+        # Apply the custom pattern to all pages
+        extraction_result = applicator._apply_pattern_rule_to_all_pages(
+            temp_filepath, pattern_rule, detection_result
+        )
+        
+        # Clean up temp file
+        os.unlink(temp_filepath)
+        
+        # Convert to JSON-serializable format
+        result_dict = {
+            "filename": file.filename,
+            "pattern_name": pattern_name,
+            "success": extraction_result.success,
+            "total_transactions": extraction_result.total_transactions,
+            "transactions": extraction_result.transactions,
+            "pages_processed": extraction_result.pages_processed,
+            "pattern_rule_used": extraction_result.pattern_rule_used,
+            "extraction_summary": extraction_result.extraction_summary,
+            "errors": extraction_result.errors,
+            "message": f"Custom pattern applied: {extraction_result.total_transactions} transactions from {len(extraction_result.pages_processed)} pages"
+        }
+        
+        return result_dict
+        
+    except Exception as e:
+        # Clean up temp file if it exists
+        if 'temp_filepath' in locals() and os.path.exists(temp_filepath):
+            os.unlink(temp_filepath)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error applying custom pattern: {str(e)}"
+        )
+
+@app.get("/saved-patterns")
+async def get_saved_patterns(current_user: UserModel = Depends(get_current_user)):
+    """
+    Get list of all saved pattern rules
+    """
+    try:
+        pattern_manager = EnhancedPatternRuleManager()
+        patterns = pattern_manager.list_patterns()
+        
+        return {
+            "patterns": patterns,
+            "total_patterns": len(patterns),
+            "message": f"Found {len(patterns)} saved patterns"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving saved patterns: {str(e)}"
+        )
+
+@app.post("/save-pattern")
+async def save_pattern_rule(
+    pattern_name: str = Form(...),
+    headers: str = Form(...),  # JSON string of headers list
+    layout_mode: str = Form("text-aligned"),
+    format_type: str = Form("text_based"),
+    bank_name: str = Form(""),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Save a custom pattern rule for reuse
+    """
+    try:
+        # Parse headers from JSON string
+        import json
+        headers_list = json.loads(headers)
+        
+        if not isinstance(headers_list, list) or not headers_list:
+            raise HTTPException(
+                status_code=400,
+                detail="Headers must be a non-empty list"
+            )
+        
+        # Create pattern rule
+        pattern_rule = PatternRule(
+            column_count=len(headers_list),
+            header_keywords=headers_list,
+            row_gap_tolerance=10.0,
+            font_size_range=(8.0, 14.0),
+            first_column_pattern=r'\d{1,2}[-/]\d{1,2}[-/]\d{2,4}',
+            layout_mode=layout_mode,
+            header_positions=[(i * 120, (i + 1) * 120) for i in range(len(headers_list))],
+            row_height=18.0,
+            format_type=format_type
+        )
+        
+        # Save pattern
+        pattern_manager = EnhancedPatternRuleManager()
+        success = pattern_manager.save_pattern(pattern_name, pattern_rule, bank_name)
+        
+        if success:
+            return {
+                "success": True,
+                "pattern_name": pattern_name,
+                "headers": headers_list,
+                "bank_name": bank_name,
+                "message": f"Pattern '{pattern_name}' saved successfully"
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to save pattern '{pattern_name}'"
+            )
+        
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid JSON format for headers"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error saving pattern: {str(e)}"
+        )
+
+class ExtractionStatisticsRequest(BaseModel):
+    """Request model for extraction statistics"""
+    success: bool
+    total_transactions: int
+    transactions: List[Dict[str, Any]]
+    pages_processed: List[int]
+    pattern_rule_used: Dict[str, Any]
+    extraction_summary: Dict[str, Any]
+    errors: List[str]
+
+@app.post("/extraction-statistics")
+async def get_extraction_statistics(
+    extraction_data: ExtractionStatisticsRequest,
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Generate detailed statistics from extraction results
+    """
+    try:
+        # Convert request to ExtractionResult object
+        extraction_result = ExtractionResult(
+            success=extraction_data.success,
+            total_transactions=extraction_data.total_transactions,
+            transactions=extraction_data.transactions,
+            pages_processed=extraction_data.pages_processed,
+            pattern_rule_used=extraction_data.pattern_rule_used,
+            extraction_summary=extraction_data.extraction_summary,
+            errors=extraction_data.errors
+        )
+        
+        # Generate statistics
+        applicator = PatternRuleApplicator()
+        statistics = applicator.get_extraction_statistics(extraction_result)
+        
+        return {
+            "statistics": statistics,
+            "message": "Statistics generated successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating statistics: {str(e)}"
+        )

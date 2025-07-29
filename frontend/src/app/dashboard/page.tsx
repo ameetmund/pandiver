@@ -38,6 +38,14 @@ const features: Feature[] = [
     href: '/dashboard/bank-statement-parser',
     isActive: true
   },
+  {
+    id: 'user-controlled-parser',
+    title: 'User-Controlled Parser',
+    description: 'Take full control! Manually select headers and adjust column boundaries for perfect extraction. Visual boundary adjustment interface.',
+    icon: '🎯',
+    href: '/dashboard/user-controlled-parser',
+    isActive: true
+  },
   // Future features can be added here
   {
     id: 'document-analyzer',
@@ -220,7 +228,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <h3 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-2">
-                1
+                3
               </h3>
               <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
                 Active Features

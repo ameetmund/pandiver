@@ -50,7 +50,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-interface TextBlock {
+export interface TextBlock {
   text: string;
   x0: number;
   y0: number;

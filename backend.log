@@ -1,19 +1,1170 @@
 INFO:     Will watch for changes in these directories: ['/Users/ameetmund/Tech/Project/pandiver-new.git/pandiver-new/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [32478] using StatReload
-INFO:     Started server process [32481]
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [55574] using StatReload
+INFO:     Started server process [55582]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:54475 - "OPTIONS /auth/login HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54475 - "POST /auth/login HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:54482 - "OPTIONS /auth/signup HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54482 - "POST /auth/signup HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54486 - "OPTIONS /upload-pdf/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54486 - "POST /upload-pdf/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54507 - "OPTIONS /export-data/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54507 - "POST /export-data/ HTTP/1.1" 200 OK
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:60167 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60198 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60236 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60288 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60290 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60292 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60294 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60296 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60371 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60416 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60418 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60421 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60423 - "POST /manual/get-page-content HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:60425 - "POST /manual/get-page-content HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:60458 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60460 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60462 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60514 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60543 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60545 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60574 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60576 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60578 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60629 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60675 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60677 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60908 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61174 - "POST /auth/signup HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:61205 - "POST /auth/signup HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:61234 - "POST /auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:61262 - "POST /auth/signup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61298 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61334 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61338 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61378 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61416 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61449 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61509 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61540 - "GET /manual/saved-patterns HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61542 - "POST /manual/save-pattern HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:61580 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61582 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61585 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61587 - "GET /manual/saved-patterns HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61589 - "POST /auth/signup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61667 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61667 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61667 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61673 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61667 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61673 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61682 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61682 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61699 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61703 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61734 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61734 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61738 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61738 - "POST /manual/get-page-content HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61874 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61878 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/manual_bank_parser.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [32481]
-INFO:     Stopping reloader process [32478]
+INFO:     Finished server process [55582]
+INFO:     Started server process [60346]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:62534 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62753 - "GET / HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=1, x=0.0, y=100.0, width=500.0, height=50.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'MR.KASULABADA PRASHANTH...'
+[Backend] Final text type: <class 'str'>, length: 23
+INFO:     127.0.0.1:62755 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62757 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62831 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62831 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62831 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62835 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62831 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62835 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62844 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=33.0, y=426.0, width=515.0, height=15.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'DATE DESCRIPTION AMOUNT BALANCE...'
+[Backend] Final text type: <class 'str'>, length: 31
+INFO:     127.0.0.1:62849 - "POST /extract-text-region HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=31.0, y=456.0, width=520.0, height=15.0
+[Backend] Found 1 tables in region
+[Backend] Extracted table with 1 rows
+[Backend] Final text type: <class 'list'>, length: 1
+INFO:     127.0.0.1:62854 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62860 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62864 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62873 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/manual_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [60346]
+INFO:     Started server process [63294]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63294]
+INFO:     Started server process [64163]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_column_detection.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64163]
+INFO:     Started server process [64224]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_column_detection.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64224]
+INFO:     Started server process [64257]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_column_detection.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64257]
+INFO:     Started server process [64351]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64351]
+INFO:     Started server process [64435]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64435]
+INFO:     Started server process [64520]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64520]
+INFO:     Started server process [64605]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64605]
+INFO:     Started server process [64695]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:64579 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64850 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64852 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64854 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64856 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64858 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64860 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64924 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64926 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64928 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64930 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64932 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64996 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64998 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65069 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65069 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65069 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65075 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65069 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65075 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65081 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65092 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65107 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65110 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65112 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65127 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65154 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65172 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65172 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65177 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65180 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65294 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65331 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64695]
+INFO:     Started server process [67755]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [67755]
+INFO:     Started server process [67804]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:49296 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49298 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49300 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49303 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49305 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49307 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49435 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49435 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49435 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49441 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49435 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49441 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49443 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49447 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49468 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49478 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49486 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49495 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49499 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [67804]
+INFO:     Started server process [69895]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69895]
+INFO:     Started server process [69947]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/manual_bank_parser.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69947]
+INFO:     Started server process [70196]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:50021 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50024 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50028 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50030 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50033 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'test_user_selection_fixes.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70196]
+INFO:     Started server process [70743]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_user_selection_fixes.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70743]
+INFO:     Started server process [70807]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_user_selection_fixes.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70807]
+INFO:     Started server process [70855]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_user_selection_fixes.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70855]
+INFO:     Started server process [70897]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:50241 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50243 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50245 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50247 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50249 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50251 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50253 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'test_user_selection_fixes.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70897]
+INFO:     Started server process [71041]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_user_selection_fixes.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71041]
+INFO:     Started server process [71078]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_user_selection_fixes.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71078]
+INFO:     Started server process [71124]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:50388 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50391 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50393 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50395 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50397 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50399 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50401 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/manual_bank_parser.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71124]
+INFO:     Started server process [71298]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:50510 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50515 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50517 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50519 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50521 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50523 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50525 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50599 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50599 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50605 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50606 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50606 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50605 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50609 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50617 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50636 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50636 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50641 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51241 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51253 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51253 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51257 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51259 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51257 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51259 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51959 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51989 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52198 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52243 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52249 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71298]
+INFO:     Started server process [77593]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:53256 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53259 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53261 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53263 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53370 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53370 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53370 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53374 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53370 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53374 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53379 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53383 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=35.0, y=426.0, width=514.0, height=15.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'DATE DESCRIPTION AMOUNT BALANCE...'
+[Backend] Final text type: <class 'str'>, length: 31
+INFO:     127.0.0.1:53383 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53389 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53389 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [77593]
+INFO:     Started server process [80668]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [80668]
+INFO:     Started server process [80743]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/manual_bank_parser.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [80743]
+INFO:     Started server process [80829]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:53702 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53705 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'test_exact_process.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [80829]
+INFO:     Started server process [81151]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_exact_process.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [81151]
+INFO:     Started server process [81186]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:53848 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53851 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53963 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53965 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [81186]
+INFO:     Started server process [81627]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/manual_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [81627]
+INFO:     Started server process [81700]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/manual_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [81700]
+INFO:     Started server process [81750]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:54164 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54167 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54169 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54252 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'test_precise_header.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [81750]
+INFO:     Started server process [82113]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:54369 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [82113]
+INFO:     Started server process [82264]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:54469 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/manual_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [82264]
+INFO:     Started server process [82501]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:54613 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54616 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54618 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54677 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54677 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54677 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54681 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54677 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54681 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54687 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54694 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=32.0, y=425.5, width=518.0, height=15.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'DATE DESCRIPTION AMOUNT BALANCE...'
+[Backend] Final text type: <class 'str'>, length: 31
+INFO:     127.0.0.1:54694 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55533 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:55533 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:55569 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55569 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55569 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55610 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55678 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=34.0, y=426.0, width=511.0, height=14.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'DATE DESCRIPTION AMOUNT BALANCE...'
+[Backend] Final text type: <class 'str'>, length: 31
+INFO:     127.0.0.1:55678 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55754 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55754 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56285 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56285 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56544 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56546 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56548 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57184 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57187 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57189 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57257 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57257 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57257 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57263 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57257 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57263 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57266 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57273 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=36.0, y=427.0, width=0.0, height=0.0
+INFO:     127.0.0.1:57273 - "POST /extract-text-region HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:57275 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57280 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57285 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57285 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57498 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57507 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57508 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57508 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57507 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57511 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57518 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57527 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57527 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57533 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57544 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57902 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57926 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57929 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57929 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57948 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57950 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57950 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59207 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59208 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59208 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59207 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59251 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59254 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59264 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59273 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59279 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59285 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59285 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59311 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59969 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59970 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59972 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:59970 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:59979 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59979 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59979 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59979 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59991 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59998 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60806 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60806 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [82501]
+INFO:     Started server process [97625]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [97625]
+INFO:     Started server process [97689]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:61297 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 500 Internal Server Error
+WARNING:  StatReload detected changes in 'test_improved_detection.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [97689]
+INFO:     Started server process [98041]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:61445 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [98041]
+INFO:     Started server process [98335]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [98335]
+INFO:     Started server process [98396]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:61561 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61627 - "POST /debug/extract-words-in-rectangle HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'app/manual_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [98396]
+INFO:     Started server process [98617]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/manual_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [98617]
+INFO:     Started server process [98923]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:61852 - "POST /debug/extract-words-in-rectangle HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'debug_word_positions.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [98923]
+INFO:     Started server process [99011]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:61914 - "POST /manual/debug/extract-words-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99011]
+INFO:     Started server process [99160]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:62009 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99160]
+INFO:     Started server process [99258]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99258]
+INFO:     Started server process [99312]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:62115 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99312]
+INFO:     Started server process [99750]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99750]
+INFO:     Started server process [99797]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:62319 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99797]
+INFO:     Started server process [99911]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/intelligent_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99911]
+INFO:     Started server process [99988]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:62434 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'test_improved_detection.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99988]
+INFO:     Started server process [266]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'test_improved_detection.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [266]
+INFO:     Started server process [291]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:62537 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62607 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62611 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62654 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62654 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62654 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62658 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62658 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62654 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62665 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62675 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62679 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62679 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62687 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62694 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62699 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=28.5, y=419.0, width=502.0, height=10.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'TRANSACTION DETAIL...'
+[Backend] Final text type: <class 'str'>, length: 18
+INFO:     127.0.0.1:62699 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62712 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62716 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62724 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62726 - "POST /manual/create-pattern-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62726 - "POST /manual/extract-with-pattern HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62737 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62739 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62744 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=30.5, y=476.0, width=537.0, height=17.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'Debit Card...'
+[Backend] Final text type: <class 'str'>, length: 10
+INFO:     127.0.0.1:62744 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62890 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62892 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62894 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62896 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62898 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62900 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62902 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62904 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62906 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62908 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62910 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62912 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62914 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62916 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62918 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62920 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62922 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62924 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62926 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62928 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62930 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62932 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62934 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62936 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63084 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63087 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63089 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63091 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63093 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63095 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63097 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63099 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63101 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63103 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63215 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63218 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63389 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63389 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63389 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63392 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63389 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63392 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63400 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63412 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63422 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63427 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63437 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63446 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64043 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64061 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64076 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64081 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64087 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64106 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=36.5, y=309.0, width=545.0, height=25.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'Statement From 24/08/2022 to 23/11/2022 Page No. : 1
+_______________________________________________...'
+[Backend] Final text type: <class 'str'>, length: 207
+INFO:     127.0.0.1:64106 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64112 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64136 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64148 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64165 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64175 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=32.5, y=476.0, width=528.0, height=17.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'Debit Car...'
+[Backend] Final text type: <class 'str'>, length: 9
+INFO:     127.0.0.1:64175 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64178 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=31.5, y=476.0, width=531.0, height=15.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'None...'
+[Backend] Final text type: <class 'str'>, length: 0
+INFO:     127.0.0.1:64178 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64197 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64205 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64207 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64205 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:64207 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:64216 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64216 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64216 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64216 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64222 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64265 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64265 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64270 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64275 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64284 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64292 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64295 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64301 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=55.0, y=427.0, width=504.0, height=19.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'Date Transaction Debit Credit Balance...'
+[Backend] Final text type: <class 'str'>, length: 37
+INFO:     127.0.0.1:64301 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64313 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64333 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=57.0, y=429.0, width=501.0, height=15.0
+[Backend] Found 0 tables in region
+[Backend] Extracted text: 'Date Transaction Debit Credit Balance...'
+[Backend] Final text type: <class 'str'>, length: 37
+INFO:     127.0.0.1:64333 - "POST /extract-text-region HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64339 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64350 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64364 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64364 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64369 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64376 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64396 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64396 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64403 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64411 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64421 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64423 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64429 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64445 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64445 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64449 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64455 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64475 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64475 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64485 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64489 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64502 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64502 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64510 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64514 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64526 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64526 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64531 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64539 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64553 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64554 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64554 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64553 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64559 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64567 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64587 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64587 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64592 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64599 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64606 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64618 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64618 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64622 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64630 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64644 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64644 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64652 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64656 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65038 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65039 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65038 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:65039 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:65047 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65047 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65051 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65051 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65113 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65127 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65127 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65139 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65182 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65182 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65187 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65206 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65206 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65210 - "POST /manual/detect-transaction-pages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65224 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=613.0, y=321.0, width=0.0, height=0.0
+INFO:     127.0.0.1:65224 - "POST /extract-text-region HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:65227 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65234 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+[Backend] Received coordinates: page=0, x=627.0, y=326.0, width=0.0, height=0.0
+INFO:     127.0.0.1:65234 - "POST /extract-text-region HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:65240 - "POST /manual/detect-columns-in-rectangle HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [291]
+INFO:     Started server process [8207]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:49337 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49339 - "POST /user-controlled/extract-data-with-columns HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49341 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49789 - "HEAD /user-controlled/extract-headers-from-selection HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49791 - "HEAD /user-controlled/preview-column-alignment HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49793 - "HEAD /user-controlled/extract-data-with-columns HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49795 - "HEAD /user-controlled/adjust-column-boundaries HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49797 - "HEAD /user-controlled/export-extracted-data HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:49799 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49801 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49803 - "POST /user-controlled/extract-data-with-columns HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49868 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49868 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49888 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49909 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49921 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50261 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50290 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50783 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50783 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50801 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51415 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51415 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51421 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51727 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51753 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51755 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51804 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51816 - "POST /user-controlled/extract-data-with-columns HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52019 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52019 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52079 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/user_controlled_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [8207]
+INFO:     Started server process [16482]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16482]
+INFO:     Started server process [16567]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16567]
+INFO:     Started server process [16624]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:52409 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52416 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52424 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/user_controlled_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16624]
+INFO:     Started server process [17574]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_column_detector.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [17574]
+INFO:     Started server process [17705]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [17705]
+INFO:     Started server process [17829]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [17829]
+INFO:     Started server process [17995]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [17995]
+INFO:     Started server process [18199]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [18199]
+INFO:     Started server process [18247]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [18247]
+INFO:     Started server process [18352]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/user_controlled_endpoints.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [18352]
+INFO:     Started server process [18386]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✅ pdf2image loaded successfully
+ℹ️ doctr temporarily disabled to avoid WeasyPrint dependency issues
+INFO:     127.0.0.1:53320 - "OPTIONS /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53320 - "POST /auth/login HTTP/1.1" 200 OK
+DEBUG: Found 10 header words
+DEBUG: Grouped into 7 column groups
+  Group 0: '___________________________________________________________________________________________________________________________ Value Date' (3 words)
+  Group 1: 'Post Date' (2 words)
+  Group 2: 'Details' (1 words)
+  Group 3: 'Chq.No.' (1 words)
+  Group 4: 'Debit' (1 words)
+  Group 5: 'Credit' (1 words)
+  Group 6: 'Balance' (1 words)
+INFO:     127.0.0.1:53331 - "POST /user-controlled/extract-headers-from-selection HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53335 - "POST /user-controlled/preview-column-alignment HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [18386]
+INFO:     Stopping reloader process [55574]
