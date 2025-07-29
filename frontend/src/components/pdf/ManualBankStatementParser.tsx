@@ -2,18 +2,28 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { CheckCircle, AlertCircle, Save, Download, Upload, Eye, Target } from 'lucide-react';
+import { CheckCircle, AlertCircle, Save, Download, Upload, Eye, Target, Settings, Trash2 } from 'lucide-react';
 
 // Dynamically import react-pdf to avoid SSR issues
-const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
-const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
+const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { 
+  ssr: false,
+  loading: () => <div className="text-center p-4">Loading PDF viewer...</div>
+});
+const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { 
+  ssr: false,
+  loading: () => <div className="text-center p-2">Loading page...</div>
+});
 
 // Set PDF.js worker source when component mounts
 const usePdfWorker = () => {
   useEffect(() => {
     const setPdfWorker = async () => {
-      const pdfjs = await import('react-pdf');
-      pdfjs.pdfjs.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
+      try {
+        const reactPdf = await import('react-pdf');
+        reactPdf.pdfjs.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
+      } catch (error) {
+        console.error('Failed to load PDF.js worker:', error);
+      }
     };
     setPdfWorker();
   }, []);
@@ -44,6 +54,15 @@ interface HeaderSelection {
   positions: number[][];
   y_position: number;
   page_number: number;
+}
+
+interface ColumnDefinition {
+  index: number;
+  name: string;
+  x_min: number;
+  x_max: number;
+  width: number;
+  user_adjusted: boolean;
 }
 
 interface SampleRowSelection {
@@ -88,6 +107,12 @@ const ManualBankStatementParser: React.FC = () => {
   const [headerRect, setHeaderRect] = useState<{x: number, y: number, width: number, height: number} | null>(null);
   const [headerSelection, setHeaderSelection] = useState<HeaderSelection | null>(null);
   const [selectedColumns, setSelectedColumns] = useState<number[]>([]);
+  
+  // Manual boundary control state
+  const [manualColumns, setManualColumns] = useState<ColumnDefinition[]>([]);
+  const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | null>(null);
+  const [isDraggingBoundary, setIsDraggingBoundary] = useState<boolean>(false);
+  const [dragInfo, setDragInfo] = useState<{columnIndex: number, edge: 'left' | 'right', startX: number} | null>(null);
   
   // Intelligent column detection results
   const [detectedColumns, setDetectedColumns] = useState<any[]>([]);
@@ -175,6 +200,36 @@ const ManualBankStatementParser: React.FC = () => {
 
   // Rectangle selection handlers
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Check if clicking on a boundary drag handle
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('boundary-handle')) {
+      const columnIndex = parseInt(target.dataset.columnIndex || '0');
+      const edge = target.dataset.edge as 'left' | 'right';
+      
+      const rect = e.currentTarget.getBoundingClientRect();
+      const startX = (e.clientX - rect.left) / pageScale;
+      
+      setIsDraggingBoundary(true);
+      setDragInfo({ columnIndex, edge, startX });
+      return;
+    }
+    
+    // Check if clicking to add a new boundary
+    if (headerRect && manualColumns.length > 0 && e.altKey) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / pageScale;
+      const y = (e.clientY - rect.top) / pageScale;
+      
+      // Check if click is within header area
+      if (x >= headerRect.x && x <= headerRect.x + headerRect.width &&
+          y >= headerRect.y && y <= headerRect.y + headerRect.height) {
+        addColumnBoundary(x);
+        return;
+      }
+    }
+    
     if (!isSelectingHeaderRect) return;
     
     const rect = e.currentTarget.getBoundingClientRect();
@@ -187,6 +242,17 @@ const ManualBankStatementParser: React.FC = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Handle boundary dragging
+    if (isDraggingBoundary && dragInfo) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const currentX = (e.clientX - rect.left) / pageScale;
+      
+      handleColumnBoundaryDrag(dragInfo.columnIndex, dragInfo.edge, currentX);
+      return;
+    }
+    
     if (!isDrawing || !startPoint) return;
     
     const rect = e.currentTarget.getBoundingClientRect();
@@ -205,6 +271,13 @@ const ManualBankStatementParser: React.FC = () => {
   };
 
   const handleMouseUp = async () => {
+    // End boundary dragging
+    if (isDraggingBoundary) {
+      setIsDraggingBoundary(false);
+      setDragInfo(null);
+      return;
+    }
+    
     if (!isDrawing || !currentRect || !pdfFile) return;
     
     setIsDrawing(false);
@@ -220,11 +293,239 @@ const ManualBankStatementParser: React.FC = () => {
     if (isSelectingHeaderRect) {
       setHeaderRect(currentRect);
       setIsSelectingHeaderRect(false);
-      await extractTextFromRect(pdfRect, 'header');
+      await extractHeadersFromUserSelection(pdfRect);
     }
     
     setCurrentRect(null);
     setStartPoint(null);
+  };
+
+  // NEW: Extract headers from user selection using user-controlled approach
+  const extractHeadersFromUserSelection = async (rect: {x: number, y: number, width: number, height: number}) => {
+    if (!pdfFile) return;
+    
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', pdfFile);
+      
+      const rectangleData = {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        page_number: currentPage - 1 // Convert to 0-based
+      };
+      
+      formData.append('rectangle', JSON.stringify(rectangleData));
+      
+      const response = await fetch('http://localhost:8000/user-controlled/extract-headers-from-selection', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to extract headers');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.columns && result.columns.length > 0) {
+        // Convert to our ColumnDefinition format
+        const columns: ColumnDefinition[] = result.columns.map((col: any, index: number) => ({
+          index,
+          name: col.name || `Column ${index + 1}`,
+          x_min: col.x_min,
+          x_max: col.x_max,
+          width: col.x_max - col.x_min,
+          user_adjusted: false
+        }));
+        
+        setManualColumns(columns);
+        
+        // Also set headerSelection for compatibility with existing flow
+        const headers = columns.map(col => col.name);
+        const positions = columns.map(col => [col.x_min, col.x_max]);
+        
+        setHeaderSelection({
+          headers,
+          positions,
+          y_position: rect.y,
+          page_number: currentPage - 1
+        });
+        setSelectedColumns(Array.from({length: headers.length}, (_, i) => i));
+        
+        addDebugLog('Manual Header Extraction', {
+          columns_count: columns.length,
+          column_names: headers,
+          boundaries: positions
+        });
+      } else {
+        setError('No headers detected in selected area. Make sure to select the transaction table header row.');
+      }
+      
+    } catch (err: any) {
+      setError(err.message || 'Failed to extract headers');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Column boundary adjustment handlers
+  const handleColumnBoundaryDrag = (columnIndex: number, edge: 'left' | 'right', newPosition: number) => {
+    const updatedColumns = [...manualColumns];
+    const column = updatedColumns[columnIndex];
+    
+    if (edge === 'left') {
+      column.x_min = newPosition;
+    } else {
+      column.x_max = newPosition;
+    }
+    
+    column.width = column.x_max - column.x_min;
+    column.user_adjusted = true;
+    
+    setManualColumns(updatedColumns);
+    
+    // Update headerSelection for compatibility
+    if (headerSelection) {
+      const updatedPositions = updatedColumns.map(col => [col.x_min, col.x_max]);
+      setHeaderSelection({
+        ...headerSelection,
+        positions: updatedPositions
+      });
+    }
+  };
+
+  // Add new column boundary at exact user click position
+  const addColumnBoundary = async (xPosition: number) => {
+    if (!pdfFile || !headerRect) return;
+    
+    // Find which column to split
+    const columnToSplit = manualColumns.find(col => col.x_min <= xPosition && xPosition <= col.x_max);
+    
+    if (columnToSplit) {
+      // Get text content within the new right column area to name it properly
+      const rightColumnText = await getTextInArea(xPosition, columnToSplit.x_max);
+      const leftColumnText = await getTextInArea(columnToSplit.x_min, xPosition);
+      
+      const updatedColumns = [...manualColumns];
+      const splitIndex = columnToSplit.index;
+      
+      // Create new right column with proper name
+      const newColumn: ColumnDefinition = {
+        index: splitIndex + 1,
+        name: rightColumnText || 'Column',
+        x_min: xPosition,
+        x_max: columnToSplit.x_max,
+        width: columnToSplit.x_max - xPosition,
+        user_adjusted: true
+      };
+      
+      // Update existing left column with proper name
+      columnToSplit.x_max = xPosition;
+      columnToSplit.width = xPosition - columnToSplit.x_min;
+      columnToSplit.name = leftColumnText || columnToSplit.name;
+      columnToSplit.user_adjusted = true;
+      
+      // Insert new column and reindex
+      updatedColumns.splice(splitIndex + 1, 0, newColumn);
+      updatedColumns.forEach((col, idx) => col.index = idx);
+      
+      setManualColumns(updatedColumns);
+      
+      // Update headerSelection for compatibility
+      if (headerSelection) {
+        const updatedHeaders = updatedColumns.map(col => col.name);
+        const updatedPositions = updatedColumns.map(col => [col.x_min, col.x_max]);
+        setHeaderSelection({
+          ...headerSelection,
+          headers: updatedHeaders,
+          positions: updatedPositions
+        });
+        setSelectedColumns(Array.from({length: updatedHeaders.length}, (_, i) => i));
+      }
+    }
+  };
+  
+  // Helper function to get text content in a specific area
+  const getTextInArea = async (xMin: number, xMax: number): Promise<string> => {
+    if (!pdfFile || !headerRect) return '';
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', pdfFile);
+      formData.append('rectangle', JSON.stringify({
+        x: xMin,
+        y: headerRect.y,
+        width: xMax - xMin,
+        height: headerRect.height,
+        page_number: currentPage - 1
+      }));
+      
+      const response = await fetch('http://localhost:8000/user-controlled/extract-headers-from-selection', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.columns && result.columns[0]) {
+          return result.columns[0].name;
+        }
+      }
+    } catch (error) {
+      console.log('Could not get text for area:', error);
+    }
+    
+    return '';
+  };
+
+  // Delete column boundary (merge with adjacent)
+  const deleteColumn = (columnIndex: number) => {
+    if (manualColumns.length <= 1) return;
+    
+    const updatedColumns = [...manualColumns];
+    const columnToDelete = updatedColumns[columnIndex];
+    
+    if (columnIndex < manualColumns.length - 1) {
+      // Merge with next column
+      const nextColumn = updatedColumns[columnIndex + 1];
+      nextColumn.x_min = columnToDelete.x_min;
+      nextColumn.name = `${columnToDelete.name} ${nextColumn.name}`;
+      nextColumn.width = nextColumn.x_max - nextColumn.x_min;
+      nextColumn.user_adjusted = true;
+      
+      updatedColumns.splice(columnIndex, 1);
+    } else if (columnIndex > 0) {
+      // Merge with previous column
+      const prevColumn = updatedColumns[columnIndex - 1];
+      prevColumn.x_max = columnToDelete.x_max;
+      prevColumn.name = `${prevColumn.name} ${columnToDelete.name}`;
+      prevColumn.width = prevColumn.x_max - prevColumn.x_min;
+      prevColumn.user_adjusted = true;
+      
+      updatedColumns.splice(columnIndex, 1);
+    }
+    
+    // Reindex columns
+    updatedColumns.forEach((col, idx) => col.index = idx);
+    setManualColumns(updatedColumns);
+    
+    // Update headerSelection for compatibility
+    if (headerSelection) {
+      const updatedHeaders = updatedColumns.map(col => col.name);
+      const updatedPositions = updatedColumns.map(col => [col.x_min, col.x_max]);
+      setHeaderSelection({
+        ...headerSelection,
+        headers: updatedHeaders,
+        positions: updatedPositions
+      });
+      setSelectedColumns(Array.from({length: updatedHeaders.length}, (_, i) => i));
+    }
   };
 
   // Extract text from selected rectangle using intelligent column detection
@@ -962,10 +1263,21 @@ const ManualBankStatementParser: React.FC = () => {
                       {/* Rectangle selection overlay */}
                       <div
                         className="absolute inset-0 w-full h-full"
-                        style={{ cursor: isSelectingHeaderRect ? 'crosshair' : 'default' }}
+                        style={{ 
+                          cursor: isSelectingHeaderRect ? 'crosshair' : 
+                                 isDraggingBoundary ? 'ew-resize' : 
+                                 'default' 
+                        }}
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
+                        onMouseLeave={() => {
+                          // Reset drag states if mouse leaves area
+                          if (isDraggingBoundary) {
+                            setIsDraggingBoundary(false);
+                            setDragInfo(null);
+                          }
+                        }}
                       >
                         {/* Header rectangle */}
                         {headerRect && (
@@ -997,8 +1309,56 @@ const ManualBankStatementParser: React.FC = () => {
                           />
                         )}
 
-                        {/* Detected column boundaries */}
-                        {detectedColumns.length > 0 && headerRect && (
+                        {/* User-controlled column boundaries overlay */}
+                        {manualColumns.length > 0 && headerRect && (
+                          <div className="absolute pointer-events-none" style={{
+                            left: `${headerRect.x}px`,
+                            top: `${headerRect.y}px`,
+                            width: `${headerRect.width}px`,
+                            height: `${headerRect.height}px`,
+                          }}>
+                            {/* Render single boundary lines between columns only */}
+                            {manualColumns.slice(0, -1).map((column, index) => (
+                              <div
+                                key={index}
+                                className="absolute h-full bg-red-500 pointer-events-auto boundary-handle cursor-ew-resize hover:bg-red-700 hover:w-1"
+                                style={{
+                                  left: `${((column.x_max * pageScale) - (headerRect.x / pageScale) * pageScale) - 1}px`,
+                                  width: '2px',
+                                }}
+                                data-column-index={index}
+                                data-edge="right"
+                                title="Drag to adjust boundary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedColumnIndex(index);
+                                }}
+                              />
+                            ))}
+                            
+                            {/* Column labels */}
+                            {manualColumns.map((column, index) => (
+                              <div
+                                key={`label-${index}`}
+                                className="absolute top-0 bg-white bg-opacity-90 text-gray-800 px-1 text-xs border border-gray-300 rounded shadow-sm pointer-events-none"
+                                style={{
+                                  left: `${((column.x_min * pageScale) - (headerRect.x / pageScale) * pageScale + (column.width * pageScale * 0.1))}px`,
+                                  transform: 'translateY(-100%)',
+                                  fontSize: '10px',
+                                  maxWidth: `${column.width * pageScale * 0.8}px`,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {column.name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Detected column boundaries (fallback display) */}
+                        {detectedColumns.length > 0 && headerRect && manualColumns.length === 0 && (
                           <>
                             {detectedColumns.map((col, idx) => (
                               <div
@@ -1062,6 +1422,8 @@ const ManualBankStatementParser: React.FC = () => {
                           setHeaderRect(null);
                           setSelectedColumns([]);
                           setDetectedColumns([]);
+                          setManualColumns([]);
+                          setSelectedColumnIndex(null);
                         }}
                         className="w-full mb-4 py-1 px-3 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                       >
@@ -1074,6 +1436,97 @@ const ManualBankStatementParser: React.FC = () => {
                         <div className="text-sm font-medium">Selected Headers:</div>
                         <div className="text-xs text-gray-600 mt-1">
                           {headerSelection.headers.join(' | ')}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Column boundary controls - only show if we have manual columns */}
+                    {manualColumns.length > 0 && (
+                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold bg-blue-600 text-white">
+                            3
+                          </div>
+                          <h3 className="font-semibold text-gray-900">Adjust Boundaries</h3>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                            <h4 className="font-medium text-blue-900 text-sm mb-2">Controls:</h4>
+                            <div className="text-xs text-blue-800 space-y-1">
+                              <div>• <strong>Click red lines</strong> to select</div>
+                              <div>• <strong>Drag red lines</strong> to adjust</div>
+                              <div>• <strong>Alt + Click</strong> PDF to add boundary</div>
+                            </div>
+                          </div>
+
+                          {/* Column List */}
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-gray-900 text-sm">Columns ({manualColumns.length}):</h4>
+                            {manualColumns.map((column, index) => (
+                              <div key={index} className={`bg-white rounded p-2 border text-xs ${selectedColumnIndex === index ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                                <div className="flex items-center justify-between">
+                                  <input
+                                    type="text"
+                                    value={column.name}
+                                    onChange={(e) => {
+                                      const updated = [...manualColumns];
+                                      updated[index].name = e.target.value;
+                                      updated[index].user_adjusted = true;
+                                      setManualColumns(updated);
+                                      
+                                      // Update headerSelection for compatibility
+                                      if (headerSelection) {
+                                        const updatedHeaders = updated.map(col => col.name);
+                                        setHeaderSelection({
+                                          ...headerSelection,
+                                          headers: updatedHeaders
+                                        });
+                                      }
+                                    }}
+                                    className="flex-1 text-xs font-medium bg-transparent border-none focus:outline-none text-gray-900"
+                                  />
+                                  <button
+                                    onClick={() => deleteColumn(index)}
+                                    disabled={manualColumns.length <= 1}
+                                    className="p-1 text-red-500 hover:text-red-700 disabled:opacity-50"
+                                    title="Delete column"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                {column.user_adjusted && (
+                                  <div className="text-xs text-blue-600 mt-1">• Modified</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="space-y-2">
+                            <div className="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                              <p className="text-blue-800 text-xs mb-2 font-medium">
+                                Add Boundary:
+                              </p>
+                              <p className="text-blue-700 text-xs">
+                                <strong>Alt + Click</strong> on the PDF where you want to add a column boundary
+                              </p>
+                            </div>
+                            
+                            <button
+                              onClick={() => {
+                                if (selectedColumnIndex !== null) {
+                                  deleteColumn(selectedColumnIndex);
+                                  setSelectedColumnIndex(null);
+                                }
+                              }}
+                              disabled={selectedColumnIndex === null || manualColumns.length <= 1}
+                              className="w-full px-3 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span>Remove Selected</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

@@ -22,6 +22,29 @@ const nextConfig = {
           filename: 'static/worker/[hash][ext][query]',
         },
       });
+      
+      // Ensure react-pdf chunks are properly named
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks?.cacheGroups,
+            reactPdf: {
+              test: /[\\/]node_modules[\\/]react-pdf[\\/]/,
+              name: 'react-pdf',
+              chunks: 'all',
+              priority: 20,
+            },
+            pdfjs: {
+              test: /[\\/]node_modules[\\/]pdfjs-dist[\\/]/,
+              name: 'pdfjs-dist',
+              chunks: 'all',
+              priority: 30,
+            },
+          },
+        },
+      };
     }
     
     // Handle PDF.js ES modules
