@@ -755,17 +755,17 @@ const ManualBankStatementParser: React.FC = () => {
     }
   };
 
-  // Step 3: Create pattern from header selection and extract data immediately
+  // Step 3: Extract data directly using user-controlled approach with strict validation
   const createPatternFromSelection = async () => {
-    if (!pdfFile || !headerSelection) {
-      setError('Please select header area');
+    if (!pdfFile || !manualColumns || manualColumns.length === 0) {
+      setError('Please select header area and define column boundaries');
       return;
     }
     
-    addDebugLog('🚀 Starting Pattern Creation & Extraction', {
-      header_selection: headerSelection,
+    addDebugLog('🚀 Starting Direct Data Extraction with Strict Validation', {
+      manual_columns: manualColumns,
       selected_columns: selectedColumns,
-      selected_column_names: selectedColumns.map(idx => headerSelection.headers[idx]),
+      selected_column_names: selectedColumns.map(idx => manualColumns[idx]?.name).filter(Boolean),
       pdf_file: pdfFile.name
     });
     
@@ -776,51 +776,71 @@ const ManualBankStatementParser: React.FC = () => {
       const formData = new FormData();
       formData.append('file', pdfFile);
       
-      // Create dummy sample rows from header selection for pattern creation
-      const sampleRows = [{
-        data: headerSelection.headers,
-        y_position: headerSelection.y_position + 30, // Estimate where data would be
-        page_number: currentPage - 1
-      }];
-
-      const patternRequest = {
-        header_selection: headerSelection,
-        sample_rows: sampleRows,
-        selected_column_indices: selectedColumns
-      };
+      // Use the precise manual columns data for strict extraction
+      formData.append('columns_data', JSON.stringify(manualColumns));
+      formData.append('header_y', (headerSelection?.y_position || 0).toString());
+      formData.append('start_page', (currentPage - 1).toString());
       
-      addDebugLog('📤 Pattern Creation Request', {
-        endpoint: '/manual/create-pattern-from-selection',
-        pattern_request: patternRequest
+      addDebugLog('📤 Direct Extraction Request', {
+        endpoint: '/user-controlled/extract-data-with-columns',
+        columns_data: manualColumns,
+        header_y: headerSelection?.y_position || 0,
+        start_page: currentPage - 1
       });
       
-      formData.append('pattern_request', JSON.stringify(patternRequest));
-      
-      const response = await fetch('http://localhost:8000/manual/create-pattern-from-selection', {
+      const response = await fetch('http://localhost:8000/user-controlled/extract-data-with-columns', {
         method: 'POST',
         body: formData,
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create pattern');
+        throw new Error(errorData.detail || 'Failed to extract data');
       }
       
       const result = await response.json();
       
-      addDebugLog('📥 Pattern Creation Response', {
+      addDebugLog('📥 Direct Extraction Response', {
         success: result.success,
-        pattern: result.pattern,
-        message: result.message
+        total_rows: result.total_rows,
+        headers: result.headers,
+        pages_processed: result.pages_processed,
+        sample_data: result.data?.slice(0, 3),
+        errors: result.errors
       });
       
-      setCreatedPattern(result.pattern);
-      
-      // Immediately proceed to extract data
-      await extractDataWithCreatedPattern(result.pattern);
+      if (result.success) {
+        // Convert user-controlled format to manual parser format for compatibility
+        const convertedData = {
+          success: true,
+          headers: result.headers,
+          transactions: result.data.map((row: Record<string, string>) => 
+            result.headers.map((header: string) => row[header] || '')
+          ),
+          total_transactions: result.total_rows,
+          pages_processed: result.pages_processed || [currentPage - 1],
+          errors: result.errors || []
+        };
+        
+        setExtractedData(convertedData);
+        setCurrentStep(4);
+        // Clear any previous errors since extraction was successful
+        setError('');
+        
+        // Create a compatible pattern object for the UI
+        setCreatedPattern({
+          column_count: manualColumns.length,
+          column_names: manualColumns.map(col => col.name),
+          selected_fields: selectedColumns.map(idx => manualColumns[idx]?.name).filter(Boolean),
+          column_boundaries: manualColumns.map(col => [col.x_min, col.x_max])
+        });
+      } else {
+        setError('Data extraction failed with strict validation');
+      }
       
     } catch (err: any) {
-      setError(err.message || 'Failed to create pattern');
+      setError(err.message || 'Failed to extract data with strict validation');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -1673,10 +1693,10 @@ const ManualBankStatementParser: React.FC = () => {
 
                     <button
                       onClick={createPatternFromSelection}
-                      disabled={!headerSelection || selectedColumns.length === 0 || isLoading}
+                      disabled={!manualColumns || manualColumns.length === 0 || selectedColumns.length === 0 || isLoading}
                       className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {isLoading ? 'Creating Pattern...' : 'Extract Data'}
+                      {isLoading ? 'Extracting with Strict Validation...' : 'Extract Data'}
                     </button>
                   </div>
                 </div>
