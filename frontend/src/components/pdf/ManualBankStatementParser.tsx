@@ -113,6 +113,7 @@ const ManualBankStatementParser: React.FC = () => {
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | null>(null);
   const [isDraggingBoundary, setIsDraggingBoundary] = useState<boolean>(false);
   const [dragInfo, setDragInfo] = useState<{columnIndex: number, edge: 'left' | 'right', startX: number} | null>(null);
+  const [boundaryHeightMultiplier, setBoundaryHeightMultiplier] = useState<number>(1.0); // Default 100% height
   
   // Intelligent column detection results
   const [detectedColumns, setDetectedColumns] = useState<any[]>([]);
@@ -157,6 +158,22 @@ const ManualBankStatementParser: React.FC = () => {
     setPdfFile(file);
     setError('');
     setCurrentStep(1);
+    
+    // Reset all header selection state when new file is uploaded
+    setHeaderSelection(null);
+    setHeaderRect(null);
+    setSelectedColumns([]);
+    setDetectedColumns([]);
+    setManualColumns([]);
+    setSelectedColumnIndex(null);
+    setIsSelectingHeaderRect(false);
+    setIsDraggingBoundary(false);
+    setDragInfo(null);
+    setCurrentRect(null);
+    setStartPoint(null);
+    setCreatedPattern(null);
+    setExtractedData(null);
+    setBoundaryHeightMultiplier(1.0); // Reset boundary height to default
     
     // Auto-detect transaction pages
     await detectTransactionPages(file);
@@ -526,6 +543,40 @@ const ManualBankStatementParser: React.FC = () => {
       });
       setSelectedColumns(Array.from({length: updatedHeaders.length}, (_, i) => i));
     }
+  };
+
+  // Column boundary height adjustment functions
+  const increaseBoundaryHeight = () => {
+    setBoundaryHeightMultiplier(prev => prev + 0.2); // No maximum limit
+  };
+
+  const decreaseBoundaryHeight = () => {
+    setBoundaryHeightMultiplier(prev => Math.max(0.5, prev - 0.2)); // Min 50% height
+  };
+
+  const resetBoundaryHeight = () => {
+    setBoundaryHeightMultiplier(1.0); // Reset to 100% height
+  };
+
+  // Calculate maximum possible boundary height based on page dimensions
+  const getMaxBoundaryHeight = () => {
+    if (!pageDims || !headerRect) return 500; // Fallback value
+    return Math.max(500, pageDims.height * pageScale - headerRect.y);
+  };
+
+  // Slider-based height adjustment (in absolute pixels)
+  const handleSliderHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const absoluteHeight = parseInt(e.target.value);
+    if (headerRect) {
+      const multiplier = absoluteHeight / headerRect.height;
+      setBoundaryHeightMultiplier(multiplier);
+    }
+  };
+
+  // Get current absolute height for slider
+  const getCurrentAbsoluteHeight = () => {
+    if (!headerRect) return 100;
+    return Math.round(headerRect.height * boundaryHeightMultiplier);
   };
 
   // Extract text from selected rectangle using intelligent column detection
@@ -1321,14 +1372,17 @@ const ManualBankStatementParser: React.FC = () => {
                             {manualColumns.slice(0, -1).map((column, index) => (
                               <div
                                 key={index}
-                                className="absolute h-full bg-red-500 pointer-events-auto boundary-handle cursor-ew-resize hover:bg-red-700 hover:w-1"
+                                className="absolute bg-red-500 pointer-events-auto boundary-handle cursor-ew-resize hover:bg-red-700 hover:w-1"
                                 style={{
                                   left: `${((column.x_max * pageScale) - (headerRect.x / pageScale) * pageScale) - 1}px`,
                                   width: '2px',
+                                  height: `${headerRect.height * boundaryHeightMultiplier}px`,
+                                  top: headerRect.height > headerRect.height * boundaryHeightMultiplier ? 
+                                    `${(headerRect.height - headerRect.height * boundaryHeightMultiplier) / 2}px` : '0px',
                                 }}
                                 data-column-index={index}
                                 data-edge="right"
-                                title="Drag to adjust boundary"
+                                title={`Drag to adjust boundary (Height: ${Math.round(boundaryHeightMultiplier * 100)}%)`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedColumnIndex(index);
@@ -1457,6 +1511,69 @@ const ManualBankStatementParser: React.FC = () => {
                               <div>• <strong>Click red lines</strong> to select</div>
                               <div>• <strong>Drag red lines</strong> to adjust</div>
                               <div>• <strong>Alt + Click</strong> PDF to add boundary</div>
+                            </div>
+                          </div>
+
+                          {/* Boundary Height Controls */}
+                          <div className="bg-green-50 border border-green-200 rounded p-3">
+                            <h4 className="font-medium text-green-900 text-sm mb-2">Boundary Height:</h4>
+                            
+                            {/* +/- Button Controls */}
+                            <div className="flex items-center justify-between space-x-2 mb-3">
+                              <div className="flex items-center space-x-1">
+                                <button
+                                  onClick={decreaseBoundaryHeight}
+                                  disabled={boundaryHeightMultiplier <= 0.5}
+                                  className="w-8 h-8 bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center justify-center text-lg font-bold disabled:opacity-50"
+                                  title="Decrease boundary height"
+                                >
+                                  −
+                                </button>
+                                <button
+                                  onClick={increaseBoundaryHeight}
+                                  className="w-8 h-8 bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center justify-center text-lg font-bold"
+                                  title="Increase boundary height (no limit)"
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <div className="text-xs text-green-800 font-medium">
+                                {Math.round(boundaryHeightMultiplier * 100)}%
+                              </div>
+                              <button
+                                onClick={resetBoundaryHeight}
+                                className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs"
+                                title="Reset to default height"
+                              >
+                                Reset
+                              </button>
+                            </div>
+
+                            {/* Slider Control */}
+                            {headerRect && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs text-green-800">
+                                  <span>Drag to adjust:</span>
+                                  <span>{getCurrentAbsoluteHeight()}px</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={Math.round(headerRect.height * 0.5)}
+                                  max={getMaxBoundaryHeight()}
+                                  value={getCurrentAbsoluteHeight()}
+                                  onChange={handleSliderHeightChange}
+                                  className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer slider"
+                                  title={`Adjust height: ${getCurrentAbsoluteHeight()}px (Max: ${getMaxBoundaryHeight()}px)`}
+                                />
+                                <div className="flex justify-between text-xs text-green-600">
+                                  <span>{Math.round(headerRect.height * 0.5)}px</span>
+                                  <span>Max: {getMaxBoundaryHeight()}px</span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="text-xs text-green-700 mt-2">
+                              Use +/- buttons for quick adjustments or drag slider for precise control
                             </div>
                           </div>
 
