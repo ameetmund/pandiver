@@ -2108,3 +2108,193 @@ async def get_extraction_statistics(
             status_code=500,
             detail=f"Error generating statistics: {str(e)}"
         )
+
+# Smart PDF Parser specific endpoints (isolated from other features)
+def smart_extract_text_blocks(pdf_bytes):
+    """
+    Extract meaningful text blocks by grouping words into rows and phrases
+    ONLY for Smart PDF Parser - does not affect other features
+    """
+    results = []
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page_num, page in enumerate(pdf.pages):
+            # Extract words with positioning
+            words = page.extract_words(x_tolerance=1, y_tolerance=1)
+            
+            if not words:
+                results.append({"page": page_num, "blocks": []})
+                continue
+            
+            # Group words into meaningful text blocks
+            text_blocks = smart_group_words_into_blocks(words, page_num)
+            
+            results.append({
+                "page": page_num,
+                "blocks": text_blocks
+            })
+    return results
+
+def smart_group_words_into_blocks(words, page_num):
+    """
+    Group words into meaningful text blocks using layout consistency rules
+    """
+    if not words:
+        return []
+    
+    # Step 1: Snap Y-coordinates into row buckets
+    rows = smart_group_words_by_rows(words, y_tolerance=3)
+    
+    # Step 2: For each row, group nearby words into phrases
+    text_blocks = []
+    for row_words in rows:
+        phrases = smart_group_words_into_phrases(row_words, x_tolerance=15)
+        text_blocks.extend(phrases)
+    
+    # Step 3: Filter out noise (single chars, punctuation, etc.)
+    filtered_blocks = smart_filter_meaningful_blocks(text_blocks)
+    
+    return filtered_blocks
+
+def smart_group_words_by_rows(words, y_tolerance=3):
+    """
+    Group words that are on the same horizontal line (row)
+    """
+    rows = {}
+    
+    for word in words:
+        y_center = (word["top"] + word["bottom"]) / 2
+        
+        # Find existing row within tolerance
+        matched_row = None
+        for existing_y in rows.keys():
+            if abs(y_center - existing_y) <= y_tolerance:
+                matched_row = existing_y
+                break
+        
+        if matched_row is not None:
+            rows[matched_row].append(word)
+        else:
+            rows[y_center] = [word]
+    
+    # Sort rows top to bottom and words left to right within each row
+    sorted_rows = []
+    for y in sorted(rows.keys()):
+        row_words = sorted(rows[y], key=lambda w: w["x0"])
+        sorted_rows.append(row_words)
+    
+    return sorted_rows
+
+def smart_group_words_into_phrases(row_words, x_tolerance=20):
+    """
+    Group words in a row into phrases based on horizontal proximity
+    """
+    if not row_words:
+        return []
+    
+    phrases = []
+    current_phrase = [row_words[0]]
+    
+    for i in range(1, len(row_words)):
+        prev_word = row_words[i-1]
+        curr_word = row_words[i]
+        
+        # Check if current word is close enough to be part of the same phrase
+        gap = curr_word["x0"] - prev_word["x1"]
+        
+        if gap <= x_tolerance:
+            current_phrase.append(curr_word)
+        else:
+            # Finish current phrase and start new one
+            if current_phrase:
+                phrases.append(smart_create_phrase_block(current_phrase))
+            current_phrase = [curr_word]
+    
+    # Add the last phrase
+    if current_phrase:
+        phrases.append(smart_create_phrase_block(current_phrase))
+    
+    return phrases
+
+def smart_create_phrase_block(words):
+    """
+    Create a single text block from a group of words
+    """
+    if not words:
+        return None
+    
+    # Combine text
+    text_parts = [word["text"] for word in words]
+    combined_text = " ".join(text_parts)
+    
+    # Calculate bounding box
+    x0 = min(word["x0"] for word in words)
+    y0 = min(word["top"] for word in words)  
+    x1 = max(word["x1"] for word in words)
+    y1 = max(word["bottom"] for word in words)
+    
+    block = {
+        "text": combined_text,
+        "x0": x0,
+        "y0": y0,
+        "x1": x1,
+        "y1": y1
+    }
+    
+    return block
+
+def smart_filter_meaningful_blocks(blocks):
+    """
+    Filter out noise blocks (single chars, punctuation, etc.)
+    """
+    filtered = []
+    
+    for block in blocks:
+        if not block or not block.get("text"):
+            continue
+            
+        text = block["text"].strip()
+        
+        # Skip empty blocks
+        if len(text) < 1:
+            continue
+            
+        # Skip blocks with only punctuation or single characters (unless meaningful numbers/letters)
+        if len(text) == 1 and not text.isalnum():
+            continue
+            
+        # Skip blocks that are just whitespace or special chars
+        if not any(c.isalnum() for c in text):
+            continue
+            
+        # Skip extremely small blocks (likely noise) - very permissive
+        width = block["x1"] - block["x0"]
+        height = block["y1"] - block["y0"]
+        # Allow zero width (stacked text) but require some height
+        if height < 1:
+            continue
+            
+        # Allow single meaningful characters (letters, numbers)
+        # Skip only if it's a single non-alphanumeric character
+        if len(text.strip()) == 1 and not text.isalnum():
+            continue
+        
+        filtered.append(block)
+    
+    return filtered
+
+@app.post("/smart-extract-blocks")
+async def smart_extract_blocks(file: UploadFile = File(...)):
+    """
+    Extract text blocks for Smart PDF Parser with improved grouping and filtering.
+    This endpoint is ONLY for Smart PDF Parser and does not affect other features.
+    """
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="File must be a PDF.")
+    
+    pdf_bytes = await file.read()
+    try:
+        # Use the new smart extraction function
+        blocks = smart_extract_text_blocks(pdf_bytes)
+        return JSONResponse(content={"pages": blocks})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -37,6 +37,159 @@ class UserControlledColumnDetector:
     def __init__(self):
         self.y_tolerance = 3.0  # Tolerance for grouping words on same baseline
         self.gap_threshold = 20.0  # Minimum gap to consider separate columns
+    
+    def _detect_column_data_type(self, column_name: str, sample_values: List[str]) -> str:
+        """
+        Intelligently detect the expected data type for a column based on its name and sample values
+        """
+        column_name_lower = column_name.lower().strip()
+        
+        # Date column detection
+        if any(keyword in column_name_lower for keyword in 
+               ['date', 'dt', 'trans', 'posting', 'value', 'effective']):
+            return 'date'
+        
+        # Amount/Balance column detection
+        if any(keyword in column_name_lower for keyword in 
+               ['amount', 'debit', 'credit', 'balance', 'withdrawal', 'deposit', 
+                'dr', 'cr', 'bal', '$', '₹', '£', '€', 'usd', 'inr', 'gbp', 'eur']):
+            return 'amount'
+        
+        # Reference/Check number column detection
+        if any(keyword in column_name_lower for keyword in 
+               ['ref', 'reference', 'check', 'cheque', 'no', 'number', 'serial', 'id']):
+            return 'reference'
+        
+        # Description column detection (usually the catch-all)
+        if any(keyword in column_name_lower for keyword in 
+               ['description', 'particulars', 'details', 'narration', 'transaction', 
+                'payee', 'memo', 'remarks', 'note']):
+            return 'description'
+        
+        # If we have sample values, analyze them to determine type
+        if sample_values:
+            return self._analyze_sample_values(sample_values)
+        
+        # Default to description for unknown columns
+        return 'description'
+    
+    def _analyze_sample_values(self, values: List[str]) -> str:
+        """
+        Analyze sample values to determine the most likely data type
+        """
+        if not values:
+            return 'description'
+        
+        date_count = 0
+        amount_count = 0
+        reference_count = 0
+        
+        for value in values[:5]:  # Analyze first 5 values
+            value = value.strip()
+            if not value:
+                continue
+                
+            if self._looks_like_date(value):
+                date_count += 1
+            elif self._looks_like_amount(value):
+                amount_count += 1
+            elif self._looks_like_reference(value):
+                reference_count += 1
+        
+        # Return the type with highest confidence
+        if date_count >= 2:
+            return 'date'
+        elif amount_count >= 2:
+            return 'amount'
+        elif reference_count >= 2:
+            return 'reference'
+        else:
+            return 'description'
+    
+    def _looks_like_date(self, value: str) -> bool:
+        """
+        Check if a value looks like a date using flexible patterns
+        """
+        value = value.strip()
+        if len(value) < 3:
+            return False
+        
+        # Common date patterns (flexible)
+        date_indicators = [
+            # Numbers with separators
+            re.search(r'\d{1,2}[-/\.]\d{1,2}[-/\.]?\d{0,4}', value),
+            # Month names
+            re.search(r'(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)', value, re.IGNORECASE),
+            # Day-month patterns
+            re.search(r'\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)', value, re.IGNORECASE),
+            # Year patterns
+            re.search(r'(19|20)\d{2}', value),
+        ]
+        
+        return any(date_indicators)
+    
+    def _looks_like_amount(self, value: str) -> bool:
+        """
+        Check if a value looks like a monetary amount
+        """
+        value = value.strip()
+        if not value:
+            return False
+        
+        # Currency symbols
+        if any(symbol in value for symbol in ['$', '₹', '£', '€', '¥', '¢']):
+            return True
+        
+        # Parentheses for negative amounts
+        if value.startswith('(') and value.endswith(')'):
+            return True
+        
+        # Numbers with decimal points and commas
+        if re.search(r'\d+[,\.]?\d*', value):
+            # Check for typical amount formatting
+            if re.search(r'\d{1,3}(,\d{3})*(\.\d{2})?', value) or re.search(r'\d+\.\d{2}', value):
+                return True
+        
+        # Plus/minus signs
+        if value.startswith(('+', '-')) and re.search(r'\d', value):
+            return True
+        
+        return False
+    
+    def _looks_like_reference(self, value: str) -> bool:
+        """
+        Check if a value looks like a reference number
+        """
+        value = value.strip()
+        if not value:
+            return False
+        
+        # Typical reference patterns
+        if re.search(r'^[A-Z0-9]{6,}$', value):  # Long alphanumeric codes
+            return True
+        if re.search(r'^\d{6,}$', value):  # Long numeric codes
+            return True
+        if re.search(r'^[A-Z]{2,}\d+', value):  # Letters followed by numbers
+            return True
+        
+        return False
+    
+    def _validate_data_type_match(self, value: str, expected_type: str) -> bool:
+        """
+        Validate if a value matches the expected data type for the column
+        """
+        value = value.strip()
+        if not value:
+            return True  # Empty values are acceptable
+        
+        if expected_type == 'date':
+            return self._looks_like_date(value)
+        elif expected_type == 'amount':
+            return self._looks_like_amount(value)
+        elif expected_type == 'reference':
+            return self._looks_like_reference(value)
+        else:  # description or unknown
+            return True  # Description can be anything
         
     def extract_header_fields_from_selection(self, 
                                            words: List[Dict[str, Any]], 
@@ -246,7 +399,10 @@ class UserControlledColumnDetector:
                                  words: List[Dict[str, Any]], 
                                  header_y: float,
                                  start_page: int) -> Dict[int, Dict[float, List[Dict[str, Any]]]]:
-        """Group words by page number and Y position (for rows)"""
+        """
+        Group words by page number and Y position (for rows) with improved Y-axis snapping.
+        Uses better tolerance for grouping words into the same horizontal line.
+        """
         
         pages_data = {}
         processed_words = 0
@@ -258,9 +414,9 @@ class UserControlledColumnDetector:
             if page_num < start_page:
                 continue
             
-            # Only process words below header (with small buffer)
+            # Only process words below header (with buffer)
             word_y = word.get('top', word.get('y0', 0))
-            header_buffer = 10  # Small buffer below header
+            header_buffer = 15  # Slightly larger buffer below header
             
             if page_num == start_page and word_y <= (header_y + header_buffer):
                 continue
@@ -268,23 +424,24 @@ class UserControlledColumnDetector:
             if page_num not in pages_data:
                 pages_data[page_num] = {}
             
-            # Group by Y position with tolerance
-            y_pos = word_y
+            # Improved Y-axis snapping with rounding to nearest bucket
+            # Round Y position to nearest 2px bucket for better grouping
+            y_bucket = round(word_y / 2.0) * 2.0
             matched_y = None
             
-            # Find existing Y position within tolerance
+            # Find existing Y position within improved tolerance
+            tolerance = 4.0  # Increased tolerance for better row grouping
             for existing_y in pages_data[page_num].keys():
-                if abs(y_pos - existing_y) <= self.y_tolerance:
+                if abs(y_bucket - existing_y) <= tolerance:
                     matched_y = existing_y
                     break
             
             if matched_y is not None:
                 pages_data[page_num][matched_y].append(word)
             else:
-                pages_data[page_num][y_pos] = [word]
+                pages_data[page_num][y_bucket] = [word]
             
             processed_words += 1
-        
         
         return pages_data
     
@@ -293,57 +450,103 @@ class UserControlledColumnDetector:
                         columns: List[ColumnDefinition],
                         y_position: float,
                         page_number: int) -> Optional[ExtractedRow]:
-        """Extract data from a single row by assigning words to columns based on X-alignment"""
+        """
+        Extract data from a single row respecting user-defined header structure.
+        Allow partial blanks but ensure alignment with user-selected column boundaries.
+        """
         
+        if not row_words or not columns:
+            return None
+        
+        # Initialize row data structure matching user header exactly
         row_data = {col.name: "" for col in columns}
-        has_data = False
-        words_assigned = 0
         
-        # Sort words by X position for better processing
+        # Sort words by X position for processing
         sorted_words = sorted(row_words, key=lambda w: w['x0'])
         
+        # STEP 1: Assign words to columns based on user-defined boundaries
         for word in sorted_words:
             word_x_center = (word['x0'] + word['x1']) / 2
             assigned = False
             
-            # Find which column this word belongs to based on X-coordinate alignment
+            # Find the column this word belongs to based on user boundaries
             for col in columns:
-                # Use a slightly more flexible boundary check
-                col_tolerance = 5  # Small tolerance for boundary matching
+                # Use reasonable tolerance for user-defined boundaries
+                col_tolerance = 10  # Allow some flexibility for alignment
                 if (col.x_min - col_tolerance) <= word_x_center <= (col.x_max + col_tolerance):
                     if row_data[col.name]:
                         row_data[col.name] += " " + word['text']
                     else:
                         row_data[col.name] = word['text']
-                    has_data = True
-                    words_assigned += 1
                     assigned = True
                     break
             
-            # If word doesn't fit in any column, assign to closest column
+            # If word doesn't fit in any column, try closest column as fallback
             if not assigned:
                 closest_col = min(columns, key=lambda c: min(
                     abs(word_x_center - c.x_min), 
                     abs(word_x_center - c.x_max)
                 ))
-                if row_data[closest_col.name]:
-                    row_data[closest_col.name] += " " + word['text']
-                else:
-                    row_data[closest_col.name] = word['text']
-                has_data = True
-                words_assigned += 1
+                # Only assign if reasonably close (within reasonable distance)
+                min_distance = min(
+                    abs(word_x_center - closest_col.x_min), 
+                    abs(word_x_center - closest_col.x_max)
+                )
+                if min_distance <= 50:  # 50px tolerance for fallback assignment
+                    if row_data[closest_col.name]:
+                        row_data[closest_col.name] += " " + word['text']
+                    else:
+                        row_data[closest_col.name] = word['text']
         
-        # Only return row if we have meaningful data
-        if not has_data or words_assigned == 0:
+        # Clean up the data
+        for col_name in row_data:
+            row_data[col_name] = row_data[col_name].strip()
+        
+        # Count filled columns
+        filled_columns = sum(1 for value in row_data.values() if value.strip())
+        
+        # VALIDATION 1: Must have at least some data
+        if filled_columns == 0:
+            return None  # Completely empty row
+        
+        # VALIDATION 2: Allow partial blanks - only require minimal filling
+        # At least 1 column should have data, be more lenient
+        min_required_fields = 1
+        if filled_columns < min_required_fields:
             return None
         
-        # Clean up empty columns
-        cleaned_data = {k: v.strip() for k, v in row_data.items() if v.strip()}
+        # VALIDATION 3: Check if this row is structurally different from header
+        # Only reject if it's clearly from a different table structure
+        total_text = ' '.join(row_data.values()).lower().strip()
         
-        # Only return if we have at least one non-empty column
-        if not cleaned_data:
+        # Skip obvious non-transaction content
+        skip_indicators = [
+            'page', 'statement', 'account number', 'customer', 'branch',
+            'period from', 'period to', 'opening balance', 'closing balance',
+            'total number of', 'summary', 'continued on next page'
+        ]
+        
+        # Only skip if it's clearly structural header/footer text
+        if any(indicator in total_text for indicator in skip_indicators):
             return None
         
+        # VALIDATION 4: Check if row falls within reasonable X boundaries of header
+        # Get the overall X range of the user-defined header
+        header_x_min = min(col.x_min for col in columns)
+        header_x_max = max(col.x_max for col in columns)
+        
+        # Check if at least some words fall within the header range
+        words_in_range = 0
+        for word in sorted_words:
+            word_x_center = (word['x0'] + word['x1']) / 2
+            if (header_x_min - 20) <= word_x_center <= (header_x_max + 20):
+                words_in_range += 1
+        
+        # If no words fall within reasonable range of header, this might be a different section
+        if words_in_range == 0 and len(sorted_words) > 0:
+            return None
+        
+        # If validations pass, return the row with user-defined column structure
         return ExtractedRow(
             data=row_data,
             y_position=y_position,
@@ -354,50 +557,90 @@ class UserControlledColumnDetector:
                                     rows: List[ExtractedRow], 
                                     columns: List[ColumnDefinition]) -> List[ExtractedRow]:
         """
-        Step 4: Merge multi-line descriptions
-        If a row only contains values in description-like columns, merge with previous row
+        Enhanced multi-line row detection and merging.
+        Handles rows that span multiple lines by merging based on leading column values.
         """
         
         if not rows:
             return rows
         
-        # Identify description columns (usually the widest or named description/particulars/narration)
-        description_cols = []
-        for col in columns:
-            col_name_lower = col.name.lower()
-            if any(keyword in col_name_lower for keyword in 
-                   ['description', 'particulars', 'narration', 'details', 'memo']):
-                description_cols.append(col.name)
+        # Sort rows by page and Y position for proper processing
+        sorted_rows = sorted(rows, key=lambda r: (r.page_number, r.y_position))
         
-        # If no explicit description column found, use the widest column
-        if not description_cols:
+        # Identify key columns that typically identify unique transactions
+        key_columns = []  # Columns that identify unique transactions (like Date, Transaction ID)
+        description_columns = []  # Columns that can span multiple lines
+        
+        for col in columns:
+            col_name_lower = col.name.lower().strip()
+            
+            # Key identifier columns (usually leftmost, contain dates or IDs)
+            if any(keyword in col_name_lower for keyword in 
+                   ['date', 'transaction', 'ref', 'check', 'cheque', 'serial']):
+                key_columns.append(col.name)
+            
+            # Description/detail columns that can span multiple lines
+            elif any(keyword in col_name_lower for keyword in 
+                     ['description', 'particulars', 'narration', 'details', 'memo', 'payee']):
+                description_columns.append(col.name)
+        
+        # If no explicit key column found, use leftmost column
+        if not key_columns:
+            leftmost_col = min(columns, key=lambda c: c.x_min)
+            key_columns = [leftmost_col.name]
+        
+        # If no explicit description column found, use widest or rightmost column  
+        if not description_columns:
             widest_col = max(columns, key=lambda c: c.x_max - c.x_min)
-            description_cols = [widest_col.name]
+            description_columns = [widest_col.name]
         
         merged_rows = []
         
-        for i, row in enumerate(rows):
-            # Check if this row only has description data
-            non_desc_data = {k: v for k, v in row.data.items() 
-                           if k not in description_cols and v.strip()}
-            desc_data = {k: v for k, v in row.data.items() 
-                        if k in description_cols and v.strip()}
+        for i, current_row in enumerate(sorted_rows):
+            should_merge = False
             
-            if not non_desc_data and desc_data and merged_rows:
-                # This row only has description data - merge with previous row
+            # Check if this row should be merged with the previous row
+            if merged_rows:
                 prev_row = merged_rows[-1]
-                for desc_col in description_cols:
-                    if row.data.get(desc_col, '').strip():
-                        if prev_row.data[desc_col]:
-                            prev_row.data[desc_col] += "\n" + row.data[desc_col]
+                
+                # Check if current row is a continuation (missing key identifiers)
+                current_has_key_data = any(current_row.data.get(key_col, '').strip() 
+                                         for key_col in key_columns)
+                current_has_desc_data = any(current_row.data.get(desc_col, '').strip() 
+                                          for desc_col in description_columns)
+                
+                # Merge conditions:
+                # 1. Current row has no key data but has description data
+                # 2. Current row is on same page and close in Y position to previous row
+                y_distance = abs(current_row.y_position - prev_row.y_position)
+                same_page = current_row.page_number == prev_row.page_number
+                close_proximity = y_distance < 20  # Within 20px vertically
+                
+                if (not current_has_key_data and current_has_desc_data and 
+                    same_page and close_proximity):
+                    should_merge = True
+            
+            if should_merge:
+                # Merge current row with previous row
+                prev_row = merged_rows[-1]
+                
+                for col in columns:
+                    col_name = col.name
+                    current_value = current_row.data.get(col_name, '').strip()
+                    
+                    if current_value:
+                        if prev_row.data.get(col_name, '').strip():
+                            # Append with space or newline based on column type
+                            separator = ' ' if col_name in description_columns else ' '
+                            prev_row.data[col_name] += separator + current_value
                         else:
-                            prev_row.data[desc_col] = row.data[desc_col]
+                            prev_row.data[col_name] = current_value
                 
                 # Mark as continuation
-                row.is_continuation = True
+                current_row.is_continuation = True
             else:
-                # Regular row
-                merged_rows.append(row)
+                # Add as new row
+                merged_rows.append(current_row)
         
         return merged_rows
     
