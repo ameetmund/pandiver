@@ -23,4 +23,8 @@ pillow>=9.0.0
 
 # Intelligent column detection dependencies
 scikit-learn==1.4.*
-numpy==1.24.* 
+numpy==1.24.*
+
+# AWS Textract dependencies
+boto3==1.34.*
+python-dotenv==1.0.* 

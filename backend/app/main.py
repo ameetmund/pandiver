@@ -2,6 +2,10 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Depends, 
 import tempfile
 import uuid
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -39,12 +43,14 @@ from enhanced_bank_parser_v2 import EnhancedTransactionDetector, PatternRule, En
 # Import extraction endpoints
 from .manual_endpoints import router as manual_router
 from .user_controlled_endpoints import router as user_controlled_router
+from .textract_endpoints import router as textract_router
 
 app = FastAPI()
 
 # Include extraction routes
 app.include_router(manual_router, prefix="/manual", tags=["Manual Bank Statement Parser"])
 app.include_router(user_controlled_router, prefix="/user-controlled", tags=["User Controlled Column Detection"])
+app.include_router(textract_router, prefix="/textract", tags=["AWS Textract Bank Statement Parser"])
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./pandiver.db'

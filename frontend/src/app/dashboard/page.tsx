@@ -46,6 +46,14 @@ const features: Feature[] = [
     href: '/dashboard/user-controlled-parser',
     isActive: true
   },
+  {
+    id: 'aws-textract-parser',
+    title: 'AWS Textract Parser',
+    description: 'AI-powered table extraction using Amazon Textract. Automatically detect and extract all table data with advanced machine learning.',
+    icon: '🤖',
+    href: '/dashboard/bank-statement-aws-textract',
+    isActive: true
+  },
   // Future features can be added here
   {
     id: 'document-analyzer',
@@ -228,7 +236,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <h3 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-2">
-                3
+                4
               </h3>
               <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
                 Active Features
