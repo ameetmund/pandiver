@@ -9,7 +9,6 @@ import dynamic from 'next/dynamic';
 function AWSTextractBankStatementParser() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState('');
 
   // Check authentication on mount
   useEffect(() => {
@@ -24,9 +23,8 @@ function AWSTextractBankStatementParser() {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Auth failed');
-        const user = await response.json();
+        await response.json();
         setIsAuthenticated(true);
-        setUserName(user.name || 'User');
       } catch {
         localStorage.removeItem('accessToken');
         window.location.href = '/auth/login';
@@ -63,9 +61,9 @@ function AWSTextractBankStatementParser() {
             </Link>
             
             <div className="flex items-center space-x-6">
-              <div className="text-[#086C67] font-medium">
-                Welcome, <span className="font-semibold">{userName}</span>
-              </div>
+              <Link href="/dashboard" className="px-4 py-2 text-[#086C67] font-medium border border-[#086C67] rounded-full hover:bg-[#086C67] hover:text-white transition-all duration-300">
+                Dashboard
+              </Link>
               <button
                 onClick={() => { 
                   localStorage.removeItem('accessToken'); 
@@ -80,16 +78,6 @@ function AWSTextractBankStatementParser() {
         </div>
       </nav>
 
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <nav className="flex items-center space-x-2 text-sm">
-          <Link href="/dashboard" className="text-[#086C67] hover:text-[#00C7BE] transition-colors">
-            Dashboard
-          </Link>
-          <span className="text-gray-400">/</span>
-          <span className="text-gray-600 font-medium">AWS Textract Bank Parser</span>
-        </nav>
-      </div>
 
       {/* Main Content */}
       <div className="pb-12">

@@ -47,9 +47,9 @@ const features: Feature[] = [
     isActive: true
   },
   {
-    id: 'aws-textract-parser',
-    title: 'AWS Textract Parser',
-    description: 'AI-powered table extraction using Amazon Textract. Automatically detect and extract all table data with advanced machine learning.',
+    id: 'ai-parser',
+    title: 'AI Bank Parser',
+    description: 'Advanced AI-powered table extraction technology. Automatically detect and extract all table data with intelligent algorithms.',
     icon: '🤖',
     href: '/dashboard/bank-statement-aws-textract',
     isActive: true

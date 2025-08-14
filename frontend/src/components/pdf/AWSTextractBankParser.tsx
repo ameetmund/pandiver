@@ -11,7 +11,8 @@ import {
   AlertCircle, 
   Loader2,
   Table,
-  FileDown
+  FileDown,
+  Check
 } from 'lucide-react';
 
 // Dynamically import react-pdf to avoid SSR issues
@@ -294,52 +295,59 @@ const AWSTextractBankParser: React.FC = () => {
             <Table className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-4">
-            Bank Statement Parser - AWS Textract
+            AI Bank Statement Parser
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            AI-powered table extraction using Amazon Textract. Upload your PDF and let AWS extract all table data automatically.
+            Advanced AI-powered table extraction technology. Upload your PDF and let intelligent algorithms extract all table data automatically.
           </p>
         </div>
 
         {/* Progress Steps */}
         <div className="mb-12">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <div className="flex items-start justify-between max-w-6xl mx-auto px-8">
             {[
               { num: 1, title: 'Upload PDF', icon: Upload, desc: 'Choose your file' },
               { num: 2, title: 'Preview & Extract', icon: Eye, desc: 'Start analysis' },
-              { num: 3, title: 'Processing', icon: Loader2, desc: 'AWS Textract' },
+              { num: 3, title: 'Processing', icon: Loader2, desc: 'AI Extraction' },
               { num: 4, title: 'Review Data', icon: Table, desc: 'Verify results' },
               { num: 5, title: 'Export', icon: Download, desc: 'Download files' },
-            ].map(({ num, title, icon: Icon, desc }) => (
-              <div key={num} className="flex flex-col items-center relative">
-                <div className={`
-                  w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500
-                  ${currentStep >= num 
-                    ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white shadow-lg scale-110' 
-                    : 'bg-white text-gray-400 border-2 border-gray-200'
-                  }
-                `}>
-                  {currentStep > num ? (
-                    <CheckCircle className="w-6 h-6" />
-                  ) : currentStep === num && (num === 3) && polling ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    <Icon className="w-6 h-6" />
-                  )}
-                </div>
-                <div className="text-center mt-3">
-                  <div className={`font-semibold text-sm ${
-                    currentStep >= num ? 'text-[#086C67]' : 'text-gray-400'
-                  }`}>
-                    {title}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">{desc}</div>
-                </div>
-                {num < 5 && (
+            ].map(({ num, title, icon: Icon, desc }, index) => (
+              <div key={num} className="flex items-start relative">
+                <div className="flex flex-col items-center">
                   <div className={`
-                    absolute top-7 left-16 w-24 h-0.5 transition-colors duration-500
+                    w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 z-10 relative
+                    ${currentStep >= num 
+                      ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white shadow-lg scale-110' 
+                      : 'bg-white text-gray-400 border-2 border-gray-200'
+                    }
+                  `}>
+                    {currentStep > num ? (
+                      // Use consistent check icon for all completed steps
+                      <Check className="w-6 h-6" />
+                    ) : currentStep === num && (num === 3) && polling ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      <Icon className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div className="text-center mt-4 min-w-[140px]">
+                    <div className={`font-semibold text-sm ${
+                      currentStep >= num ? 'text-[#086C67]' : 'text-gray-400'
+                    }`}>
+                      {title}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{desc}</div>
+                  </div>
+                </div>
+                {index < 4 && (
+                  <div className={`
+                    absolute top-7 left-14 h-0.5 transition-colors duration-500 z-0
                     ${currentStep > num ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67]' : 'bg-gray-200'}
-                  `} />
+                  `} 
+                  style={{
+                    width: 'calc(100vw / 5 + 3rem)',
+                    maxWidth: '240px'
+                  }} />
                 )}
               </div>
             ))}
@@ -421,24 +429,46 @@ const AWSTextractBankParser: React.FC = () => {
                       <span className="ml-2">({(pdfFile.size / 1024 / 1024).toFixed(1)} MB)</span>
                     </div>
                     
-                    <div className="flex items-center space-x-3">
-                      <button 
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                        disabled={currentPage <= 1}
-                        className="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        ← Prev
-                      </button>
-                      <span className="text-sm text-gray-600">
-                        Page {currentPage} of {numPages}
-                      </span>
-                      <button 
-                        onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} 
-                        disabled={currentPage >= numPages}
-                        className="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Next →
-                      </button>
+                    <div className="flex items-center space-x-4">
+                      {/* Page Navigation */}
+                      <div className="flex items-center space-x-2 bg-white rounded-full px-3 py-1 border border-gray-200 shadow-sm">
+                        <button 
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                          disabled={currentPage <= 1}
+                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <span className="text-sm font-bold">‹</span>
+                        </button>
+                        <span className="text-sm text-gray-600 px-2">
+                          {currentPage} / {numPages}
+                        </span>
+                        <button 
+                          onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} 
+                          disabled={currentPage >= numPages}
+                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <span className="text-sm font-bold">›</span>
+                        </button>
+                      </div>
+
+                      {/* Zoom Controls */}
+                      <div className="flex items-center space-x-2 bg-white rounded-full px-3 py-1 border border-gray-200 shadow-sm">
+                        <button 
+                          onClick={() => setPageScale(s => Math.max(0.5, s - 0.1))}
+                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                          <span className="text-sm font-bold">−</span>
+                        </button>
+                        <span className="text-sm text-gray-600 px-2 min-w-[3rem] text-center">
+                          {Math.round(pageScale * 100)}%
+                        </span>
+                        <button 
+                          onClick={() => setPageScale(s => Math.min(2.0, s + 0.1))}
+                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                          <span className="text-sm font-bold">+</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   
@@ -459,21 +489,6 @@ const AWSTextractBankParser: React.FC = () => {
                     </Document>
                   </div>
                   
-                  <div className="flex items-center justify-center mt-4 space-x-4">
-                    <button 
-                      onClick={() => setPageScale(s => Math.max(0.5, s - 0.1))}
-                      className="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                    >
-                      Zoom Out
-                    </button>
-                    <span className="text-sm text-gray-600">{Math.round(pageScale * 100)}%</span>
-                    <button 
-                      onClick={() => setPageScale(s => Math.min(2.0, s + 0.1))}
-                      className="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
-                    >
-                      Zoom In
-                    </button>
-                  </div>
                 </div>
               </div>
               
@@ -482,7 +497,7 @@ const AWSTextractBankParser: React.FC = () => {
                 <div className="bg-gradient-to-br from-[#00C7BE]/5 to-[#086C67]/5 rounded-2xl p-6 border">
                   <h3 className="text-xl font-bold text-gray-900 mb-4">Ready to Extract</h3>
                   <p className="text-gray-600 mb-6">
-                    AWS Textract will analyze your document and extract all table data automatically. This process typically takes 30-60 seconds.
+                    Our AI will analyze your document and extract all table data automatically. This process typically takes 30-60 seconds.
                   </p>
                   
                   <div className="space-y-4">
@@ -514,7 +529,7 @@ const AWSTextractBankParser: React.FC = () => {
                       ) : (
                         <span className="flex items-center justify-center">
                           <Table className="w-5 h-5 mr-2" />
-                          Extract Data with AWS Textract
+                          Extract Data with AI
                         </span>
                       )}
                     </button>
@@ -584,9 +599,9 @@ const AWSTextractBankParser: React.FC = () => {
               <div className="flex space-x-3">
                 <button
                   onClick={() => setCurrentStep(5)}
-                  className="px-6 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                  className="px-8 py-4 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-xl hover:from-[#00B4AB] hover:to-[#074E4A] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
                 >
-                  Proceed to Export
+                  🚀 Proceed to Export
                 </button>
               </div>
             </div>
@@ -708,7 +723,7 @@ const AWSTextractBankParser: React.FC = () => {
                 <button
                   onClick={() => exportData('csv')}
                   disabled={isLoading}
-                  className="flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
                 >
                   <FileDown className="w-5 h-5 mr-2" />
                   CSV Format
@@ -716,7 +731,7 @@ const AWSTextractBankParser: React.FC = () => {
                 <button
                   onClick={() => exportData('xlsx')}
                   disabled={isLoading}
-                  className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
                 >
                   <FileDown className="w-5 h-5 mr-2" />
                   Excel Format
@@ -724,23 +739,15 @@ const AWSTextractBankParser: React.FC = () => {
                 <button
                   onClick={() => exportData('json')}
                   disabled={isLoading}
-                  className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
                 >
                   <FileDown className="w-5 h-5 mr-2" />
                   JSON Format
                 </button>
                 <button
-                  onClick={() => exportData('xml')}
-                  disabled={isLoading}
-                  className="flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
-                >
-                  <FileDown className="w-5 h-5 mr-2" />
-                  XML Format
-                </button>
-                <button
                   onClick={() => exportData('txt')}
                   disabled={isLoading}
-                  className="flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                  className="flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
                 >
                   <FileDown className="w-5 h-5 mr-2" />
                   Text Format
