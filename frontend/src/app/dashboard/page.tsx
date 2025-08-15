@@ -31,27 +31,19 @@ const features: Feature[] = [
     isActive: true
   },
   {
-    id: 'bank-statement-parser',
-    title: 'Bank Statement Parser',
-    description: 'Extract structured data from bank statements, invoices, and tabular documents. Select entire columns and export to Excel or CSV.',
-    icon: '🏦',
-    href: '/dashboard/bank-statement-parser',
-    isActive: true
-  },
-  {
-    id: 'user-controlled-parser',
-    title: 'User-Controlled Parser',
-    description: 'Take full control! Manually select headers and adjust column boundaries for perfect extraction. Visual boundary adjustment interface.',
-    icon: '🎯',
-    href: '/dashboard/user-controlled-parser',
-    isActive: true
-  },
-  {
     id: 'ai-parser',
     title: 'AI Bank Parser',
     description: 'Advanced AI-powered table extraction technology. Automatically detect and extract all table data with intelligent algorithms.',
     icon: '🤖',
     href: '/dashboard/bank-statement-aws-textract',
+    isActive: true
+  },
+  {
+    id: 'form-data-parser',
+    title: 'Form Data Parser',
+    description: 'AI-powered key-value extraction from PDF forms. Automatically detect and extract all form fields and their values.',
+    icon: '📋',
+    href: '/dashboard/form-data-parser',
     isActive: true
   },
   // Future features can be added here
@@ -117,9 +109,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFEFC]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       {/* Header */}
-      <header className="bg-[#FFFEFC] py-4 px-4 md:px-16 border-b border-[#0D0D0C]/10">
+      <header className="bg-white/80 backdrop-blur-sm py-4 px-4 md:px-16 border-b border-gray-200">
         <div className="max-w-[1312px] mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
@@ -132,18 +124,18 @@ export default function DashboardPage() {
           </Link>
           <div className="flex items-center space-x-6">
             <div className="hidden md:flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#00C7BE] rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm">
                   {user?.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-medium">
+              <span className="text-[#086C67] text-[14px] leading-[21px] font-['Hind'] font-medium">
                 {user?.name}
               </span>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-[#0D0D0C] font-medium text-sm bg-transparent border border-[#0D0D0C]/20 rounded-lg hover:bg-[#F9FEFE] transition-colors"
+              className="px-6 py-2 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
             >
               Logout
             </button>
@@ -154,11 +146,11 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-[1312px] mx-auto px-4 md:px-16 py-12">
         {/* Welcome Section */}
-        <div className="mb-12">
-          <h1 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Urbanist'] font-normal tracking-[-0.48px] mb-4">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-4">
             Welcome back, {user?.name}!
           </h1>
-          <p className="text-[#0D0D0C] text-[20px] leading-[30px] font-['Hind'] font-normal">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Choose from our powerful tools to streamline your document processing workflow.
           </p>
         </div>
@@ -169,47 +161,45 @@ export default function DashboardPage() {
             <div key={feature.id} className="relative">
               {feature.isActive ? (
                 <Link href={feature.href}>
-                  <div className="bg-white rounded-2xl shadow-lg border border-[#0D0D0C]/10 p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
-                    <div className="flex items-center mb-4">
-                      <div className="w-12 h-12 bg-[#00C7BE] rounded-xl flex items-center justify-center text-2xl mr-4">
-                        {feature.icon}
+                  <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 hover:shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer">
+                    <div className="text-center mb-6">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mb-4">
+                        <span className="text-2xl">{feature.icon}</span>
                       </div>
-                      <div>
-                        <h3 className="text-[#0D0D0C] text-[20px] leading-[24px] font-['Urbanist'] font-medium">
-                          {feature.title}
-                        </h3>
-                        <div className="w-8 h-1 bg-[#00C7BE] rounded-full mt-2"></div>
-                      </div>
+                      <h3 className="text-2xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-2">
+                        {feature.title}
+                      </h3>
                     </div>
-                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal mb-6">
+                    <p className="text-gray-600 text-center mb-6">
                       {feature.description}
                     </p>
-                    <div className="flex items-center text-[#00C7BE] font-medium text-sm">
-                      <span>Get Started</span>
-                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                    <div className="text-center">
+                      <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                        <span>Get Started</span>
+                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </Link>
               ) : (
-                <div className="bg-white rounded-2xl shadow-lg border border-[#0D0D0C]/10 p-8 opacity-60 cursor-not-allowed">
-                  <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-[#0D0D0C]/20 rounded-xl flex items-center justify-center text-2xl mr-4">
-                      {feature.icon}
+                <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 opacity-60 cursor-not-allowed">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-200 rounded-full mb-4">
+                      <span className="text-2xl">{feature.icon}</span>
                     </div>
-                    <div>
-                      <h3 className="text-[#0D0D0C] text-[20px] leading-[24px] font-['Urbanist'] font-medium">
-                        {feature.title}
-                      </h3>
-                      <div className="w-8 h-1 bg-[#0D0D0C]/20 rounded-full mt-2"></div>
-                    </div>
+                    <h3 className="text-2xl font-bold text-gray-500 mb-2">
+                      {feature.title}
+                    </h3>
                   </div>
-                  <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal mb-6">
+                  <p className="text-gray-500 text-center mb-6">
                     {feature.description}
                   </p>
-                  <div className="flex items-center text-[#0D0D0C]/40 font-medium text-sm">
-                    <span>Coming Soon</span>
+                  <div className="text-center">
+                    <div className="inline-flex items-center px-6 py-3 bg-gray-300 text-gray-500 rounded-full font-semibold">
+                      <span>Coming Soon</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -218,55 +208,55 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Section */}
-        <div className="mt-16 bg-gradient-to-r from-[#F9FEFE] to-[#EDEDED] rounded-2xl p-8">
+        <div className="mt-16 bg-gradient-to-br from-[#00C7BE]/5 to-[#086C67]/5 rounded-3xl p-8 border border-gray-100">
           <div className="text-center mb-8">
-            <h2 className="text-[#0D0D0C] text-[32px] leading-[38.4px] font-['Urbanist'] font-normal mb-4">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-4">
               Your Account Overview
             </h2>
-            <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+            <p className="text-gray-600">
               Track your usage and account details
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 text-center">
-              <div className="w-12 h-12 bg-[#00C7BE] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-2">
-                4
+              <h3 className="text-3xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-2">
+                3
               </h3>
-              <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
+              <p className="text-gray-600 font-medium">
                 Active Features
               </p>
             </div>
             
-            <div className="bg-white rounded-xl p-6 text-center">
-              <div className="w-12 h-12 bg-[#086C67] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#086C67] to-[#00C7BE] rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h3 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-2">
+              <h3 className="text-3xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-2">
                 Free
               </h3>
-              <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
+              <p className="text-gray-600 font-medium">
                 Current Plan
               </p>
             </div>
             
-            <div className="bg-white rounded-xl p-6 text-center">
-              <div className="w-12 h-12 bg-[#00C7BE] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-2">
+              <h3 className="text-3xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-2">
                 {new Date(user?.created_at || '').toLocaleDateString()}
               </h3>
-              <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
+              <p className="text-gray-600 font-medium">
                 Member Since
               </p>
             </div>

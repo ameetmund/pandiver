@@ -716,3 +716,433 @@ async def cleanup_old_jobs():
         'message': f'Cleaned up {len(jobs_to_remove)} old jobs',
         'removed_jobs': len(jobs_to_remove)
     }
+
+# Form Data Parser Endpoints (AnalyzeDocument - Forms)
+
+@router.post("/start-forms-analysis", response_model=TextractJobResponse)
+async def start_forms_analysis(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...)
+):
+    """Start asynchronous AWS Textract forms analysis for key-value extraction"""
+    
+    if file.content_type != 'application/pdf':
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+    
+    # Generate unique job ID
+    job_id = str(uuid.uuid4())
+    
+    try:
+        # Read file content
+        file_content = await file.read()
+        
+        # Get S3 bucket name from environment (create bucket if needed)
+        s3_bucket = os.getenv('AWS_S3_BUCKET', 'pandiver-textract-documents')
+        s3_key = f"forms/{job_id}/{file.filename}"
+        
+        # Upload to S3 for async processing
+        s3_client = get_s3_client()
+        
+        try:
+            s3_client.head_bucket(Bucket=s3_bucket)
+        except:
+            # Create bucket if it doesn't exist
+            s3_client.create_bucket(
+                Bucket=s3_bucket,
+                CreateBucketConfiguration={'LocationConstraint': os.getenv('AWS_REGION', 'ap-south-1')}
+            )
+        
+        s3_client.put_object(
+            Bucket=s3_bucket,
+            Key=s3_key,
+            Body=file_content,
+            ContentType=file.content_type
+        )
+        
+        # Start Textract async forms analysis
+        textract_client = get_textract_client()
+        
+        response = textract_client.start_document_analysis(
+            DocumentLocation={
+                'S3Object': {
+                    'Bucket': s3_bucket,
+                    'Name': s3_key
+                }
+            },
+            FeatureTypes=['FORMS'],
+            JobTag=f"pandiver-forms-{job_id}"
+        )
+        
+        # Store job information
+        textract_jobs[job_id] = {
+            'textract_job_id': response['JobId'],
+            'status': 'IN_PROGRESS',
+            's3_bucket': s3_bucket,
+            's3_key': s3_key,
+            'original_filename': file.filename,
+            'started_at': datetime.now().isoformat(),
+            'forms_data': None,
+            'error': None,
+            'job_type': 'forms'
+        }
+        
+        return TextractJobResponse(
+            job_id=job_id,
+            status='IN_PROGRESS',
+            message='Textract forms analysis started successfully'
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start Textract forms analysis: {str(e)}")
+
+@router.get("/process-forms-results/{job_id}")
+async def process_forms_results(job_id: str):
+    """Process and extract key-value pairs from completed Textract forms analysis"""
+    
+    if job_id not in textract_jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    job_info = textract_jobs[job_id]
+    
+    if job_info['status'] != 'SUCCEEDED':
+        raise HTTPException(status_code=400, detail=f"Job status is {job_info['status']}, cannot process results")
+    
+    try:
+        textract_client = get_textract_client()
+        
+        # Get all pages of results
+        all_blocks = []
+        next_token = None
+        
+        while True:
+            if next_token:
+                response = textract_client.get_document_analysis(
+                    JobId=job_info['textract_job_id'],
+                    NextToken=next_token
+                )
+            else:
+                response = textract_client.get_document_analysis(
+                    JobId=job_info['textract_job_id']
+                )
+            
+            all_blocks.extend(response['Blocks'])
+            
+            next_token = response.get('NextToken')
+            if not next_token:
+                break
+        
+        # Extract key-value pairs from blocks
+        print(f"Processing {len(all_blocks)} blocks for forms analysis...")
+        forms_data = extract_key_value_pairs_from_blocks(all_blocks)
+        
+        # Store extracted forms data
+        job_info['forms_data'] = forms_data
+        
+        return {
+            'success': True,
+            'forms_data': forms_data,
+            'total_pages': len(forms_data)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process forms results: {str(e)}")
+
+def extract_key_value_pairs_from_blocks(blocks):
+    """Extract key-value pairs from Textract blocks"""
+    
+    try:
+        # Create a mapping of block IDs to blocks
+        block_map = {block['Id']: block for block in blocks}
+        
+        # Find all key-value sets
+        key_value_sets = [block for block in blocks if block.get('BlockType') == 'KEY_VALUE_SET']
+        print(f"Found {len(key_value_sets)} key-value sets")
+        
+        # Group by page
+        pages_data = {}
+        
+        for kvs_block in key_value_sets:
+            page_number = kvs_block.get('Page', 1)
+            
+            if page_number not in pages_data:
+                pages_data[page_number] = {'keys': [], 'values': []}
+            
+            # Check if this is a KEY or VALUE
+            entity_types = []
+            for entity in kvs_block.get('EntityTypes', []):
+                if isinstance(entity, dict):
+                    entity_types.append(entity.get('Type', ''))
+                elif isinstance(entity, str):
+                    entity_types.append(entity)
+                else:
+                    entity_types.append(str(entity))
+            
+            if 'KEY' in entity_types:
+                key_text = extract_text_from_kvs_block(kvs_block, block_map)
+                if key_text:
+                    pages_data[page_number]['keys'].append({
+                        'id': kvs_block['Id'],
+                        'text': key_text,
+                        'relationships': kvs_block.get('Relationships', [])
+                    })
+            elif 'VALUE' in entity_types:
+                value_text = extract_text_from_kvs_block(kvs_block, block_map)
+                pages_data[page_number]['values'].append({
+                    'id': kvs_block['Id'],
+                    'text': value_text,
+                    'relationships': kvs_block.get('Relationships', [])
+                })
+        
+        # Match keys with their corresponding values
+        result = []
+        
+        for page_num in sorted(pages_data.keys()):
+            page_data = pages_data[page_num]
+            print(f"Page {page_num}: Found {len(page_data['keys'])} keys and {len(page_data['values'])} values")
+            key_value_pairs = match_keys_with_values(page_data['keys'], page_data['values'])
+            
+            # Always add page data, even if no key-value pairs found
+            headers = [pair['key'] for pair in key_value_pairs if pair.get('key', '').strip()]
+            values = [pair['value'] for pair in key_value_pairs if pair.get('key', '').strip()]
+            
+            page_result = {
+                'page_number': page_num - 1,  # Convert to 0-based
+                'headers': headers,
+                'data': [values] if values else [],  # Single row of data
+                'key_value_pairs': key_value_pairs
+            }
+            result.append(page_result)
+            print(f"Page {page_num} result: {len(headers)} headers, {len(key_value_pairs)} pairs")
+        
+        print(f"Final result: {len(result)} pages")
+        return result
+        
+    except Exception as e:
+        print(f"Error in extract_key_value_pairs_from_blocks: {str(e)}")
+        # Return empty result instead of failing
+        return []
+
+def extract_text_from_kvs_block(kvs_block, block_map):
+    """Extract text content from a key-value set block"""
+    
+    if 'Relationships' not in kvs_block:
+        return ''
+    
+    text_parts = []
+    
+    for relationship in kvs_block['Relationships']:
+        if relationship['Type'] == 'CHILD':
+            for child_id in relationship['Ids']:
+                if child_id in block_map:
+                    child_block = block_map[child_id]
+                    if child_block['BlockType'] == 'WORD':
+                        text_parts.append(child_block.get('Text', ''))
+    
+    return ' '.join(text_parts).strip()
+
+def match_keys_with_values(keys, values):
+    """Match keys with their corresponding values based on relationships"""
+    
+    key_value_pairs = []
+    
+    for key in keys:
+        # Find the corresponding value for this key
+        corresponding_value = ''
+        
+        # Look for VALUE relationships in the key
+        for relationship in key.get('relationships', []):
+            if relationship.get('Type') == 'VALUE':
+                value_ids = relationship.get('Ids', [])
+                for value_id in value_ids:
+                    # Find the value with this ID
+                    for value in values:
+                        if value['id'] == value_id:
+                            corresponding_value = value['text']
+                            break
+                    if corresponding_value:  # Break outer loop if value found
+                        break
+                break
+        
+        key_value_pairs.append({
+            'key': key['text'],
+            'value': corresponding_value
+        })
+    
+    return key_value_pairs
+
+@router.post("/export-forms/{format}")
+async def export_forms_data(format: str, data: dict):
+    """Export forms data in various formats"""
+    
+    supported_formats = ['csv', 'xlsx', 'json', 'txt']
+    if format not in supported_formats:
+        raise HTTPException(status_code=400, detail=f"Unsupported format. Supported: {supported_formats}")
+    
+    forms_data = data.get('forms_data', [])
+    
+    if not forms_data:
+        raise HTTPException(status_code=400, detail="No forms data provided for export")
+    
+    try:
+        if len(forms_data) > 1:
+            # Multiple pages - create separate files in ZIP
+            return export_multiple_forms_pages(format, forms_data)
+        else:
+            # Single page
+            page_data = forms_data[0]
+            headers = page_data.get('headers', [])
+            rows = page_data.get('data', [])
+            
+            if format == 'csv':
+                return export_csv(headers, rows)
+            elif format == 'xlsx':
+                return export_excel(headers, rows)
+            elif format == 'json':
+                return export_forms_json(forms_data)
+            elif format == 'txt':
+                return export_forms_txt(forms_data)
+                
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to export {format}: {str(e)}")
+
+def export_multiple_forms_pages(format: str, forms_data: List[Dict]):
+    """Export multiple form pages as a zip file containing separate files for each page"""
+    import zipfile
+    
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for page_data in forms_data:
+            page_number = page_data.get('page_number', 0) + 1  # Convert to 1-based
+            headers = page_data.get('headers', [])
+            rows = page_data.get('data', [])
+            
+            if not headers:
+                continue
+                
+            filename = f"forms_page_{page_number}"
+            
+            if format == 'csv':
+                content = generate_csv_content(headers, rows)
+                zip_file.writestr(f"{filename}.csv", content)
+            elif format == 'xlsx':
+                content = generate_excel_content(headers, rows)
+                zip_file.writestr(f"{filename}.xlsx", content)
+            elif format == 'json':
+                content = generate_forms_json_content(page_data)
+                zip_file.writestr(f"{filename}.json", content)
+            elif format == 'txt':
+                content = generate_forms_txt_content(page_data)
+                zip_file.writestr(f"{filename}.txt", content)
+    
+    zip_buffer.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(zip_buffer.getvalue()),
+        media_type='application/zip',
+        headers={'Content-Disposition': f'attachment; filename=form-data-pages.zip'}
+    )
+
+def generate_forms_json_content(page_data):
+    """Generate JSON content for forms data"""
+    data = {
+        'page_number': page_data.get('page_number', 0) + 1,
+        'headers': page_data.get('headers', []),
+        'data': page_data.get('data', []),
+        'key_value_pairs': page_data.get('key_value_pairs', []),
+        'metadata': {
+            'export_date': datetime.now().isoformat(),
+            'export_type': 'aws_textract_forms'
+        }
+    }
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+def generate_forms_txt_content(page_data):
+    """Generate TXT content for forms data"""
+    output = io.StringIO()
+    
+    page_number = page_data.get('page_number', 0) + 1
+    headers = page_data.get('headers', [])
+    rows = page_data.get('data', [])
+    
+    output.write(f'Form Data - Page {page_number}\n')
+    output.write('=' * 50 + '\n\n')
+    
+    if headers and rows:
+        # Headers
+        output.write(' | '.join(headers) + '\n')
+        output.write('-' * (len(' | '.join(headers))) + '\n')
+        
+        # Rows
+        for row in rows:
+            output.write(' | '.join(str(cell) for cell in row) + '\n')
+    
+    # Also include key-value pairs
+    key_value_pairs = page_data.get('key_value_pairs', [])
+    if key_value_pairs:
+        output.write('\n\nKey-Value Pairs:\n')
+        output.write('-' * 20 + '\n')
+        for pair in key_value_pairs:
+            output.write(f"{pair.get('key', '')}: {pair.get('value', '')}\n")
+    
+    return output.getvalue()
+
+def export_forms_json(forms_data):
+    """Export forms data as JSON"""
+    export_data = {
+        'forms_data': forms_data,
+        'metadata': {
+            'total_pages': len(forms_data),
+            'export_date': datetime.now().isoformat(),
+            'export_type': 'aws_textract_forms'
+        }
+    }
+    
+    json_str = json.dumps(export_data, indent=2, ensure_ascii=False)
+    
+    return StreamingResponse(
+        io.BytesIO(json_str.encode('utf-8')),
+        media_type='application/json',
+        headers={'Content-Disposition': 'attachment; filename=form-data.json'}
+    )
+
+def export_forms_txt(forms_data):
+    """Export forms data as text file"""
+    output = io.StringIO()
+    
+    # Header
+    output.write('Form Data Extraction - AWS Textract\n')
+    output.write('=' * 50 + '\n\n')
+    
+    # Process each page
+    for page_data in forms_data:
+        page_number = page_data.get('page_number', 0) + 1
+        headers = page_data.get('headers', [])
+        rows = page_data.get('data', [])
+        key_value_pairs = page_data.get('key_value_pairs', [])
+        
+        output.write(f'Page {page_number}\n')
+        output.write('-' * 20 + '\n')
+        
+        if headers and rows:
+            # Table format
+            output.write(' | '.join(headers) + '\n')
+            output.write('-' * (len(' | '.join(headers))) + '\n')
+            for row in rows:
+                output.write(' | '.join(str(cell) for cell in row) + '\n')
+        
+        # Key-value pairs
+        if key_value_pairs:
+            output.write('\nKey-Value Pairs:\n')
+            for pair in key_value_pairs:
+                output.write(f"{pair.get('key', '')}: {pair.get('value', '')}\n")
+        
+        output.write('\n')
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        media_type='text/plain',
+        headers={'Content-Disposition': 'attachment; filename=form-data.txt'}
+    )
