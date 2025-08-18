@@ -48,36 +48,32 @@ export default function Home() {
                   <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                     <div className="py-2">
                       <Link
-                        href="/dashboard/smart-pdf-parser"
+                        href="/dashboard/bank-statement-aws-textract"
                         className="block px-4 py-3 text-[#0D0D0C] hover:bg-[#F9FEFE] hover:text-[#00C7BE] transition-colors"
                         onClick={() => setIsProductDropdownOpen(false)}
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-[#00C7BE] rounded-lg flex items-center justify-center">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+                          <div className="w-8 h-8 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg flex items-center justify-center">
+                            <span className="text-lg">🤖</span>
                           </div>
                           <div>
-                            <div className="font-medium text-sm">Smart PDF Parser</div>
-                            <div className="text-xs text-gray-500">Extract and organize PDF data</div>
+                            <div className="font-medium text-sm">AI Bank Parser</div>
+                            <div className="text-xs text-gray-500">Advanced AI-powered table extraction</div>
                           </div>
                         </div>
                       </Link>
                       <Link
-                        href="/dashboard/bank-statement-parser"
+                        href="/dashboard/form-data-parser"
                         className="block px-4 py-3 text-[#0D0D0C] hover:bg-[#F9FEFE] hover:text-[#00C7BE] transition-colors"
                         onClick={() => setIsProductDropdownOpen(false)}
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-[#00C7BE] rounded-lg flex items-center justify-center">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
+                          <div className="w-8 h-8 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg flex items-center justify-center">
+                            <span className="text-lg">📋</span>
                           </div>
                           <div>
-                            <div className="font-medium text-sm">Bank Statement Parser</div>
-                            <div className="text-xs text-gray-500">Extract tabular data from statements</div>
+                            <div className="font-medium text-sm">Form Data Parser</div>
+                            <div className="text-xs text-gray-500">AI-powered key-value extraction</div>
                           </div>
                         </div>
                       </Link>
@@ -85,12 +81,9 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <a href="#" className="text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
-                TEMPLATES
-              </a>
-              <a href="#" className="text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
+              <Link href="/pricing" className="text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
                 PRICING
-              </a>
+              </Link>
             </div>
             
             {/* Desktop Auth Buttons */}
@@ -158,7 +151,7 @@ export default function Home() {
                   {isProductDropdownOpen && (
                     <div className="mt-2 pl-4">
                       <Link
-                        href="/dashboard/smart-pdf-parser"
+                        href="/dashboard/bank-statement-aws-textract"
                         className="block py-2 text-[#0D0D0C] hover:text-[#00C7BE] transition-colors"
                         onClick={() => {
                           setIsProductDropdownOpen(false);
@@ -166,19 +159,17 @@ export default function Home() {
                         }}
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-6 h-6 bg-[#00C7BE] rounded flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+                          <div className="w-6 h-6 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded flex items-center justify-center">
+                            <span className="text-sm">🤖</span>
                           </div>
                           <div>
-                            <div className="font-medium text-sm">Smart PDF Parser</div>
-                            <div className="text-xs text-gray-500">Extract and organize PDF data</div>
+                            <div className="font-medium text-sm">AI Bank Parser</div>
+                            <div className="text-xs text-gray-500">Advanced AI-powered table extraction</div>
                           </div>
                         </div>
                       </Link>
                       <Link
-                        href="/dashboard/bank-statement-parser"
+                        href="/dashboard/form-data-parser"
                         className="block py-2 text-[#0D0D0C] hover:text-[#00C7BE] transition-colors"
                         onClick={() => {
                           setIsProductDropdownOpen(false);
@@ -186,26 +177,21 @@ export default function Home() {
                         }}
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-6 h-6 bg-[#00C7BE] rounded flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
+                          <div className="w-6 h-6 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded flex items-center justify-center">
+                            <span className="text-sm">📋</span>
                           </div>
                           <div>
-                            <div className="font-medium text-sm">Bank Statement Parser</div>
-                            <div className="text-xs text-gray-500">Extract tabular data from statements</div>
+                            <div className="font-medium text-sm">Form Data Parser</div>
+                            <div className="text-xs text-gray-500">AI-powered key-value extraction</div>
                           </div>
                         </div>
                       </Link>
                     </div>
                   )}
                 </div>
-                <a href="#" className="text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
-                  TEMPLATES
-                </a>
-                <a href="#" className="text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
+                <Link href="/pricing" className="text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
                   PRICING
-                </a>
+                </Link>
                 <div className="flex flex-col space-y-3 pt-4">
                   <Link href="/auth/login">
                     <button className="w-full px-5 py-2 text-[#0D0C05] font-bold text-base bg-transparent border border-[#086C67] rounded-[20px] hover:bg-[#086C67] hover:text-white transition-colors">
@@ -241,37 +227,94 @@ export default function Home() {
       )}
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-[#BAF9F6] to-[#086C67] py-28 px-4 md:px-16">
-        <div className="max-w-[1312px] mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-8">
+      <section className="bg-gradient-to-br from-[#BAF9F6] to-[#086C67] py-20 px-4 md:px-16 min-h-[90vh] flex items-center">
+        <div className="max-w-[1312px] mx-auto w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-10">
+              {/* Badge */}
+              <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                <span className="text-[#0D0D0C] text-sm font-semibold">AI-Powered Document Processing</span>
+              </div>
+              
+              {/* Main Headline */}
               <div className="space-y-6">
-                <h1 className="text-[#0D0D0C] text-[56px] leading-[67.2px] font-['Urbanist'] font-normal tracking-[-0.56px]">
-                  Transform Your Workflow with Our Innovative SaaS
+                <h1 className="text-[#0D0D0C] text-[64px] lg:text-[72px] leading-[1.1] font-['Poppins',sans-serif] font-bold tracking-[-0.02em]">
+                  Stop copy-pasting.
+                  <span className="block bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent">
+                    Extract PDF data
+                  </span>
+                  <span className="block">in minutes</span>
                 </h1>
-                <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
-                  Experience seamless integration and unparalleled efficiency with our cutting-edge software solution. Join countless satisfied users who have streamlined their processes and boosted productivity.
+                <p className="text-[#0D0D0C] text-[20px] leading-[30px] font-['Poppins',sans-serif] font-normal max-w-[600px]">
+                  Transform complex PDF documents into structured, analysis-ready data <span className="font-semibold">10× faster</span> by automatically detecting headers, stitching multi-page tables, and exporting to Excel(XLSX), CSV, JSON and TXT
                 </p>
               </div>
-              <div className="flex items-center space-x-4">
-                <button className="px-6 py-[10px] text-[#0D0D0C] font-medium text-base bg-transparent rounded-[20px] hover:bg-[#086C67] hover:text-white transition-colors" style={{
-                  border: '1px solid transparent',
-                  backgroundImage: 'linear-gradient(to bottom, transparent, transparent), linear-gradient(to bottom, #BAF9F6, #086C67)',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box'
-                }}>
-                  TRY NOW
-                </button>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <Link href="/auth/signup">
+                  <button className="px-8 py-4 text-white font-bold text-lg bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1">
+                    Start free
+                  </button>
+                </Link>
+                <Link href="/dashboard/bank-statement-aws-textract">
+                  <button className="flex items-center space-x-2 px-6 py-4 text-[#0D0D0C] font-semibold text-lg bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all duration-300 hover:shadow-lg">
+                    <span>Try with your PDF</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
+                </Link>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="flex items-center space-x-8 pt-6">
+                <div className="text-center">
+                  <div className="text-[#0D0D0C] text-2xl font-bold">5000+</div>
+                  <div className="text-[#0D0D0C]/70 text-sm">Documents Processed</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[#0D0D0C] text-2xl font-bold">99.9%</div>
+                  <div className="text-[#0D0D0C]/70 text-sm">Accuracy Rate</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[#0D0D0C] text-2xl font-bold">10x</div>
+                  <div className="text-[#0D0D0C]/70 text-sm">Faster Processing</div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-center">
-              <Image
-                src="/images/hero-image.png"
-                alt="Hero Image"
-                width={600}
-                height={600}
-                className="w-full h-auto max-w-[600px]"
-              />
+
+            {/* Hero Image */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-[650px] lg:max-w-[750px]">
+                {/* Floating Cards Animation */}
+                <div className="absolute -top-6 -left-6 w-64 h-40 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4 transform rotate-[-5deg] hover:rotate-[-2deg] transition-transform duration-300 z-20">
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded"></div>
+                    <div className="h-2 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                    <div className="mt-3 text-xs text-[#086C67] font-semibold">Bank Statement ✓</div>
+                  </div>
+                </div>
+                
+                <div className="absolute -bottom-6 -right-6 w-64 h-40 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4 transform rotate-[8deg] hover:rotate-[4deg] transition-transform duration-300 z-20">
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gradient-to-r from-[#086C67] to-[#00C7BE] rounded"></div>
+                    <div className="h-2 bg-gray-200 rounded w-4/5"></div>
+                    <div className="h-2 bg-gray-200 rounded w-2/3"></div>
+                    <div className="mt-3 text-xs text-[#086C67] font-semibold">Form Data ✓</div>
+                  </div>
+                </div>
+
+                <Image
+                  src="/images/hero-image.png"
+                  alt="AI Document Processing"
+                  width={800}
+                  height={800}
+                  className="w-full h-auto relative z-10 drop-shadow-2xl object-contain"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -283,15 +326,15 @@ export default function Home() {
           <div className="space-y-20">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">
+                <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">
                   Innovative
                 </span>
               </div>
               <div className="space-y-6">
-                <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Urbanist'] font-normal tracking-[-0.48px] max-w-none mx-auto">
+                <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.48px] max-w-none mx-auto">
                   Transform Your Workflow with Our Solutions
                 </h2>
-                <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal max-w-none mx-auto">
+                <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal max-w-none mx-auto">
                   Our SaaS product streamlines your processes, enhancing productivity and collaboration. Experience seamless integration and user-friendly design.
                 </p>
               </div>
@@ -308,10 +351,10 @@ export default function Home() {
                     className="w-full h-full"
                   />
                 </div>
-                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Urbanist'] font-normal tracking-[-0.32px]">
+                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px]">
                   Real-Time Collaboration Made Effortless
                 </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                   Work together in real-time, no matter where you are.
                 </p>
               </div>
@@ -326,10 +369,10 @@ export default function Home() {
                     className="w-full h-full"
                   />
                 </div>
-                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Urbanist'] font-normal tracking-[-0.32px]">
+                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px]">
                   Advanced Analytics for Informed Decisions
                 </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                   Leverage data insights to drive your strategy.
                 </p>
               </div>
@@ -344,10 +387,10 @@ export default function Home() {
                     className="w-full h-full"
                   />
                 </div>
-                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Urbanist'] font-normal tracking-[-0.32px]">
+                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px]">
                   Customizable Features to Fit Your Needs
                 </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                   Tailor our tools to match your unique requirements.
                 </p>
               </div>
@@ -378,15 +421,15 @@ export default function Home() {
             <div className="space-y-8">
               <div className="space-y-4">
                 <div className="flex">
-                  <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">
+                  <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">
                     Empower
                   </span>
                 </div>
                 <div className="space-y-6">
-                  <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Urbanist'] font-normal tracking-[-0.48px]">
+                  <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
                     Unlock Your Potential with Our SaaS Solution
                   </h2>
-                  <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
+                  <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
                     Experience seamless integration and unparalleled efficiency. Our platform is designed to streamline your workflow and enhance productivity.
                   </p>
                 </div>
@@ -404,10 +447,10 @@ export default function Home() {
                         className="w-full h-full"
                       />
                     </div>
-                    <h3 className="text-[#0D0D0C] text-[20px] leading-[28px] font-['Urbanist'] font-normal tracking-[-0.2px]">
+                    <h3 className="text-[#0D0D0C] text-[20px] leading-[28px] font-['Poppins',sans-serif] font-normal tracking-[-0.2px]">
                       Boost Efficiency
                     </h3>
-                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                       Automate tasks and save time with our intuitive tools and features.
                     </p>
                   </div>
@@ -422,10 +465,10 @@ export default function Home() {
                         className="w-full h-full"
                       />
                     </div>
-                    <h3 className="text-[#0D0D0C] text-[20px] leading-[28px] font-['Urbanist'] font-normal tracking-[-0.2px]">
+                    <h3 className="text-[#0D0D0C] text-[20px] leading-[28px] font-['Poppins',sans-serif] font-normal tracking-[-0.2px]">
                       Enhance Collaboration
                     </h3>
-                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                       Work together effortlessly with real-time updates and shared resources.
                     </p>
                   </div>
@@ -477,10 +520,10 @@ export default function Home() {
             
             <div className="space-y-8">
               <div className="space-y-6">
-                <h2 className="text-[#0D0D0C] text-[40px] leading-[48px] font-['Urbanist'] font-normal tracking-[-0.4px]">
+                <h2 className="text-[#0D0D0C] text-[40px] leading-[48px] font-['Poppins',sans-serif] font-normal tracking-[-0.4px]">
                   Discover how our SaaS product transforms businesses with proven results.
                 </h2>
-                <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
+                <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
                   Join thousands of satisfied users who trust our platform. Experience seamless integration and unparalleled support.
                 </p>
               </div>
@@ -488,19 +531,19 @@ export default function Home() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <h3 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Urbanist'] font-normal tracking-[-0.48px]">
+                    <h3 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
                       95%
                     </h3>
-                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                       Customer satisfaction rate based on recent surveys.
                     </p>
                   </div>
                   
                   <div className="space-y-2">
-                    <h3 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Urbanist'] font-normal tracking-[-0.48px]">
+                    <h3 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
                       99.9%
                     </h3>
-                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                    <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                       Uptime guarantee ensuring reliability and performance.
                     </p>
                   </div>
@@ -517,15 +560,15 @@ export default function Home() {
           <div className="space-y-20">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">
+                <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">
                   Blog
                 </span>
               </div>
               <div className="space-y-6">
-                <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Urbanist'] font-normal tracking-[-0.48px]">
+                <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
                   Explore Our Latest Insights
                 </h2>
-                <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
+                <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
                   Stay updated with PDF editing tips and tricks
                 </p>
               </div>
@@ -542,14 +585,14 @@ export default function Home() {
                 />
                 <div className="p-8 space-y-2">
                   <div className="inline-block">
-                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-semibold bg-gray-100 px-3 py-1 rounded">
+                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-gray-100 px-3 py-1 rounded">
                       Tips
                     </span>
                   </div>
-                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Urbanist'] font-normal tracking-[-0.24px]">
+                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.24px]">
                     Mastering PDF Editing: A Comprehensive Guide
                   </h3>
-                  <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                  <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                     Learn essential techniques to enhance your PDF editing skills today.
                   </p>
                 </div>
@@ -558,11 +601,11 @@ export default function Home() {
                     <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-semibold">Jane Doe</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">11 Jan 2022</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">5 min read</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold">Jane Doe</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">11 Jan 2022</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">5 min read</span>
                       </div>
                     </div>
                   </div>
@@ -573,14 +616,14 @@ export default function Home() {
                 <div className="w-full h-[270px] bg-gray-200 rounded-t-[16px]"></div>
                 <div className="p-8 space-y-2">
                   <div className="inline-block">
-                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-semibold bg-gray-100 px-3 py-1 rounded">
+                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-gray-100 px-3 py-1 rounded">
                       Tutorial
                     </span>
                   </div>
-                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Urbanist'] font-normal tracking-[-0.24px]">
+                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.24px]">
                     How to Convert PDFs Effortlessly
                   </h3>
-                  <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                  <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                     Discover the easiest methods to convert PDFs to various formats.
                   </p>
                 </div>
@@ -589,11 +632,11 @@ export default function Home() {
                     <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-semibold">John Smith</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">15 Feb 2022</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">4 min read</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold">John Smith</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">15 Feb 2022</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">4 min read</span>
                       </div>
                     </div>
                   </div>
@@ -604,14 +647,14 @@ export default function Home() {
                 <div className="w-full h-[270px] bg-gray-200 rounded-t-[16px]"></div>
                 <div className="p-8 space-y-2">
                   <div className="inline-block">
-                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-semibold bg-gray-100 px-3 py-1 rounded">
+                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-gray-100 px-3 py-1 rounded">
                       News
                     </span>
                   </div>
-                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Urbanist'] font-normal tracking-[-0.24px]">
+                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.24px]">
                     Latest Trends in PDF Technology
                   </h3>
-                  <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                  <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                     Stay informed about the newest advancements in PDF technology.
                   </p>
                 </div>
@@ -620,11 +663,11 @@ export default function Home() {
                     <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-semibold">Alice Johnson</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">20 Mar 2022</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">6 min read</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold">Alice Johnson</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">20 Mar 2022</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
+                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">6 min read</span>
                       </div>
                     </div>
                   </div>
@@ -646,10 +689,10 @@ export default function Home() {
         <div className="max-w-[1312px] mx-auto">
           <div className="space-y-20">
             <div className="text-center space-y-6">
-              <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Urbanist'] font-normal tracking-[-0.48px] max-w-[560px] mx-auto">
+              <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px] max-w-[560px] mx-auto">
                 Customer testimonials
               </h2>
-              <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal max-w-[560px] mx-auto">
+              <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal max-w-[560px] mx-auto">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit.
               </p>
             </div>
@@ -668,20 +711,20 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-6">
-                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
                         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare."
                       </p>
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                         <div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Name Surname</div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">Position, Company name</div>
+                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Name Surname</div>
+                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">Position, Company name</div>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="flex justify-center">
-                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">
+                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">
                       <span>Read case study</span>
                       <Image
                         src="/images/chevron-right-icon.svg"
@@ -705,20 +748,20 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-6">
-                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
                         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare."
                       </p>
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                         <div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Name Surname</div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">Position, Company name</div>
+                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Name Surname</div>
+                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">Position, Company name</div>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="flex justify-center">
-                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">
+                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">
                       <span>Read case study</span>
                       <Image
                         src="/images/chevron-right-icon.svg"
@@ -742,20 +785,20 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-6">
-                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
                         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare."
                       </p>
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                         <div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Name Surname</div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">Position, Company name</div>
+                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Name Surname</div>
+                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">Position, Company name</div>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="flex justify-center">
-                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">
+                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">
                       <span>Read case study</span>
                       <Image
                         src="/images/chevron-right-icon.svg"
@@ -808,10 +851,10 @@ export default function Home() {
         <div className="max-w-[1312px] mx-auto">
           <div className="text-center space-y-8">
             <div className="space-y-6">
-              <h2 className="text-[#0D0D0C] text-[40px] leading-[48px] font-['Urbanist'] font-normal tracking-[-0.4px]">
+              <h2 className="text-[#0D0D0C] text-[40px] leading-[48px] font-['Poppins',sans-serif] font-normal tracking-[-0.4px]">
                 Start Your Free Trial Today
               </h2>
-              <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-normal">
+              <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
                 Experience the future of SaaS with no commitment.
               </p>
             </div>
@@ -834,10 +877,10 @@ export default function Home() {
             {/* Newsletter */}
             <div className="flex flex-col md:flex-row justify-between items-start space-y-6 md:space-y-0 md:space-x-6">
               <div className="space-y-2">
-                <h3 className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Hind'] font-semibold">
+                <h3 className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-semibold">
                   Subscribe to updates
                 </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">
+                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
                   Stay informed about our latest news and offers.
                 </p>
               </div>
@@ -847,7 +890,7 @@ export default function Home() {
                     <input
                       type="email"
                       placeholder="Your email here"
-                      className="w-full px-3 py-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal bg-transparent border-none outline-none"
+                      className="w-full px-3 py-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal bg-transparent border-none outline-none"
                     />
                   </div>
                   <button className="px-6 py-2 text-[#FFFFFF] font-medium text-base bg-transparent border border-white/20 rounded-[20px] hover:bg-white/10 transition-colors">
@@ -858,7 +901,7 @@ export default function Home() {
             </div>
             
             <div className="text-center">
-              <p className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Hind'] font-normal">
+              <p className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Poppins',sans-serif] font-normal">
                 By subscribing, you agree to our Privacy Policy.
               </p>
             </div>
@@ -878,57 +921,57 @@ export default function Home() {
               </div>
               
               <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Resources</h4>
+                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Resources</h4>
                 <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Blog Posts</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Help Center</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Contact Us</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">About Us</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Careers</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Blog Posts</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Help Center</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Contact Us</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">About Us</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Careers</a>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Company</h4>
+                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Company</h4>
                 <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Our Team</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Our Values</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Press Releases</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Investor Relations</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Sustainability</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Our Team</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Our Values</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Press Releases</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Investor Relations</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Sustainability</a>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Support</h4>
+                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Support</h4>
                 <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">FAQs</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Documentation</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Community Forum</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Feedback</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Live Chat</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">FAQs</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Documentation</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Community Forum</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Feedback</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Live Chat</a>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Legal</h4>
+                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Legal</h4>
                 <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Privacy Policy</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Terms of Use</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Cookie Policy</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Accessibility</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">User Agreement</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Privacy Policy</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Terms of Use</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Cookie Policy</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Accessibility</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">User Agreement</a>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-semibold">Follow Us</h4>
+                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Follow Us</h4>
                 <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Facebook Page</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Twitter Profile</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">LinkedIn Page</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Instagram Account</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">YouTube Channel</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Facebook Page</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Twitter Profile</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">LinkedIn Page</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Instagram Account</a>
+                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">YouTube Channel</a>
                 </div>
               </div>
             </div>
@@ -938,10 +981,10 @@ export default function Home() {
               <div className="h-px bg-[#0D0D0C]/15"></div>
               <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <div className="flex flex-wrap items-center space-x-6">
-                  <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">© 2025 Relume. All rights reserved.</span>
-                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Privacy Policy</a>
-                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Terms of Service</a>
-                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal hover:text-[#00C7BE] transition-colors">Cookies Settings</a>
+                  <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">© 2025 Relume. All rights reserved.</span>
+                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Privacy Policy</a>
+                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Terms of Service</a>
+                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Cookies Settings</a>
                 </div>
                 <div className="flex items-center space-x-3">
                   <a href="#" className="w-6 h-6 hover:opacity-80 transition-opacity">

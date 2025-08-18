@@ -75,6 +75,11 @@ const FormDataParser: React.FC = () => {
   const [textractJob, setTextractJob] = useState<TextractJob | null>(null);
   const [formsData, setFormsData] = useState<FormPageData[]>([]);
 
+  // Export customization state
+  const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
+  const [selectedFields, setSelectedFields] = useState<Record<number, Set<string>>>({});
+  const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
+
   // Polling for job status
   const [polling, setPolling] = useState<boolean>(false);
 
@@ -172,6 +177,17 @@ const FormDataParser: React.FC = () => {
       
       const result = await response.json();
       setFormsData(result.forms_data);
+      
+      // Initialize selection state - all pages and all fields selected by default
+      const allPages = new Set(result.forms_data.map((_: any, index: number) => index));
+      setSelectedPages(allPages);
+      
+      const allFields: Record<number, Set<string>> = {};
+      result.forms_data.forEach((pageData: FormPageData, pageIndex: number) => {
+        allFields[pageIndex] = new Set(pageData.headers);
+      });
+      setSelectedFields(allFields);
+      
       setCurrentStep(4);
       
     } catch (err: any) {
@@ -185,7 +201,36 @@ const FormDataParser: React.FC = () => {
   const exportData = async (format: 'csv' | 'xlsx' | 'json' | 'txt') => {
     setIsLoading(true);
     try {
-      const requestData = { forms_data: formsData };
+      // Filter data based on selections
+      const filteredFormsData = formsData
+        .map((pageData, pageIndex) => {
+          // Only include selected pages
+          if (!selectedPages.has(pageIndex)) return null;
+          
+          // Only include selected fields
+          const pageSelectedFields = selectedFields[pageIndex] || new Set();
+          if (pageSelectedFields.size === 0) return null;
+          
+          const filteredHeaders = pageData.headers.filter(header => pageSelectedFields.has(header));
+          const filteredKeyValuePairs = pageData.key_value_pairs.filter(pair => pageSelectedFields.has(pair.key));
+          
+          // Filter data rows to match selected headers
+          const filteredData = pageData.data.map(row => 
+            pageData.headers
+              .map((header, headerIndex) => pageSelectedFields.has(header) ? row[headerIndex] : null)
+              .filter((_, headerIndex) => pageSelectedFields.has(pageData.headers[headerIndex]))
+          );
+          
+          return {
+            ...pageData,
+            headers: filteredHeaders,
+            data: filteredData,
+            key_value_pairs: filteredKeyValuePairs
+          };
+        })
+        .filter(pageData => pageData !== null);
+      
+      const requestData = { forms_data: filteredFormsData };
       
       const response = await fetch(`http://localhost:8000/textract/export-forms/${format}`, {
         method: 'POST',
@@ -205,11 +250,12 @@ const FormDataParser: React.FC = () => {
       const a = document.createElement('a');
       a.href = url;
       
-      // Use zip filename when multiple pages
-      if (formsData && formsData.length > 1) {
-        a.download = `form-data-pages.zip`;
+      // Use zip filename when multiple selected pages
+      const selectedPageCount = Array.from(selectedPages).length;
+      if (selectedPageCount > 1) {
+        a.download = `form-data-selected-pages.zip`;
       } else {
-        a.download = `form-data.${format}`;
+        a.download = `form-data-page-${Array.from(selectedPages)[0] + 1}.${format}`;
       }
       
       a.click();
@@ -229,6 +275,9 @@ const FormDataParser: React.FC = () => {
     setError('');
     setTextractJob(null);
     setFormsData([]);
+    setSelectedPages(new Set());
+    setSelectedFields({});
+    setActivePageIndex(null);
     setPolling(false);
     setCurrentPage(1);
     if (fileInputRef.current) {
@@ -549,7 +598,7 @@ const FormDataParser: React.FC = () => {
                   
                   <p className="text-gray-600 mb-6">
                     {textractJob.status === 'IN_PROGRESS' 
-                      ? 'AWS Textract is analyzing your document for form fields and key-value pairs...' 
+                      ? 'Our AI is analyzing your document for form fields and key-value pairs...' 
                       : 'Document analysis completed successfully!'
                     }
                   </p>
@@ -559,10 +608,6 @@ const FormDataParser: React.FC = () => {
                       <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
                     </div>
                   )}
-                  
-                  <div className="text-sm text-gray-500">
-                    Job ID: {textractJob.job_id}
-                  </div>
                 </div>
               </div>
             </div>
@@ -582,7 +627,7 @@ const FormDataParser: React.FC = () => {
                     onClick={() => setCurrentStep(5)}
                     className="px-8 py-4 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-xl hover:from-[#00B4AB] hover:to-[#074E4A] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
                   >
-                    🚀 Proceed to Export
+                    Proceed to Export
                   </button>
                 </div>
               </div>
@@ -662,123 +707,306 @@ const FormDataParser: React.FC = () => {
 
           {/* Step 5: Export */}
           {currentStep === 5 && formsData.length > 0 && (
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-              <div className="text-center mb-8">
+            <div className="bg-white rounded-3xl shadow-xl border border-gray-100">
+              {/* Header */}
+              <div className="text-center p-8 pb-4">
                 <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Form Data Ready for Export</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Customize Your Export</h3>
                 <p className="text-gray-600">
-                  {formsData.length > 1 
-                    ? `${formsData.length} pages of form data have been extracted and are ready to download.`
-                    : 'Your form data has been extracted and is ready to download.'
-                  }
+                  Select pages on the left and their fields on the right. Only selected items will be exported.
                 </p>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl text-center border border-blue-200">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
-                    {formsData.reduce((sum, page) => sum + page.headers.length, 0)}
-                  </div>
-                  <div className="text-blue-800 font-medium">Total Fields</div>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl text-center border border-green-200">
-                  <div className="text-3xl font-bold text-green-600 mb-2">{formsData.length}</div>
-                  <div className="text-green-800 font-medium">Pages</div>
-                </div>
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-2xl text-center border border-purple-200">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">
-                    {formsData.reduce((sum, page) => sum + page.key_value_pairs.length, 0)}
-                  </div>
-                  <div className="text-purple-800 font-medium">Key-Value Pairs</div>
-                </div>
-              </div>
-
-              {/* Export Buttons */}
-              <div className="mb-8">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-                  Download Options {formsData.length > 1 && '(ZIP Archive)'}
-                </h4>
-                <div className="flex flex-wrap justify-center gap-4">
-                  <button
-                    onClick={() => exportData('csv')}
-                    disabled={isLoading}
-                    className="flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
-                  >
-                    <FileDown className="w-5 h-5 mr-2" />
-                    CSV Format
-                  </button>
-                  <button
-                    onClick={() => exportData('xlsx')}
-                    disabled={isLoading}
-                    className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
-                  >
-                    <FileDown className="w-5 h-5 mr-2" />
-                    Excel Format
-                  </button>
-                  <button
-                    onClick={() => exportData('json')}
-                    disabled={isLoading}
-                    className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
-                  >
-                    <FileDown className="w-5 h-5 mr-2" />
-                    JSON Format
-                  </button>
-                  <button
-                    onClick={() => exportData('txt')}
-                    disabled={isLoading}
-                    className="flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
-                  >
-                    <FileDown className="w-5 h-5 mr-2" />
-                    Text Format
-                  </button>
-                </div>
-                
-                {formsData.length > 1 && (
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3 inline-block">
-                      💡 Multiple pages detected! Download will be a ZIP file containing separate files for each page.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Form Data Summary */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900">Export Summary</h4>
-                {formsData.map((pageData, pageIndex) => (
-                  <div key={pageIndex} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="font-medium text-gray-900">
-                          Page {pageData.page_number + 1}
-                        </h5>
-                        <p className="text-sm text-gray-600">
-                          {pageData.headers.length} fields, {pageData.key_value_pairs.length} key-value pairs
-                        </p>
+              {/* Sticky Summary Header */}
+              <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-50 to-green-50 border-b border-gray-200 px-8 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-6">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-white text-sm font-bold">{Array.from(selectedPages).length}</span>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-500">Sample Fields:</div>
-                        <div className="text-sm font-medium text-gray-700">
-                          {pageData.headers.slice(0, 3).join(', ')}
-                          {pageData.headers.length > 3 && ` +${pageData.headers.length - 3} more`}
-                        </div>
+                      <span className="text-sm font-medium text-gray-700">Selected Pages</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-white text-sm font-bold">
+                          {Array.from(selectedPages).reduce((sum, pageIndex) => sum + (selectedFields[pageIndex]?.size || 0), 0)}
+                        </span>
                       </div>
+                      <span className="text-sm font-medium text-gray-700">Selected Fields</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-white text-xs font-bold">
+                          {Array.from(selectedPages).length > 1 ? 'ZIP' : 'FILE'}
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Download Type</span>
                     </div>
                   </div>
-                ))}
+                  
+                  {activePageIndex !== null && (
+                    <div className="text-sm text-gray-600">
+                      Editing: <span className="font-semibold">Page {formsData[activePageIndex].page_number + 1}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Reset Button */}
-              <div className="mt-8 text-center">
-                <button
-                  onClick={resetParser}
-                  className="px-8 py-3 border border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Process Another Document
-                </button>
+              {/* Two Panel Layout */}
+              <div className="p-8 pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-[500px]">
+                  
+                  {/* Left Panel: Page Selection */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-gray-900">Pages to Export</h4>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setSelectedPages(new Set(formsData.map((_, i) => i)))}
+                          className="px-3 py-1 text-sm bg-[#086C67] text-white rounded-lg hover:bg-[#074E4A] transition-colors"
+                        >
+                          All
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedPages(new Set());
+                            setActivePageIndex(null);
+                          }}
+                          className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                          None
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {formsData.map((pageData, pageIndex) => (
+                        <div 
+                          key={pageIndex} 
+                          className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                            activePageIndex === pageIndex
+                              ? 'border-orange-400 bg-orange-50 shadow-md'
+                              : selectedPages.has(pageIndex) 
+                                ? 'border-[#00C7BE] bg-[#00C7BE]/5' 
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setActivePageIndex(pageIndex)}
+                        >
+                          {/* Active page indicator */}
+                          {activePageIndex === pageIndex && (
+                            <div className="absolute top-2 right-2">
+                              <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-medium text-gray-900">Page {pageData.page_number + 1}</h5>
+                            <div 
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                selectedPages.has(pageIndex) 
+                                  ? 'border-[#00C7BE] bg-[#00C7BE]' 
+                                  : 'border-gray-300'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newSelected = new Set(selectedPages);
+                                if (newSelected.has(pageIndex)) {
+                                  newSelected.delete(pageIndex);
+                                } else {
+                                  newSelected.add(pageIndex);
+                                }
+                                setSelectedPages(newSelected);
+                              }}
+                            >
+                              {selectedPages.has(pageIndex) && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                          </div>
+                          
+                          <p className="text-sm text-gray-600">
+                            {pageData.headers.length} fields • {pageData.key_value_pairs.length} pairs
+                          </p>
+                          
+                          <div className="mt-2 text-xs text-gray-500">
+                            {selectedFields[pageIndex]?.size || 0} of {pageData.headers.length} fields selected
+                          </div>
+                          
+                          {activePageIndex === pageIndex && (
+                            <div className="mt-2 text-xs font-medium text-orange-600">
+                              ← Click fields on the right to select
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right Panel: Field Selection */}
+                  <div className="border-l border-gray-200 pl-8">
+                    {activePageIndex === null ? (
+                      <div className="flex items-center justify-center h-full text-center">
+                        <div>
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Eye className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <h4 className="text-lg font-medium text-gray-500 mb-2">Select a Page to View Fields</h4>
+                          <p className="text-gray-400">Click on a page from the left panel to see its fields here</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            Page {formsData[activePageIndex].page_number + 1} Fields
+                          </h4>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                setSelectedFields(prev => ({
+                                  ...prev,
+                                  [activePageIndex]: new Set(formsData[activePageIndex].headers)
+                                }));
+                              }}
+                              className="px-3 py-1 text-sm bg-[#086C67] text-white rounded-lg hover:bg-[#074E4A] transition-colors"
+                            >
+                              All
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedFields(prev => ({
+                                  ...prev,
+                                  [activePageIndex]: new Set()
+                                }));
+                              }}
+                              className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                              None
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="max-h-96 overflow-y-auto space-y-2">
+                          {formsData[activePageIndex].headers.map((header, headerIndex) => {
+                            const pageSelectedFields = selectedFields[activePageIndex] || new Set();
+                            const keyValuePair = formsData[activePageIndex].key_value_pairs.find(p => p.key === header);
+                            
+                            return (
+                              <div 
+                                key={headerIndex}
+                                className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                                  pageSelectedFields.has(header)
+                                    ? 'border-[#00C7BE] bg-[#00C7BE]/5'
+                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                }`}
+                                onClick={() => {
+                                  const newFields = new Set(pageSelectedFields);
+                                  if (newFields.has(header)) {
+                                    newFields.delete(header);
+                                  } else {
+                                    newFields.add(header);
+                                  }
+                                  setSelectedFields(prev => ({
+                                    ...prev,
+                                    [activePageIndex]: newFields
+                                  }));
+                                }}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center">
+                                      <span className="text-sm font-medium text-gray-900 truncate mr-2">
+                                        {header}
+                                      </span>
+                                      <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                                        pageSelectedFields.has(header)
+                                          ? 'border-[#00C7BE] bg-[#00C7BE]'
+                                          : 'border-gray-300'
+                                      }`}>
+                                        {pageSelectedFields.has(header) && <Check className="w-2.5 h-2.5 text-white" />}
+                                      </div>
+                                    </div>
+                                    {keyValuePair?.value && (
+                                      <div className="text-xs text-gray-500 mt-1 break-words">
+                                        <span className="font-medium">Value:</span> {keyValuePair.value}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Export Buttons */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  {Array.from(selectedPages).length > 0 && Array.from(selectedPages).some(pageIndex => (selectedFields[pageIndex]?.size || 0) > 0) ? (
+                    <div className="text-center">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                        Download Your Selected Data
+                      </h4>
+                      <div className="flex flex-wrap justify-center gap-4">
+                        <button
+                          onClick={() => exportData('csv')}
+                          disabled={isLoading}
+                          className="flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
+                        >
+                          <FileDown className="w-5 h-5 mr-2" />
+                          CSV Format
+                        </button>
+                        <button
+                          onClick={() => exportData('xlsx')}
+                          disabled={isLoading}
+                          className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
+                        >
+                          <FileDown className="w-5 h-5 mr-2" />
+                          Excel Format
+                        </button>
+                        <button
+                          onClick={() => exportData('json')}
+                          disabled={isLoading}
+                          className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
+                        >
+                          <FileDown className="w-5 h-5 mr-2" />
+                          JSON Format
+                        </button>
+                        <button
+                          onClick={() => exportData('txt')}
+                          disabled={isLoading}
+                          className="flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
+                        >
+                          <FileDown className="w-5 h-5 mr-2" />
+                          Text Format
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 inline-block">
+                        <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
+                        <h4 className="font-semibold text-yellow-800 mb-2">No Data Selected</h4>
+                        <p className="text-yellow-700">
+                          Select at least one page and one field to export data.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reset Button */}
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={resetParser}
+                      className="px-8 py-3 border border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      Process Another Document
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

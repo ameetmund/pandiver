@@ -75,10 +75,10 @@ function BankStatementParser() {
       {/* Main Content */}
       <div className="max-w-[1312px] mx-auto py-8 px-4 md:px-16">
         <div className="mb-8">
-          <h1 className="text-[#0D0D0C] text-[32px] font-bold font-['Urbanist'] mb-4">
+          <h1 className="text-[#0D0D0C] text-[32px] font-bold font-['Poppins',sans-serif'] mb-4">
             Manual Bank Statement Parser
           </h1>
-          <p className="text-[#0D0D0C] text-base font-['Hind'] mb-6">
+          <p className="text-[#0D0D0C] text-base font-['Poppins',sans-serif'] mb-6">
             Extract transaction data with full user control - no AI guessing, exact field preservation.
           </p>
         </div>

@@ -75,10 +75,10 @@ function BankStatementArchetypes() {
       {/* Main Content */}
       <div className="max-w-[1312px] mx-auto py-8 px-4 md:px-16">
         <div className="mb-8">
-          <h1 className="text-[#0D0D0C] text-[32px] font-bold font-['Urbanist'] mb-4">
+          <h1 className="text-[#0D0D0C] text-[32px] font-bold font-['Poppins',sans-serif] mb-4">
             Bank Statement Archetypes Parser
           </h1>
-          <p className="text-[#0D0D0C] text-base font-['Hind'] mb-6">
+          <p className="text-[#0D0D0C] text-base font-['Poppins',sans-serif] mb-6">
             Advanced bank statement parsing using predefined archetypes - intelligent pattern recognition with manual override capabilities.
           </p>
         </div>

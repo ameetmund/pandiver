@@ -930,10 +930,10 @@ function BankStatementParser() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-[#0D0D0C] text-[32px] font-bold font-['Urbanist'] mb-4">
+              <h1 className="text-[#0D0D0C] text-[32px] font-bold font-['Poppins',sans-serif'] mb-4">
                 Bank Statement Parser
               </h1>
-              <p className="text-[#0D0D0C] text-base font-['Hind'] mb-6">
+              <p className="text-[#0D0D0C] text-base font-['Poppins',sans-serif'] mb-6">
                 Extract transaction data with full user control - no AI guessing, exact field preservation.
               </p>
             </div>

@@ -174,7 +174,7 @@ export default function LoginPage() {
 
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
-                  <label htmlFor="email" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-medium mb-2">
+                  <label htmlFor="email" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-medium mb-2">
                     Email*
                   </label>
                   <input
@@ -192,7 +192,7 @@ export default function LoginPage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="password" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-medium">
+                    <label htmlFor="password" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-medium">
                       Password*
                     </label>
                     <Link 

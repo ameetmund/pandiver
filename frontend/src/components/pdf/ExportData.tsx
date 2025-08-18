@@ -74,13 +74,13 @@ export default function ExportData({ tableData, columnHeaders }: ExportDataProps
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-[#0D0D0C]/10 p-8">
-      <h2 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-6">
+      <h2 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Poppins',sans-serif] font-medium mb-6">
         📊 Export Data
       </h2>
       
       <div className="space-y-6">
         <div>
-          <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal mb-4">
+          <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif'] font-normal mb-4">
             Export your organized data to Excel or CSV format for further analysis.
           </p>
           
@@ -117,7 +117,7 @@ export default function ExportData({ tableData, columnHeaders }: ExportDataProps
                 ? 'bg-red-50 border-red-200 text-red-700'
                 : 'bg-[#F9FEFE] border-[#00C7BE]/20 text-[#0D0D0C]'
           }`}>
-            <p className="text-[14px] leading-[21px] font-['Hind'] font-medium">
+            <p className="text-[14px] leading-[21px] font-['Poppins',sans-serif'] font-medium">
               {exportStatus}
             </p>
           </div>
@@ -125,31 +125,31 @@ export default function ExportData({ tableData, columnHeaders }: ExportDataProps
 
         {/* Data Summary */}
         <div className="border-t border-[#0D0D0C]/10 pt-6">
-          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-3">
+          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif'] font-medium mb-3">
             📋 Data Summary
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-[#F9FEFE] border border-[#00C7BE]/20 rounded-xl p-4 text-center">
-              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium">
+              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Poppins',sans-serif] font-medium">
                 {tableData ? tableData.length : 0}
               </div>
-              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Hind'] font-normal">
+              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Poppins',sans-serif'] font-normal">
                 Rows
               </div>
             </div>
             <div className="bg-[#F9FEFE] border border-[#00C7BE]/20 rounded-xl p-4 text-center">
-              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium">
+              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Poppins',sans-serif] font-medium">
                 {columnHeaders.length || (tableData && tableData[0] ? tableData[0].length : 0)}
               </div>
-              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Hind'] font-normal">
+              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Poppins',sans-serif'] font-normal">
                 Columns
               </div>
             </div>
             <div className="bg-[#F9FEFE] border border-[#00C7BE]/20 rounded-xl p-4 text-center">
-              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium">
+              <div className="text-[#00C7BE] text-[24px] leading-[28.8px] font-['Poppins',sans-serif] font-medium">
                 {tableData ? tableData.reduce((acc, row) => acc + row.filter(cell => cell.trim() !== '').length, 0) : 0}
               </div>
-              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Hind'] font-normal">
+              <div className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Poppins',sans-serif'] font-normal">
                 Filled Cells
               </div>
             </div>
@@ -158,10 +158,10 @@ export default function ExportData({ tableData, columnHeaders }: ExportDataProps
 
         {/* Export Instructions */}
         <div className="border-t border-[#0D0D0C]/10 pt-6">
-          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-3">
+          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif'] font-medium mb-3">
             💡 Export Tips
           </h3>
-          <ul className="space-y-2 text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
+          <ul className="space-y-2 text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif'] font-normal">
             <li className="flex items-start space-x-2">
               <span className="text-[#00C7BE] mt-1">•</span>
               <span><strong>Excel (XLSX):</strong> Best for complex data analysis and formatting</span>

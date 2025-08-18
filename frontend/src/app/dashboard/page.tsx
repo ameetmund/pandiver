@@ -23,14 +23,6 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    id: 'smart-pdf-parser',
-    title: 'Smart PDF Parser',
-    description: 'Extract text and data from PDF files with intelligent parsing. Drag and drop text blocks to create structured tables.',
-    icon: '📄',
-    href: '/dashboard/smart-pdf-parser',
-    isActive: true
-  },
-  {
     id: 'ai-parser',
     title: 'AI Bank Parser',
     description: 'Advanced AI-powered table extraction technology. Automatically detect and extract all table data with intelligent algorithms.',
@@ -102,7 +94,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-[#FFFEFC] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00C7BE] mx-auto mb-4"></div>
-          <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-normal">Loading...</p>
+          <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">Loading...</p>
         </div>
       </div>
     );
@@ -129,7 +121,7 @@ export default function DashboardPage() {
                   {user?.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <span className="text-[#086C67] text-[14px] leading-[21px] font-['Hind'] font-medium">
+              <span className="text-[#086C67] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-medium">
                 {user?.name}
               </span>
             </div>
@@ -226,7 +218,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <h3 className="text-3xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-2">
-                3
+                2
               </h3>
               <p className="text-gray-600 font-medium">
                 Active Features

@@ -112,13 +112,13 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-[#0D0D0C]/10 p-8">
-      <h2 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Urbanist'] font-medium mb-6">
+      <h2 className="text-[#0D0D0C] text-[24px] leading-[28.8px] font-['Poppins',sans-serif'] font-medium mb-6">
         📄 Upload PDF File
       </h2>
       
       <div className="space-y-6">
         <div>
-          <label className="block text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-4">
+          <label className="block text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif'] font-medium mb-4">
             Select PDF File
           </label>
           <div className="flex items-center space-x-4">
@@ -148,10 +148,10 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
                 </svg>
               </div>
               <div>
-                <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-medium">
+                <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif'] font-medium">
                   {selectedFile.name}
                 </p>
-                <p className="text-[#0D0D0C]/60 text-[12px] leading-[18px] font-['Hind'] font-normal">
+                <p className="text-[#0D0D0C]/60 text-[12px] leading-[18px] font-['Poppins',sans-serif'] font-normal">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -167,7 +167,7 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
                 ? 'bg-red-50 border-red-200 text-red-700'
                 : 'bg-[#F9FEFE] border-[#00C7BE]/20 text-[#0D0D0C]'
           }`}>
-            <p className="text-[14px] leading-[21px] font-['Hind'] font-medium">
+            <p className="text-[14px] leading-[21px] font-['Poppins',sans-serif'] font-medium">
               {uploadStatus}
             </p>
           </div>
@@ -175,10 +175,10 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
 
         {/* Instructions */}
         <div className="border-t border-[#0D0D0C]/10 pt-6">
-          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Hind'] font-medium mb-3">
+          <h3 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif'] font-medium mb-3">
             📝 Instructions
           </h3>
-          <ul className="space-y-2 text-[#0D0D0C] text-[14px] leading-[21px] font-['Hind'] font-normal">
+          <ul className="space-y-2 text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif'] font-normal">
             <li className="flex items-start space-x-2">
               <span className="text-[#00C7BE] mt-1">•</span>
               <span>Select a PDF file from your device</span>
