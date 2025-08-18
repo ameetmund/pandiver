@@ -250,19 +250,11 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              {/* CTA Button */}
+              <div className="flex justify-start">
                 <Link href="/auth/signup">
-                  <button className="px-8 py-4 text-white font-bold text-lg bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1">
+                  <button className="px-10 py-5 text-white font-bold text-xl bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-lg">
                     Start free
-                  </button>
-                </Link>
-                <Link href="/dashboard/bank-statement-aws-textract">
-                  <button className="flex items-center space-x-2 px-6 py-4 text-[#0D0D0C] font-semibold text-lg bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-all duration-300 hover:shadow-lg">
-                    <span>Try with your PDF</span>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
                   </button>
                 </Link>
               </div>
@@ -288,21 +280,52 @@ export default function Home() {
             <div className="flex justify-center lg:justify-end">
               <div className="relative w-full max-w-[650px] lg:max-w-[750px]">
                 {/* Floating Cards Animation */}
-                <div className="absolute -top-6 -left-6 w-64 h-40 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4 transform rotate-[-5deg] hover:rotate-[-2deg] transition-transform duration-300 z-20">
-                  <div className="space-y-2">
-                    <div className="h-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded"></div>
-                    <div className="h-2 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-2 bg-gray-200 rounded w-1/2"></div>
-                    <div className="mt-3 text-xs text-[#086C67] font-semibold">Bank Statement ✓</div>
+                <div className="absolute -top-8 -left-8 w-72 h-44 bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/60 p-6 transform rotate-[-4deg] hover:rotate-[-1deg] transition-all duration-500 z-20">
+                  <div className="flex items-start space-x-3 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7V10H22V7L12 2ZM4 8.5L12 4.5L20 8.5H4Z" />
+                        <path d="M3 11H21V21H3V11ZM5 13V19H7V13H5ZM9 13V19H11V13H9ZM13 13V19H15V13H13ZM17 13V19H19V13H17Z" />
+                        <path d="M1 21H23V22H1V21Z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="h-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mb-2"></div>
+                      <div className="h-2 bg-gray-200 rounded-full mb-2 w-3/4"></div>
+                      <div className="h-2 bg-gray-200 rounded-full w-1/2"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#086C67] font-bold">Bank Statement</span>
+                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="absolute -bottom-6 -right-6 w-64 h-40 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-4 transform rotate-[8deg] hover:rotate-[4deg] transition-transform duration-300 z-20">
-                  <div className="space-y-2">
-                    <div className="h-3 bg-gradient-to-r from-[#086C67] to-[#00C7BE] rounded"></div>
-                    <div className="h-2 bg-gray-200 rounded w-4/5"></div>
-                    <div className="h-2 bg-gray-200 rounded w-2/3"></div>
-                    <div className="mt-3 text-xs text-[#086C67] font-semibold">Form Data ✓</div>
+                <div className="absolute -bottom-6 -right-8 w-72 h-44 bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/60 p-6 transform rotate-[6deg] hover:rotate-[3deg] transition-all duration-500 z-20">
+                  <div className="flex items-start space-x-3 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#086C67] to-[#00C7BE] rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17 5H3c-1.1 0-2 .9-2 2v9c0 .55.45 1 1 1h1c0 1.66 1.34 3 3 3s3-1.34 3-3h4c0 1.66 1.34 3 3 3s3-1.34 3-3h1c.55 0 1-.45 1-1v-3l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm10 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM17 12V7H3v9h.76c.55-1.19 1.74-2 3.24-2s2.69.81 3.24 2h1.52c.55-1.19 1.74-2 3.24-2s2.69.81 3.24 2H20v-2h-3z"/>
+                        <path d="M18 8l2 3h-3V8h1z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="h-3 bg-gradient-to-r from-[#086C67] to-[#00C7BE] rounded-full mb-2"></div>
+                      <div className="h-2 bg-gray-200 rounded-full mb-2 w-4/5"></div>
+                      <div className="h-2 bg-gray-200 rounded-full w-2/3"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#086C67] font-bold">Logistics Invoice</span>
+                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
 
