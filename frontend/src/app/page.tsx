@@ -2,16 +2,50 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function Home() {
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Add testimonials scroll functionality
+  useEffect(() => {
+    const scrollContainer = document.querySelector('#testimonials-scroll-container');
+    const prevButton = document.querySelector('#testimonial-prev');
+    const nextButton = document.querySelector('#testimonial-next');
+
+    if (scrollContainer && prevButton && nextButton) {
+      const scrollDistance = 320; // Width of one testimonial card + gap
+
+      const handlePrevClick = () => {
+        scrollContainer.scrollBy({ left: -scrollDistance, behavior: 'smooth' });
+      };
+
+      const handleNextClick = () => {
+        scrollContainer.scrollBy({ left: scrollDistance, behavior: 'smooth' });
+      };
+
+      prevButton.addEventListener('click', handlePrevClick);
+      nextButton.addEventListener('click', handleNextClick);
+
+      // Cleanup event listeners
+      return () => {
+        prevButton.removeEventListener('click', handlePrevClick);
+        nextButton.removeEventListener('click', handleNextClick);
+      };
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#FFFEFC] text-[#0D0D0C]">
+      {/* Add CSS to hide scrollbar */}
+      <style jsx global>{`
+        #testimonials-scroll-container::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       {/* Navbar */}
-      <nav className="bg-[#FFFEFC] py-4 px-4 md:px-16">
+      <nav className="sticky top-0 z-50 bg-[#FFFEFC] py-4 px-4 md:px-16 shadow-sm">
         <div className="max-w-[1312px] mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -47,6 +81,21 @@ export default function Home() {
                 {isProductDropdownOpen && (
                   <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                     <div className="py-2">
+                      <Link
+                        href="/products"
+                        className="block px-4 py-3 text-[#0D0D0C] hover:bg-[#F9FEFE] hover:text-[#00C7BE] transition-colors border-b border-gray-100"
+                        onClick={() => setIsProductDropdownOpen(false)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg flex items-center justify-center">
+                            <span className="text-lg">📋</span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">All Products</div>
+                            <div className="text-xs text-gray-500">Complete product overview</div>
+                          </div>
+                        </div>
+                      </Link>
                       <Link
                         href="/dashboard/bank-statement-aws-textract"
                         className="block px-4 py-3 text-[#0D0D0C] hover:bg-[#F9FEFE] hover:text-[#00C7BE] transition-colors"
@@ -149,7 +198,25 @@ export default function Home() {
                   </button>
                   
                   {isProductDropdownOpen && (
-                    <div className="mt-2 pl-4">
+                    <div className="mt-2 pl-4 space-y-2">
+                      <Link
+                        href="/products"
+                        className="block py-2 text-[#0D0D0C] hover:text-[#00C7BE] transition-colors border-b border-gray-200 pb-3"
+                        onClick={() => {
+                          setIsProductDropdownOpen(false);
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded flex items-center justify-center">
+                            <span className="text-sm">📋</span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">All Products</div>
+                            <div className="text-xs text-gray-500">Complete product overview</div>
+                          </div>
+                        </div>
+                      </Link>
                       <Link
                         href="/dashboard/bank-statement-aws-textract"
                         className="block py-2 text-[#0D0D0C] hover:text-[#00C7BE] transition-colors"
@@ -350,88 +417,74 @@ export default function Home() {
             <div className="text-center space-y-4">
               <div className="flex justify-center">
                 <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">
-                  Innovative
+                  Powerful Features
                 </span>
               </div>
               <div className="space-y-6">
                 <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.48px] max-w-none mx-auto">
-                  Transform Your Workflow with Our Solutions
+                  Turn Complex PDFs into Clean Data
                 </h2>
                 <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal max-w-none mx-auto">
-                  Our SaaS product streamlines your processes, enhancing productivity and collaboration. Experience seamless integration and user-friendly design.
+                  Extract, organize, and export data from any PDF document with precision. Our AI-powered technology handles the complexity so you don't have to.
                 </p>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="text-center space-y-6">
-                <div className="w-12 h-12 mx-auto">
-                  <Image
-                    src="/images/group-work-icon.svg"
-                    alt="Group Work"
-                    width={48}
-                    height={48}
-                    className="w-full h-full"
-                  />
+              <div className="text-center space-y-6 flex flex-col">
+                <div className="w-12 h-12 mx-auto bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"/>
+                    <circle cx="9" cy="9" r="1.5"/>
+                    <circle cx="15" cy="9" r="1.5"/>
+                    <path d="M12 17C14.5 17 16.5 15 16.5 12.5H15C15 14.16 13.66 15.5 12 15.5S9 14.16 9 12.5H7.5C7.5 15 9.5 17 12 17Z"/>
+                    <path d="M8 11H16V13H8V11Z"/>
+                    <circle cx="12" cy="6" r="1"/>
+                  </svg>
                 </div>
-                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px]">
-                  Real-Time Collaboration Made Effortless
+                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px] min-h-[84px] flex items-center justify-center">
+                  AI-Powered PDF Processing
                 </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                  Work together in real-time, no matter where you are.
+                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal flex-1">
+                  Advanced machine learning algorithms automatically detect and extract text, tables, and data structures from any PDF document.
                 </p>
               </div>
               
-              <div className="text-center space-y-6">
-                <div className="w-12 h-12 mx-auto">
-                  <Image
-                    src="/images/analytics-icon.svg"
-                    alt="Analytics"
-                    width={48}
-                    height={48}
-                    className="w-full h-full"
-                  />
+              <div className="text-center space-y-6 flex flex-col">
+                <div className="w-12 h-12 mx-auto bg-gradient-to-br from-[#086C67] to-[#00C7BE] rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 6H2V20C2 21.1 2.9 22 4 22H18V20H4V6ZM20 2H8C6.9 2 6 2.9 6 4V16C6 17.1 6.9 18 8 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM14 7H16V9H18V11H16V13H14V11H12V9H14V7ZM8 7H10V13H8V7ZM8 15H18V17H8V15Z"/>
+                  </svg>
                 </div>
-                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px]">
-                  Advanced Analytics for Informed Decisions
+                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px] min-h-[84px] flex items-center justify-center">
+                  Precise Data Extraction
                 </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                  Leverage data insights to drive your strategy.
+                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal flex-1">
+                  Intelligently detect data boundaries, stitch multi-page content, and preserve data relationships for accurate extraction.
                 </p>
               </div>
               
-              <div className="text-center space-y-6">
-                <div className="w-12 h-12 mx-auto">
-                  <Image
-                    src="/images/dashboard-customize-icon.svg"
-                    alt="Dashboard Customize"
-                    width={48}
-                    height={48}
-                    className="w-full h-full"
-                  />
+              <div className="text-center space-y-6 flex flex-col">
+                <div className="w-12 h-12 mx-auto bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20ZM8 12V14H16V12H8ZM8 16V18H13V16H8Z"/>
+                  </svg>
                 </div>
-                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px]">
-                  Customizable Features to Fit Your Needs
+                <h3 className="text-[#0D0D0C] text-[32px] leading-[41.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.32px] min-h-[84px] flex items-center justify-center">
+                  Multiple Export Formats
                 </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                  Tailor our tools to match your unique requirements.
+                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal flex-1">
+                  Export your extracted data in few clicks to Excel (XLSX), CSV, JSON, or TXT formats for seamless integration with your existing workflows.
                 </p>
               </div>
             </div>
             
-            <div className="flex justify-center items-center space-x-6">
-              <button className="px-6 py-[10px] text-[#0D0D0C] font-medium text-base bg-transparent border border-[#0D0D0C] rounded-[20px] hover:bg-[#0D0D0C] hover:text-white transition-colors">
-                Explore
-              </button>
-              <button className="flex items-center space-x-2 text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
-                <span>Get Started</span>
-                <Image
-                  src="/images/chevron-right-icon.svg"
-                  alt="Chevron Right"
-                  width={24}
-                  height={24}
-                />
-              </button>
+            <div className="flex justify-center">
+              <Link href="/auth/signup">
+                <button className="px-6 py-[10px] text-white font-medium text-base bg-[#00C7BE] rounded-[20px] hover:bg-[#086C67] transition-colors">
+                  Try For Free
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -445,15 +498,15 @@ export default function Home() {
               <div className="space-y-4">
                 <div className="flex">
                   <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">
-                    Empower
+                    Banking Solutions
                   </span>
                 </div>
                 <div className="space-y-6">
                   <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
-                    Unlock Your Potential with Our SaaS Solution
+                    Transform Bank Statements into Structured Data
                   </h2>
                   <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
-                    Experience seamless integration and unparalleled efficiency. Our platform is designed to streamline your workflow and enhance productivity.
+                    Extract transaction data from bank statements with unprecedented accuracy. Our AI automatically identifies transactions, dates, amounts, and descriptions for seamless financial analysis.
                   </p>
                 </div>
               </div>
@@ -461,56 +514,43 @@ export default function Home() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <div className="w-12 h-12">
-                      <Image
-                        src="/images/automation-icon.svg"
-                        alt="Automation"
-                        width={48}
-                        height={48}
-                        className="w-full h-full"
-                      />
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7V10H22V7L12 2ZM4 8.5L12 4.5L20 8.5H4Z" />
+                        <path d="M3 11H21V21H3V11ZM5 13V19H7V13H5ZM9 13V19H11V13H9ZM13 13V19H15V13H13ZM17 13V19H19V13H17Z" />
+                        <path d="M1 21H23V22H1V21Z" />
+                      </svg>
                     </div>
                     <h3 className="text-[#0D0D0C] text-[20px] leading-[28px] font-['Poppins',sans-serif] font-normal tracking-[-0.2px]">
-                      Boost Efficiency
+                      Smart Recognition
                     </h3>
                     <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                      Automate tasks and save time with our intuitive tools and features.
+                      Automatically identify transaction types, account numbers, and financial patterns with AI-powered recognition.
                     </p>
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="w-12 h-12">
-                      <Image
-                        src="/images/share-location-icon.svg"
-                        alt="Share Location"
-                        width={48}
-                        height={48}
-                        className="w-full h-full"
-                      />
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#086C67] to-[#00C7BE] rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 11H7V9C7 8.45 7.45 8 8 8S9 8.45 9 9V11ZM13 9V11H11V9C11 8.45 11.45 8 12 8S13 8.45 13 9ZM17 9V11H15V9C15 8.45 15.45 8 16 8S17 8.45 17 9ZM19 3H18V1H16V3H8V1H6V3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V8H19V19Z"/>
+                      </svg>
                     </div>
                     <h3 className="text-[#0D0D0C] text-[20px] leading-[28px] font-['Poppins',sans-serif] font-normal tracking-[-0.2px]">
-                      Enhance Collaboration
+                      Precise Extraction
                     </h3>
                     <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                      Work together effortlessly with real-time updates and shared resources.
+                      Extract dates, amounts, descriptions, and balance information with 99.9% accuracy across all major bank formats.
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-6">
-                <button className="px-6 py-[10px] text-[#0D0D0C] font-medium text-base bg-transparent border border-[#0D0D0C] rounded-[20px] hover:bg-[#0D0D0C] hover:text-white transition-colors">
-                  Learn More
-                </button>
-                <button className="flex items-center space-x-2 text-[#0D0D0C] font-medium text-base hover:text-[#00C7BE] transition-colors">
-                  <span>Sign Up</span>
-                  <Image
-                    src="/images/chevron-right-icon.svg"
-                    alt="Chevron Right"
-                    width={24}
-                    height={24}
-                  />
-                </button>
+              <div className="flex justify-start">
+                <Link href="/auth/signup">
+                  <button className="px-6 py-[10px] text-white font-medium text-base bg-[#00C7BE] rounded-[20px] hover:bg-[#086C67] transition-colors">
+                    Try For Free
+                  </button>
+                </Link>
               </div>
             </div>
             
@@ -544,21 +584,21 @@ export default function Home() {
             <div className="space-y-8">
               <div className="space-y-6">
                 <h2 className="text-[#0D0D0C] text-[40px] leading-[48px] font-['Poppins',sans-serif] font-normal tracking-[-0.4px]">
-                  Discover how our SaaS product transforms businesses with proven results.
+                  Trusted by businesses worldwide for accurate PDF data extraction.
                 </h2>
                 <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
-                  Join thousands of satisfied users who trust our platform. Experience seamless integration and unparalleled support.
+                  Join thousands of users who rely on PandiVer for fast, accurate, and reliable document processing. Our proven track record speaks for itself.
                 </p>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <h3 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
-                      95%
+                      50,000+
                     </h3>
                     <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                      Customer satisfaction rate based on recent surveys.
+                      Documents processed monthly across banking, logistics, and enterprise sectors.
                     </p>
                   </div>
                   
@@ -567,9 +607,17 @@ export default function Home() {
                       99.9%
                     </h3>
                     <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                      Uptime guarantee ensuring reliability and performance.
+                      Extraction accuracy rate with advanced AI algorithms for financial documents.
                     </p>
                   </div>
+                </div>
+                
+                <div className="pt-4">
+                  <Link href="/products">
+                    <button className="px-8 py-3 text-white font-bold text-base bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-[20px] hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      Explore Now
+                    </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -577,131 +625,163 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Blog Section */}
+      {/* Industry Solutions Section */}
       <section className="bg-gradient-to-b from-[#F9FEFE] to-[#EDEDED] py-28 px-4 md:px-16">
         <div className="max-w-[1312px] mx-auto">
           <div className="space-y-20">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
                 <span className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">
-                  Blog
+                  Industry Solutions
                 </span>
               </div>
               <div className="space-y-6">
                 <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
-                  Explore Our Latest Insights
+                  Tailored for Every Industry
                 </h2>
                 <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
-                  Stay updated with PDF editing tips and tricks
+                  Discover how leading organizations across different sectors leverage PandiVer for their document processing needs
                 </p>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white rounded-lg overflow-hidden">
-                <Image
-                  src="/images/blog-image-1.png"
-                  alt="Blog Image 1"
-                  width={405}
-                  height={270}
-                  className="w-full h-[270px] object-cover rounded-t-[20px]"
-                />
-                <div className="p-8 space-y-2">
+              {/* Banking & Finance */}
+              <div className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="w-full h-[200px] bg-gradient-to-br from-[#00C7BE] to-[#086C67] flex items-center justify-center">
+                  <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7V10H22V7L12 2ZM4 8.5L12 4.5L20 8.5H4Z" />
+                    <path d="M3 11H21V21H3V11ZM5 13V19H7V13H5ZM9 13V19H11V13H9ZM13 13V19H15V13H13ZM17 13V19H19V13H17Z" />
+                    <path d="M1 21H23V22H1V21Z" />
+                  </svg>
+                </div>
+                <div className="p-8 space-y-4">
                   <div className="inline-block">
-                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-gray-100 px-3 py-1 rounded">
-                      Tips
+                    <span className="text-[#00C7BE] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-[#F9FEFE] px-3 py-1 rounded">
+                      Banking & Finance
                     </span>
                   </div>
-                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.24px]">
-                    Mastering PDF Editing: A Comprehensive Guide
+                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.24px]">
+                    Bank Statement Processing
                   </h3>
                   <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                    Learn essential techniques to enhance your PDF editing skills today.
+                    Extract transaction data, account balances, and financial patterns from bank statements with 99.9% accuracy for compliance and analysis.
                   </p>
-                </div>
-                <div className="p-8 pt-0">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold">Jane Doe</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">11 Jan 2022</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">5 min read</span>
-                      </div>
-                    </div>
-                  </div>
+                  <ul className="space-y-2">
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#00C7BE] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Transaction categorization</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#00C7BE] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Multi-page table stitching</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#00C7BE] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Compliance reporting</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg overflow-hidden">
-                <div className="w-full h-[270px] bg-gray-200 rounded-t-[16px]"></div>
-                <div className="p-8 space-y-2">
+              {/* Logistics & Supply Chain */}
+              <div className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="w-full h-[200px] bg-gradient-to-br from-[#086C67] to-[#00C7BE] flex items-center justify-center">
+                  <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17 5H3c-1.1 0-2 .9-2 2v9c0 .55.45 1 1 1h1c0 1.66 1.34 3 3 3s3-1.34 3-3h4c0 1.66 1.34 3 3 3s3-1.34 3-3h1c.55 0 1-.45 1-1v-3l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm10 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM17 12V7H3v9h.76c.55-1.19 1.74-2 3.24-2s2.69.81 3.24 2h1.52c.55-1.19 1.74-2 3.24-2s2.69.81 3.24 2H20v-2h-3z"/>
+                    <path d="M18 8l2 3h-3V8h1z"/>
+                  </svg>
+                </div>
+                <div className="p-8 space-y-4">
                   <div className="inline-block">
-                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-gray-100 px-3 py-1 rounded">
-                      Tutorial
+                    <span className="text-[#086C67] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-[#F9FEFE] px-3 py-1 rounded">
+                      Logistics & Supply Chain
                     </span>
                   </div>
-                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.24px]">
-                    How to Convert PDFs Effortlessly
+                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.24px]">
+                    Invoice & Receipt Processing
                   </h3>
                   <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                    Discover the easiest methods to convert PDFs to various formats.
+                    Automate invoice processing, track shipments, and manage supplier documents for streamlined logistics operations.
                   </p>
-                </div>
-                <div className="p-8 pt-0">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold">John Smith</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">15 Feb 2022</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">4 min read</span>
-                      </div>
-                    </div>
-                  </div>
+                  <ul className="space-y-2">
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#086C67] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Invoice automation</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#086C67] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Shipment tracking</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#086C67] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Supplier management</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg overflow-hidden">
-                <div className="w-full h-[270px] bg-gray-200 rounded-t-[16px]"></div>
-                <div className="p-8 space-y-2">
+              {/* Legal & Healthcare */}
+              <div className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="w-full h-[200px] bg-gradient-to-br from-[#00C7BE] to-[#086C67] flex items-center justify-center">
+                  <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20ZM8 12V14H16V12H8ZM8 16V18H13V16H8Z"/>
+                  </svg>
+                </div>
+                <div className="p-8 space-y-4">
                   <div className="inline-block">
-                    <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-gray-100 px-3 py-1 rounded">
-                      News
+                    <span className="text-[#00C7BE] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold bg-[#F9FEFE] px-3 py-1 rounded">
+                      Legal & Healthcare
                     </span>
                   </div>
-                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.24px]">
-                    Latest Trends in PDF Technology
+                  <h3 className="text-[#0D0D0C] text-[24px] leading-[33.6px] font-['Poppins',sans-serif] font-semibold tracking-[-0.24px]">
+                    Document & Form Processing
                   </h3>
                   <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                    Stay informed about the newest advancements in PDF technology.
+                    Extract data from legal contracts, medical forms, and regulatory documents with precision for compliance and record-keeping.
                   </p>
-                </div>
-                <div className="p-8 pt-0">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-semibold">Alice Johnson</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">20 Mar 2022</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">•</span>
-                        <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">6 min read</span>
-                      </div>
-                    </div>
-                  </div>
+                  <ul className="space-y-2">
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#00C7BE] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Contract analysis</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#00C7BE] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Medical form extraction</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <svg className="w-4 h-4 text-[#00C7BE] mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-[#0D0D0C] text-[14px]">Regulatory compliance</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
             
             <div className="flex justify-center">
-              <button className="px-6 py-[10px] text-[#0D0D0C] font-medium text-base bg-transparent border border-[#0D0D0C] rounded-[20px] hover:bg-[#0D0D0C] hover:text-white transition-colors">
-                View all
-              </button>
+              <Link href="/products">
+                <button className="px-8 py-3 text-white font-medium text-base bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-[20px] hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                  Explore All Solutions
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -712,346 +792,484 @@ export default function Home() {
         <div className="max-w-[1312px] mx-auto">
           <div className="space-y-20">
             <div className="text-center space-y-6">
-              <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px] max-w-[560px] mx-auto">
-                Customer testimonials
+              <h2 className="text-[#0D0D0C] text-[48px] leading-[57.6px] font-['Poppins',sans-serif] font-normal tracking-[-0.48px]">
+                What Our Customers Say
               </h2>
-              <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal max-w-[560px] mx-auto">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+              <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal max-w-2xl mx-auto">
+                Join thousands of satisfied users who trust PandiVer for their document processing needs
               </p>
             </div>
             
             <div className="relative">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div className="bg-white border border-[#0D0D0C]/15 rounded-2xl p-8 space-y-8">
-                  <div className="space-y-12">
-                    <div className="w-[120px] h-[48px]">
-                      <Image
-                        src="/images/placeholder-logo-2.svg"
-                        alt="Company Logo"
-                        width={120}
-                        height={48}
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <div className="space-y-6">
-                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
-                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare."
+              <div className="overflow-hidden">
+                <div 
+                  id="testimonials-scroll-container" 
+                  className="flex overflow-x-auto scroll-smooth" 
+                  style={{ 
+                    scrollbarWidth: 'none', 
+                    msOverflowStyle: 'none'
+                  }}
+                >
+                  {/* Testimonial 1 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "PandiVer saved me hours of manual work. The accuracy is incredible and the interface is so intuitive. Best investment I've made for my workflow!"
                       </p>
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                        <div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Name Surname</div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">Position, Company name</div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">S</span>
                         </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Sarah</div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-center">
-                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">
-                      <span>Read case study</span>
-                      <Image
-                        src="/images/chevron-right-icon.svg"
-                        alt="Chevron Right"
-                        width={24}
-                        height={24}
-                      />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="bg-white border border-[#0D0D0C]/15 rounded-2xl p-8 space-y-8">
-                  <div className="space-y-12">
-                    <div className="w-[120px] h-[48px]">
-                      <Image
-                        src="/images/placeholder-logo-1.svg"
-                        alt="Company Logo"
-                        width={120}
-                        height={48}
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <div className="space-y-6">
-                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
-                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare."
+
+                  {/* Testimonial 2 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Amazing tool! I process hundreds of bank statements monthly and PandiVer handles them all perfectly. The export feature is a game changer."
                       </p>
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                        <div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Name Surname</div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">Position, Company name</div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#086C67] to-[#00C7BE] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">M</span>
                         </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Michael</div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-center">
-                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">
-                      <span>Read case study</span>
-                      <Image
-                        src="/images/chevron-right-icon.svg"
-                        alt="Chevron Right"
-                        width={24}
-                        height={24}
-                      />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="bg-white border border-[#0D0D0C]/15 rounded-2xl p-8 space-y-8">
-                  <div className="space-y-12">
-                    <div className="w-[120px] h-[48px]">
-                      <Image
-                        src="/images/placeholder-logo-2.svg"
-                        alt="Company Logo"
-                        width={120}
-                        height={48}
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <div className="space-y-6">
-                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
-                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare."
+
+                  {/* Testimonial 3 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Simply outstanding! The AI recognition is spot on and saves me so much time. I can't imagine going back to manual data entry."
                       </p>
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                        <div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Name Surname</div>
-                          <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">Position, Company name</div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">E</span>
                         </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Emily</div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-center">
-                    <button className="flex items-center space-x-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">
-                      <span>Read case study</span>
-                      <Image
-                        src="/images/chevron-right-icon.svg"
-                        alt="Chevron Right"
-                        width={24}
-                        height={24}
-                      />
-                    </button>
+
+                  {/* Testimonial 4 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Incredible accuracy and speed! PandiVer has revolutionized how we handle document processing. Highly recommend to anyone dealing with PDFs."
+                      </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#086C67] to-[#00C7BE] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">D</span>
+                        </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">David</div>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Testimonial 5 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Perfect solution for our logistics team! Processing invoices is now effortless and error-free. The team loves how easy it is to use."
+                      </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">J</span>
+                        </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Jessica</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Testimonial 6 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Game-changing technology! Our accounting department saves hours every week thanks to PandiVer's precise extraction capabilities."
+                      </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#086C67] to-[#00C7BE] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">T</span>
+                        </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Thomas</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Testimonial 7 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Exceptional service and results! The interface is intuitive and the accuracy is unmatched. PandiVer has transformed our workflow completely."
+                      </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">L</span>
+                        </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Lisa</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Testimonial 8 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Brilliant solution for financial document processing. The reliability is outstanding and customer support is always helpful when needed."
+                      </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#086C67] to-[#00C7BE] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">M</span>
+                        </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Mark</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Testimonial 9 */}
+                  <div className="w-80 flex-shrink-0 px-4">
+                    <div className="bg-white border border-[#0D0D0C]/10 rounded-2xl p-8 h-full flex flex-col">
+                      <div className="flex items-center space-x-1 mb-4">
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </div>
+                      <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal mb-6 flex-grow">
+                        "Outstanding tool that delivers on its promises! The quality of data extraction is consistently excellent. Highly recommend for any business."
+                      </p>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">J</span>
+                        </div>
+                        <div className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Jennifer</div>
+                      </div>
+                    </div>
+                  </div>
+                  
                 </div>
               </div>
               
-              <div className="flex justify-center items-center space-x-2 mt-12">
-                <div className="w-2 h-2 bg-[#0D0D0C] rounded-full"></div>
-                <div className="w-2 h-2 bg-[#0D0D0C] opacity-20 rounded-full"></div>
-                <div className="w-2 h-2 bg-[#0D0D0C] opacity-20 rounded-full"></div>
-                <div className="w-2 h-2 bg-[#0D0D0C] opacity-20 rounded-full"></div>
-                <div className="w-2 h-2 bg-[#0D0D0C] opacity-20 rounded-full"></div>
-                <div className="w-2 h-2 bg-[#0D0D0C] opacity-20 rounded-full"></div>
-              </div>
+              {/* Navigation arrows */}
+              <button 
+                id="testimonial-prev" 
+                className="absolute left-[-28px] top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white border border-[#0D0D0C]/15 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-lg"
+              >
+                <svg className="w-6 h-6 text-[#0D0D0C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
               
-              <div className="absolute left-[-28px] top-1/2 transform -translate-y-1/2">
-                <button className="w-12 h-12 bg-white border border-[#0D0D0C]/15 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors">
-                  <Image
-                    src="/images/arrow-back-icon.svg"
-                    alt="Previous"
-                    width={24}
-                    height={24}
-                  />
-                </button>
-              </div>
-              
-              <div className="absolute right-[-28px] top-1/2 transform -translate-y-1/2">
-                <button className="w-12 h-12 bg-white border border-[#0D0D0C]/15 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors">
-                  <Image
-                    src="/images/arrow-forward-icon.svg"
-                    alt="Next"
-                    width={24}
-                    height={24}
-                  />
-                </button>
-              </div>
+              <button 
+                id="testimonial-next"
+                className="absolute right-[-28px] top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white border border-[#0D0D0C]/15 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-lg"
+              >
+                <svg className="w-6 h-6 text-[#0D0D0C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-b from-[#F9FEFE] to-[#EDEDED] py-28 px-4 md:px-16">
-        <div className="max-w-[1312px] mx-auto">
-          <div className="text-center space-y-8">
-            <div className="space-y-6">
-              <h2 className="text-[#0D0D0C] text-[40px] leading-[48px] font-['Poppins',sans-serif] font-normal tracking-[-0.4px]">
-                Start Your Free Trial Today
+      <section className="bg-gradient-to-br from-[#FFFEFC] via-[#F9FEFE] to-[#E8F8F7] py-28 px-4 md:px-16 relative overflow-hidden">
+        <div className="max-w-[1312px] mx-auto relative z-10">
+          <div className="text-center space-y-12">
+            {/* Badge */}
+            <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+              <span className="text-[#0D0D0C] text-sm font-semibold">✨ Start Processing PDFs in Minutes</span>
+            </div>
+            
+            {/* Main Content */}
+            <div className="space-y-8">
+              <h2 className="text-[#0D0D0C] text-[48px] lg:text-[56px] leading-[1.1] font-['Poppins',sans-serif] font-bold tracking-[-0.02em] max-w-4xl mx-auto">
+                Ready to Transform Your 
+                <span className="block bg-gradient-to-r from-[#FFFFFF] to-[#F0FDFD] bg-clip-text text-transparent">
+                  Document Processing?
+                </span>
               </h2>
-              <p className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-normal">
-                Experience the future of SaaS with no commitment.
+              <p className="text-[#0D0D0C] text-[20px] leading-[30px] font-['Poppins',sans-serif] font-normal max-w-3xl mx-auto">
+                Join thousands of businesses who trust PandiVer for accurate, fast, and reliable PDF data extraction. No credit card required.
               </p>
             </div>
-            <div className="flex justify-center items-center space-x-4">
-              <button className="px-6 py-[10px] text-[#0D0D0C] font-medium text-base bg-[#00C7BE] rounded-[20px] hover:bg-[#086C67] hover:text-white transition-colors">
-                Sign Up
-              </button>
-              <button className="px-6 py-[10px] text-[#FFFFFF] font-medium text-base bg-transparent border border-white/20 rounded-[20px] hover:bg-white/10 transition-colors">
-                Learn More
-              </button>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
+              <Link href="/auth/signup">
+                <button className="px-10 py-5 text-white font-bold text-xl bg-gradient-to-r from-[#086C67] to-[#00C7BE] rounded-full hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 shadow-xl">
+                  Start Free Trial
+                </button>
+              </Link>
+              <Link href="/products">
+                <button className="px-8 py-4 text-[#0D0D0C] font-bold text-lg bg-white/90 backdrop-blur-sm rounded-full hover:bg-white hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-white/30">
+                  View All Products
+                </button>
+              </Link>
+            </div>
+
+            {/* Features Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 max-w-4xl mx-auto">
+              <div className="flex items-center justify-center space-x-3 text-[#0D0D0C]">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="font-medium">No Credit Card Required</span>
+              </div>
+              <div className="flex items-center justify-center space-x-3 text-[#0D0D0C]">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="font-medium">99.9% Accuracy Guaranteed</span>
+              </div>
+              <div className="flex items-center justify-center space-x-3 text-[#0D0D0C]">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="font-medium">Process Files in Seconds</span>
+              </div>
             </div>
           </div>
         </div>
+        
+        {/* Background Elements */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-10 right-10 w-40 h-40 bg-[#00C7BE]/20 rounded-full blur-2xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-white/5 to-[#00C7BE]/5 rounded-full blur-3xl"></div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-b from-[#BAF9F6] to-[#086C67] py-20 px-4 md:px-16">
+      <footer className="bg-gradient-to-b from-[#BAF9F6] to-[#086C67] py-12 px-4 md:px-16">
         <div className="max-w-[1312px] mx-auto">
-          <div className="space-y-20">
-            {/* Newsletter */}
-            <div className="flex flex-col md:flex-row justify-between items-start space-y-6 md:space-y-0 md:space-x-6">
-              <div className="space-y-2">
-                <h3 className="text-[#0D0D0C] text-[18px] leading-[27px] font-['Poppins',sans-serif] font-semibold">
-                  Subscribe to updates
-                </h3>
-                <p className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal">
-                  Stay informed about our latest news and offers.
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-1 flex items-center space-x-4 min-w-[400px]">
-                <div className="flex-1 flex items-center space-x-4">
-                  <div className="flex-1">
-                    <input
-                      type="email"
-                      placeholder="Your email here"
-                      className="w-full px-3 py-2 text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-normal bg-transparent border-none outline-none"
-                    />
-                  </div>
-                  <button className="px-6 py-2 text-[#FFFFFF] font-medium text-base bg-transparent border border-white/20 rounded-[20px] hover:bg-white/10 transition-colors">
-                    Subscribe
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <p className="text-[#0D0D0C] text-[12px] leading-[18px] font-['Poppins',sans-serif] font-normal">
-                By subscribing, you agree to our Privacy Policy.
-              </p>
-            </div>
-            
-            {/* Footer Links */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
-              <div className="space-y-4">
+          <div className="space-y-8">
+            {/* Main Footer Content */}
+            <div className="flex flex-col md:flex-row justify-between items-start space-y-8 md:space-y-0">
+              {/* Logo and Description */}
+              <div className="space-y-4 max-w-md">
                 <div className="w-[84px] h-[36px]">
                   <Image
-                    src="/images/footer-logo.svg"
-                    alt="Footer Logo"
+                    src="/images/pandiver-logo.svg"
+                    alt="Pandiver Logo"
                     width={84}
                     height={36}
                     className="w-full h-full"
                   />
                 </div>
+                <p className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">
+                  Transform your PDFs into structured data effortlessly with our intelligent parsing technology.
+                </p>
               </div>
               
-              <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Resources</h4>
-                <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Blog Posts</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Help Center</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Contact Us</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">About Us</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Careers</a>
+              {/* Quick Links */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+                <div className="space-y-3">
+                  <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Product</h4>
+                  <div className="space-y-2">
+                    <a href="/dashboard" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Dashboard</a>
+                    <a href="/pricing" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Pricing</a>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Company</h4>
-                <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Our Team</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Our Values</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Press Releases</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Investor Relations</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Sustainability</a>
+                
+                <div className="space-y-3">
+                  <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Support</h4>
+                  <div className="space-y-2">
+                    <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Help Center</a>
+                    <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Contact Us</a>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Support</h4>
-                <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">FAQs</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Documentation</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Community Forum</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Feedback</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Live Chat</a>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Legal</h4>
-                <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Privacy Policy</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Terms of Use</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Cookie Policy</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Accessibility</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">User Agreement</a>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Follow Us</h4>
-                <div className="space-y-2">
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Facebook Page</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Twitter Profile</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">LinkedIn Page</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Instagram Account</a>
-                  <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">YouTube Channel</a>
+                
+                <div className="space-y-3">
+                  <h4 className="text-[#0D0D0C] text-[16px] leading-[24px] font-['Poppins',sans-serif] font-semibold">Legal</h4>
+                  <div className="space-y-2">
+                    <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Privacy Policy</a>
+                    <a href="#" className="block text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Terms of Service</a>
+                  </div>
                 </div>
               </div>
             </div>
             
             {/* Bottom Section */}
-            <div className="space-y-8">
-              <div className="h-px bg-[#0D0D0C]/15"></div>
+            <div className="pt-6 border-t border-[#0D0D0C]/15">
               <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                <div className="flex flex-wrap items-center space-x-6">
-                  <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">© 2025 Relume. All rights reserved.</span>
-                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Privacy Policy</a>
-                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Terms of Service</a>
-                  <a href="#" className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal hover:text-[#00C7BE] transition-colors">Cookies Settings</a>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <a href="#" className="w-6 h-6 hover:opacity-80 transition-opacity">
-                    <Image
-                      src="/images/facebook-icon.svg"
-                      alt="Facebook"
-                      width={24}
-                      height={24}
-                      className="w-full h-full"
-                    />
-                  </a>
-                  <a href="#" className="w-6 h-6 hover:opacity-80 transition-opacity">
-                    <Image
-                      src="/images/instagram-icon.svg"
-                      alt="Instagram"
-                      width={24}
-                      height={24}
-                      className="w-full h-full"
-                    />
-                  </a>
-                  <a href="#" className="w-6 h-6 hover:opacity-80 transition-opacity">
-                    <Image
-                      src="/images/x-icon.svg"
-                      alt="X"
-                      width={24}
-                      height={24}
-                      className="w-full h-full"
-                    />
-                  </a>
-                  <a href="#" className="w-6 h-6 hover:opacity-80 transition-opacity">
+                <span className="text-[#0D0D0C] text-[14px] leading-[21px] font-['Poppins',sans-serif] font-normal">
+                  © 2025 Pandiver. All rights reserved.
+                </span>
+                
+                {/* Social Links */}
+                <div className="flex items-center space-x-4">
+                  <a href="#" className="w-5 h-5 hover:opacity-80 transition-opacity" aria-label="LinkedIn">
                     <Image
                       src="/images/linkedin-icon.svg"
                       alt="LinkedIn"
-                      width={24}
-                      height={24}
+                      width={20}
+                      height={20}
                       className="w-full h-full"
                     />
                   </a>
-                  <a href="#" className="w-6 h-6 hover:opacity-80 transition-opacity">
+                  <a href="#" className="w-5 h-5 hover:opacity-80 transition-opacity" aria-label="X (Twitter)">
                     <Image
-                      src="/images/youtube-icon.svg"
-                      alt="YouTube"
-                      width={24}
-                      height={24}
+                      src="/images/x-icon.svg"
+                      alt="X"
+                      width={20}
+                      height={20}
                       className="w-full h-full"
                     />
                   </a>
