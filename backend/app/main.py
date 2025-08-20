@@ -45,12 +45,28 @@ from .manual_endpoints import router as manual_router
 from .user_controlled_endpoints import router as user_controlled_router
 from .textract_endpoints import router as textract_router
 
-app = FastAPI()
+# Import new API endpoints
+from .api.endpoints import router as api_router
+from .api.webhooks import router as webhooks_router
+from .api.watch_folder import router as watch_folder_router
 
-# Include extraction routes
+app = FastAPI(
+    title="Pandiver PDF Processing API",
+    description="Advanced PDF processing and transaction extraction API with support for single/bulk processing, webhooks, and watch folders",
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Include existing extraction routes
 app.include_router(manual_router, prefix="/manual", tags=["Manual Bank Statement Parser"])
 app.include_router(user_controlled_router, prefix="/user-controlled", tags=["User Controlled Column Detection"])
 app.include_router(textract_router, prefix="/textract", tags=["AWS Textract Bank Statement Parser"])
+
+# Include new API routes
+app.include_router(api_router, prefix="/api/v1", tags=["API - File Processing"])
+app.include_router(webhooks_router, prefix="/api/v1", tags=["API - Webhooks"])
+app.include_router(watch_folder_router, prefix="/api/v1", tags=["API - Watch Folders"])
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./pandiver.db'

@@ -27,4 +27,9 @@ numpy==1.24.*
 
 # AWS Textract dependencies
 boto3==1.34.*
-python-dotenv==1.0.* 
+python-dotenv==1.0.*
+
+# New API features dependencies
+httpx==0.27.*  # For async HTTP requests in webhooks
+croniter==2.0.*  # For cron-style scheduling
+pydantic[email]==2.7.*  # For enhanced validation 

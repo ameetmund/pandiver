@@ -1,12 +1,16 @@
 from celery import Celery
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Celery configuration
 celery_app = Celery(
     "statement_parser",
     broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
     backend=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-    include=["backend.app.tasks"]
+    include=["app.api.tasks"]
 )
 
 # Configuration
