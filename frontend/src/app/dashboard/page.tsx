@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
+import { pixelifySans } from '../../lib/fonts';
 
 interface User {
   id: string;
@@ -116,6 +117,24 @@ export default function DashboardPage() {
     }
   }, [router]);
 
+  useEffect(() => {
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (userDropdownOpen && !target.closest('[data-dropdown="user-menu"]')) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    if (userDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [userDropdownOpen]);
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
@@ -147,9 +166,9 @@ export default function DashboardPage() {
         {/* Logo */}
         <div className="h-16 flex items-center justify-center px-4 border-b border-slate-200/50">
           {sidebarCollapsed ? (
-            <div className="w-10 h-10 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">V</span>
-            </div>
+            <span className={`text-[#00C7BE] font-bold text-5xl ${pixelifySans.className}`}>
+              V
+            </span>
           ) : (
             <Image
               src="/images/pandiver-logo.svg"
@@ -259,19 +278,15 @@ export default function DashboardPage() {
           </div>
 
           {/* User Menu */}
-          <div className="relative">
+          <div className="relative" data-dropdown="user-menu">
             <button
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
               className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <div className="w-8 h-8 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
+              <div className="w-10 h-10 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center">
+                <span className="text-white font-normal" style={{ fontSize: '18px' }}>
                   {getInitials(user?.name || '')}
                 </span>
-              </div>
-              <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
               <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
