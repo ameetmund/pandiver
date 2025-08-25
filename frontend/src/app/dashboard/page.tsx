@@ -65,6 +65,30 @@ const sidebarItems: SidebarItem[] = [
     ),
     href: '/dashboard/form-data-parser',
     isActive: true
+  },
+  {
+    id: 'intelligent-table-parser',
+    title: 'Intelligent Table Parser',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z" />
+      </svg>
+    ),
+    href: '/dashboard/intelligent-table-parser',
+    isActive: true,
+    badge: 'Azure'
+  },
+  {
+    id: 'smart-key-value-parser',
+    title: 'Smart Key-Value Parser',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+      </svg>
+    ),
+    href: '/dashboard/smart-key-value-parser',
+    isActive: true,
+    badge: 'Azure'
   }
 ];
 
@@ -83,6 +107,22 @@ const features: Feature[] = [
     description: 'AI-powered key-value extraction from PDF forms. Automatically detect and extract all form fields and their values.',
     icon: '📋',
     href: '/dashboard/form-data-parser',
+    isActive: true
+  },
+  {
+    id: 'intelligent-table-parser',
+    title: 'Intelligent Table Parser',
+    description: 'Azure-powered intelligent table extraction. Advanced layout analysis and superior accuracy for complex table structures.',
+    icon: '🔷',
+    href: '/dashboard/intelligent-table-parser',
+    isActive: true
+  },
+  {
+    id: 'smart-key-value-parser',
+    title: 'Smart Key-Value Parser',
+    description: 'Azure-powered smart key-value extraction. Intelligent field recognition with exceptional precision for forms and documents.',
+    icon: '🔹',
+    href: '/dashboard/smart-key-value-parser',
     isActive: true
   }
 ];
@@ -401,7 +441,7 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">2</p>
+                  <p className="text-2xl font-bold text-gray-900">4</p>
                   <p className="text-sm text-gray-600">Active Features</p>
                 </div>
               </div>

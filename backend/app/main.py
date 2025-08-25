@@ -45,6 +45,9 @@ from .manual_endpoints import router as manual_router
 from .user_controlled_endpoints import router as user_controlled_router
 from .textract_endpoints import router as textract_router
 
+# Import Azure Document Intelligence endpoints
+from .azure_di_endpoints import router as azure_di_router
+
 # Import new API endpoints
 from .api.endpoints import router as api_router
 from .api.webhooks import router as webhooks_router
@@ -62,6 +65,9 @@ app = FastAPI(
 app.include_router(manual_router, prefix="/manual", tags=["Manual Bank Statement Parser"])
 app.include_router(user_controlled_router, prefix="/user-controlled", tags=["User Controlled Column Detection"])
 app.include_router(textract_router, prefix="/textract", tags=["AWS Textract Bank Statement Parser"])
+
+# Include Azure Document Intelligence routes
+app.include_router(azure_di_router, prefix="/azure-di", tags=["Azure Document Intelligence - Intelligent Tables & Smart Key-Value"])
 
 # Include new API routes
 app.include_router(api_router, prefix="/api/v1", tags=["API - File Processing"])
