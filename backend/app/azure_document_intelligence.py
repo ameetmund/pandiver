@@ -159,8 +159,8 @@ def extract_tables_from_azure_result(operation_id: str) -> List[Dict[str, Any]]:
                 if hasattr(table, 'bounding_regions') and table.bounding_regions:
                     page_number = table.bounding_regions[0].page_number
                 
-                # Format according to AWS Textract structure
-                if table_data and any(any(cell.strip() for cell in row) for row in table_data):
+                # Format according to AWS Textract structure - no filtering, include all tables
+                if table_data:
                     headers = table_data[0] if table_data else []
                     rows = table_data[1:] if len(table_data) > 1 else []
                     
@@ -180,7 +180,7 @@ def extract_tables_from_azure_result(operation_id: str) -> List[Dict[str, Any]]:
 
 
 def extract_key_value_pairs_from_azure_result(operation_id: str) -> List[Dict[str, Any]]:
-    """Extract key-value pairs from Azure Document Intelligence Layout model result with intelligent filtering"""
+    """Extract key-value pairs from Azure Document Intelligence Layout model result - using raw Azure DI data"""
     if operation_id not in azure_di_jobs:
         raise HTTPException(status_code=404, detail="Operation not found")
     
@@ -193,45 +193,7 @@ def extract_key_value_pairs_from_azure_result(operation_id: str) -> List[Dict[st
         result = job_info['result']
         pages_data = []
         
-        def is_valid_key_value_pair(key: str, value: str) -> bool:
-            """Filter out invalid or unwanted key-value pairs"""
-            key = key.strip()
-            value = value.strip()
-            
-            # Skip if key or value is empty
-            if not key or not value:
-                return False
-            
-            # Skip very long keys (likely not real labels)
-            if len(key) > 50:
-                return False
-                
-            # Skip keys that are just numbers or single characters
-            if key.isdigit() or len(key) == 1:
-                return False
-                
-            # Skip keys that are common text fragments (not form labels)
-            invalid_patterns = [
-                'the', 'and', 'or', 'but', 'for', 'at', 'by', 'from', 'to', 'in', 'on', 'with',
-                'this', 'that', 'these', 'those', 'a', 'an', 'as', 'is', 'was', 'are', 'were',
-                'page', 'document', 'file', 'text', 'content', 'paragraph', 'section'
-            ]
-            
-            if key.lower() in invalid_patterns:
-                return False
-                
-            # Skip if key contains common sentence starters
-            sentence_starters = ['if', 'when', 'where', 'how', 'why', 'what', 'which', 'who']
-            if any(key.lower().startswith(starter) for starter in sentence_starters):
-                return False
-                
-            # Skip if key looks like a sentence (contains multiple words and ends with punctuation)
-            if len(key.split()) > 5 and key.endswith(('.', '?', '!')):
-                return False
-                
-            return True
-        
-        # Extract key-value pairs from Layout model result with keyValuePairs feature enabled
+        # Extract key-value pairs directly from Azure DI Layout model result
         if hasattr(result, 'key_value_pairs') and result.key_value_pairs:
             # Group by page
             pages_kvp = {}
@@ -271,82 +233,28 @@ def extract_key_value_pairs_from_azure_result(operation_id: str) -> List[Dict[st
                 if hasattr(kvp, 'confidence') and kvp.confidence is not None:
                     confidence_score = round(kvp.confidence, 2)
                 
-                # Apply intelligent filtering
-                if is_valid_key_value_pair(key_text, value_text):
-                    pages_kvp[page_number].append({
-                        'key': key_text.strip(),
-                        'value': value_text.strip(),
-                        'confidence': confidence_score
-                    })
+                # Include all key-value pairs from Azure DI - no filtering
+                pages_kvp[page_number].append({
+                    'key': key_text,
+                    'value': value_text,
+                    'confidence': confidence_score
+                })
             
-            # Convert to format matching AWS Textract
+            # Convert to format matching AWS Textract - include all pages
             for page_num in sorted(pages_kvp.keys()):
                 key_value_pairs = pages_kvp[page_num]
                 
-                if key_value_pairs:  # Only create page data if we have pairs
-                    headers = [pair['key'] for pair in key_value_pairs]
-                    values = [pair['value'] for pair in key_value_pairs]
-                    
-                    pages_data.append({
-                        'page_number': page_num - 1,  # Convert to 0-based
-                        'headers': headers,
-                        'data': [values] if values else [],  # Single row of data
-                        'key_value_pairs': key_value_pairs
-                    })
-        
-        # Enhanced fallback: extract from paragraphs with better pattern recognition
-        if not pages_data and hasattr(result, 'paragraphs') and result.paragraphs:
-            page_kvp_fallback = {}
-            
-            for paragraph in result.paragraphs:
-                page_number = 1
-                if hasattr(paragraph, 'bounding_regions') and paragraph.bounding_regions:
-                    page_number = paragraph.bounding_regions[0].page_number
-                
-                content = paragraph.content if hasattr(paragraph, 'content') else ''
-                
-                # Look for various key-value patterns
-                patterns_to_try = [
-                    # Colon separated: "Label: Value"
-                    r'([^:\n]+):\s*([^\n]+)',
-                    # Form field pattern: "Label ___Value___" or "Label _____Value"
-                    r'([A-Za-z][^_\n]{2,30})\s*_{3,}\s*([^\n_]+)',
-                    # Equals separated: "Label = Value"
-                    r'([^=\n]+)=\s*([^\n]+)',
-                    # Tab or multiple spaces separated: "Label    Value"
-                    r'([A-Za-z][^\t\n]{2,30})\s{4,}([^\s\n][^\n]*)'
-                ]
-                
-                import re
-                for pattern in patterns_to_try:
-                    matches = re.finditer(pattern, content, re.MULTILINE)
-                    for match in matches:
-                        key = match.group(1).strip()
-                        value = match.group(2).strip()
-                        
-                        if is_valid_key_value_pair(key, value):
-                            if page_number not in page_kvp_fallback:
-                                page_kvp_fallback[page_number] = []
-                            page_kvp_fallback[page_number].append({
-                                'key': key,
-                                'value': value,
-                                'confidence': 0.5  # Default confidence for fallback extraction
-                            })
-            
-            # Convert fallback data
-            for page_num in sorted(page_kvp_fallback.keys()):
-                key_value_pairs = page_kvp_fallback[page_num]
                 headers = [pair['key'] for pair in key_value_pairs]
                 values = [pair['value'] for pair in key_value_pairs]
                 
                 pages_data.append({
-                    'page_number': page_num - 1,
+                    'page_number': page_num - 1,  # Convert to 0-based
                     'headers': headers,
-                    'data': [values] if values else [],
+                    'data': [values] if values else [],  # Single row of data
                     'key_value_pairs': key_value_pairs
                 })
         
-        # If still no key-value pairs found, create empty page data
+        # If no key-value pairs found, still create page data structure
         if not pages_data:
             pages_data.append({
                 'page_number': 0,
