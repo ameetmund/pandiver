@@ -762,6 +762,156 @@ def export_key_value_txt(forms_data):
 
 
 
+# ============================
+# INTELLIGENT DATA PARSER ENDPOINTS (COMBINED)
+# ============================
+
+@router.post("/intelligent-data/start-analysis", response_model=AzureDIJobResponse)
+async def start_intelligent_data_analysis(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...)
+):
+    """Start asynchronous Azure Document Intelligence analysis for combined table and key-value extraction"""
+    
+    if file.content_type != 'application/pdf':
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+    
+    try:
+        # Read file content
+        file_content = await file.read()
+        
+        # Start Azure DI analysis (single call for both tables and key-value pairs)
+        operation_id = start_layout_analysis(file_content, file.filename)
+        
+        return AzureDIJobResponse(
+            job_id=operation_id,
+            status='IN_PROGRESS',
+            message='Azure Document Intelligence combined analysis started successfully'
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start intelligent data analysis: {str(e)}")
+
+
+@router.get("/intelligent-data/job-status/{job_id}", response_model=AzureDIJobStatus)
+async def get_intelligent_data_job_status(job_id: str):
+    """Get the status of an Azure Document Intelligence combined analysis job"""
+    
+    try:
+        status_info = get_analysis_status(job_id)
+        
+        return AzureDIJobStatus(
+            job_id=job_id,
+            status=status_info['status'],
+            error=status_info.get('error'),
+            tables=None  # Combined data will be available through process-results endpoint
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        return AzureDIJobStatus(
+            job_id=job_id,
+            status='FAILED',
+            error=str(e)
+        )
+
+
+@router.get("/intelligent-data/process-results/{job_id}")
+async def process_intelligent_data_results(job_id: str):
+    """Process and extract both tables and key-value pairs from completed Azure Document Intelligence analysis"""
+    
+    try:
+        # Extract both tables and key-value pairs from the same Azure DI result
+        tables = extract_tables_from_azure_result(job_id)
+        forms_data = extract_key_value_pairs_from_azure_result(job_id)
+        
+        return {
+            'success': True,
+            'tables': tables,
+            'total_tables': len(tables),
+            'forms_data': forms_data,
+            'total_pages': len(forms_data)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process intelligent data results: {str(e)}")
+
+
+@router.post("/intelligent-data/export-tables/{format}")
+async def export_intelligent_data_tables(format: str, data: dict):
+    """Export table data from intelligent data parser"""
+    
+    supported_formats = ['csv', 'xlsx', 'json', 'xml', 'txt']
+    if format not in supported_formats:
+        raise HTTPException(status_code=400, detail=f"Unsupported format. Supported: {supported_formats}")
+    
+    # Check if this is multiple tables or merged data
+    tables = data.get('tables', [])
+    
+    if tables:
+        # Multiple tables - create separate files
+        return export_multiple_intelligent_tables(format, tables)
+    else:
+        # Single merged data
+        headers = data.get('headers', [])
+        rows = data.get('rows', [])
+        
+        if not headers or not rows:
+            raise HTTPException(status_code=400, detail="No data provided for export")
+        
+        try:
+            if format == 'csv':
+                return export_csv(headers, rows, "intelligent-data-tables")
+            elif format == 'xlsx':
+                return export_excel(headers, rows, "intelligent-data-tables")
+            elif format == 'json':
+                return export_json(headers, rows, data, "azure_intelligent_data_tables")
+            elif format == 'xml':
+                return export_xml(headers, rows, data, "azure_intelligent_data_tables")
+            elif format == 'txt':
+                return export_txt(headers, rows, data, "Azure Intelligent Data Tables")
+                
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to export {format}: {str(e)}")
+
+
+@router.post("/intelligent-data/export-key-values/{format}")
+async def export_intelligent_data_key_values(format: str, data: dict):
+    """Export key-value data from intelligent data parser"""
+    
+    supported_formats = ['csv', 'xlsx', 'json', 'txt']
+    if format not in supported_formats:
+        raise HTTPException(status_code=400, detail=f"Unsupported format. Supported: {supported_formats}")
+    
+    forms_data = data.get('forms_data', [])
+    
+    if not forms_data:
+        raise HTTPException(status_code=400, detail="No forms data provided for export")
+    
+    try:
+        if len(forms_data) > 1:
+            # Multiple pages - create separate files in ZIP
+            return export_multiple_key_value_pages(format, forms_data)
+        else:
+            # Single page
+            page_data = forms_data[0]
+            headers = page_data.get('headers', [])
+            rows = page_data.get('data', [])
+            
+            if format == 'csv':
+                return export_csv(headers, rows, "intelligent-data-key-values")
+            elif format == 'xlsx':
+                return export_excel(headers, rows, "intelligent-data-key-values")
+            elif format == 'json':
+                return export_key_value_json(forms_data)
+            elif format == 'txt':
+                return export_key_value_txt(forms_data)
+                
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to export {format}: {str(e)}")
+
+
 # Cleanup endpoint to remove old operations
 @router.delete("/cleanup-operations")
 async def cleanup_old_operations():

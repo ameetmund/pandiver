@@ -83,12 +83,24 @@ const sidebarItems: SidebarItem[] = [
     title: 'Smart Key-Value Parser',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z" />
       </svg>
     ),
     href: '/dashboard/smart-key-value-parser',
     isActive: true,
     badge: 'Azure'
+  },
+  {
+    id: 'intelligent-data-parser',
+    title: 'Intelligent Data Parser',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+      </svg>
+    ),
+    href: '/dashboard/intelligent-data-parser',
+    isActive: true,
+    badge: 'Combined'
   }
 ];
 
@@ -112,7 +124,7 @@ const features: Feature[] = [
   {
     id: 'intelligent-table-parser',
     title: 'Intelligent Table Parser',
-    description: 'Azure-powered intelligent table extraction. Advanced layout analysis and superior accuracy for complex table structures.',
+    description: 'Advanced intelligent table extraction with superior accuracy for complex table structures and multi-page processing.',
     icon: '🔷',
     href: '/dashboard/intelligent-table-parser',
     isActive: true
@@ -120,9 +132,17 @@ const features: Feature[] = [
   {
     id: 'smart-key-value-parser',
     title: 'Smart Key-Value Parser',
-    description: 'Azure-powered smart key-value extraction. Intelligent field recognition with exceptional precision for forms and documents.',
+    description: 'Smart key-value extraction with intelligent field recognition and exceptional precision for forms and documents.',
     icon: '🔹',
     href: '/dashboard/smart-key-value-parser',
+    isActive: true
+  },
+  {
+    id: 'intelligent-data-parser',
+    title: 'Intelligent Data Parser',
+    description: 'Combined intelligent table and key-value extraction. Single API call to extract both tabular data and form fields efficiently.',
+    icon: '🔶',
+    href: '/dashboard/intelligent-data-parser',
     isActive: true
   }
 ];
@@ -441,7 +461,7 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">4</p>
+                  <p className="text-2xl font-bold text-gray-900">5</p>
                   <p className="text-sm text-gray-600">Active Features</p>
                 </div>
               </div>
