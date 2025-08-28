@@ -138,38 +138,59 @@ async def merge_intelligent_tables(request: MergeTablesRequest):
         raise HTTPException(status_code=400, detail="No tables provided for merging")
     
     try:
-        # Find the most common header structure
-        all_headers = []
-        for table in request.tables:
-            if table.get('headers'):
-                all_headers.append(table['headers'])
-        
-        if not all_headers:
-            raise HTTPException(status_code=400, detail="No headers found in tables")
-        
-        # Use the longest header set or most common one
-        merged_headers = max(all_headers, key=len)
-        
-        # Merge all rows
+        # Simply concatenate all tables sequentially with spacing
         merged_rows = []
+        merged_headers = []
+        max_columns = 0
         
+        # First pass: determine the maximum number of columns needed
         for table in request.tables:
             table_headers = table.get('headers', [])
             table_rows = table.get('rows', [])
             
-            # Create header mapping
-            header_mapping = {}
-            for i, header in enumerate(table_headers):
-                if header in merged_headers:
-                    header_mapping[i] = merged_headers.index(header)
-            
-            # Add rows with proper column mapping
+            # Calculate max columns for this table (headers + data)
+            current_max = len(table_headers)
             for row in table_rows:
-                merged_row = [''] * len(merged_headers)
-                for old_col_idx, cell_value in enumerate(row):
-                    if old_col_idx in header_mapping:
-                        new_col_idx = header_mapping[old_col_idx]
-                        merged_row[new_col_idx] = cell_value
+                current_max = max(current_max, len(row))
+            
+            max_columns = max(max_columns, current_max)
+        
+        # Create generic headers for the maximum columns
+        merged_headers = [f'Column {i+1}' for i in range(max_columns)]
+        
+        # Second pass: merge all tables sequentially
+        for table_idx, table in enumerate(request.tables):
+            table_headers = table.get('headers', [])
+            table_rows = table.get('rows', [])
+            
+            # Add spacing between tables (except for the first one)
+            if table_idx > 0:
+                # Add 2 empty rows for spacing
+                empty_row = [''] * max_columns
+                merged_rows.append(empty_row)
+                merged_rows.append(empty_row)
+            
+            # Add table identifier row
+            table_identifier_row = [''] * max_columns
+            table_identifier_row[0] = f'--- Table {table.get("table_id", table_idx + 1)} - Page {table.get("page_number", 0) + 1} ---'
+            merged_rows.append(table_identifier_row)
+            
+            # Add one empty row
+            empty_row = [''] * max_columns
+            merged_rows.append(empty_row)
+            
+            # Add headers if they exist
+            if table_headers:
+                header_row = [''] * max_columns
+                for i, header in enumerate(table_headers[:max_columns]):
+                    header_row[i] = header or ''
+                merged_rows.append(header_row)
+            
+            # Add all table rows as they are
+            for row in table_rows:
+                merged_row = [''] * max_columns
+                for i, cell_value in enumerate(row[:max_columns]):
+                    merged_row[i] = cell_value or ''
                 merged_rows.append(merged_row)
         
         return MergedDataResponse(

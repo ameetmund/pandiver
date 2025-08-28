@@ -106,6 +106,8 @@ const IntelligentDataParser: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('tables');
   const [selectedTables, setSelectedTables] = useState<number[]>([]);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
+  const [selectedKeyValues, setSelectedKeyValues] = useState<{[pageNumber: number]: number[]}>({});
+  const [exportMode, setExportMode] = useState<'individual' | 'merged'>('individual');
 
   // Polling for job status
   const [polling, setPolling] = useState<boolean>(false);
@@ -137,6 +139,7 @@ const IntelligentDataParser: React.FC = () => {
     setMergedData(null);
     setSelectedTables([]);
     setSelectedPages([]);
+    setSelectedKeyValues({});
   };
 
   // Step 2: Start Intelligent Data analysis
@@ -219,6 +222,15 @@ const IntelligentDataParser: React.FC = () => {
       }
       if (result.forms_data) {
         setSelectedPages(result.forms_data.map((f: FormData) => f.page_number));
+        // Initialize all key-value pairs as selected
+        const initialKeyValues: {[pageNumber: number]: number[]} = {};
+        result.forms_data.forEach((page: FormData) => {
+          initialKeyValues[page.page_number] = Array.from(
+            { length: page.key_value_pairs.length }, 
+            (_, index) => index
+          );
+        });
+        setSelectedKeyValues(initialKeyValues);
       }
       
       setCurrentStep(4);
@@ -246,6 +258,37 @@ const IntelligentDataParser: React.FC = () => {
         ? prev.filter(p => p !== pageNumber)
         : [...prev, pageNumber]
     );
+  };
+
+  // Handle individual key-value pair selection
+  const handleKeyValueSelect = (pageNumber: number, kvIndex: number) => {
+    setSelectedKeyValues(prev => {
+      const pageSelections = prev[pageNumber] || [];
+      const isSelected = pageSelections.includes(kvIndex);
+      
+      return {
+        ...prev,
+        [pageNumber]: isSelected 
+          ? pageSelections.filter(i => i !== kvIndex)
+          : [...pageSelections, kvIndex]
+      };
+    });
+  };
+
+  // Select all key-value pairs for a page
+  const handleSelectAllKeyValues = (pageNumber: number, totalCount: number) => {
+    setSelectedKeyValues(prev => ({
+      ...prev,
+      [pageNumber]: Array.from({ length: totalCount }, (_, index) => index)
+    }));
+  };
+
+  // Clear all key-value pairs for a page
+  const handleClearAllKeyValues = (pageNumber: number) => {
+    setSelectedKeyValues(prev => ({
+      ...prev,
+      [pageNumber]: []
+    }));
   };
 
   // Merge selected tables
@@ -283,7 +326,7 @@ const IntelligentDataParser: React.FC = () => {
   };
 
   // Export data in various formats
-  const exportData = async (format: 'csv' | 'xlsx' | 'json' | 'xml' | 'txt', dataType: TabType) => {
+  const exportData = async (format: 'csv' | 'xlsx' | 'json' | 'xml' | 'txt', dataType: TabType, useMerged = false) => {
     if (!extractedData || !pdfFile) return;
     
     setIsLoading(true);
@@ -293,7 +336,7 @@ const IntelligentDataParser: React.FC = () => {
       let baseFileName = getCleanFileName(pdfFile.name);
       
       if (dataType === 'tables') {
-        if (mergedData) {
+        if (useMerged && mergedData) {
           requestData = mergedData;
           endpoint = `http://localhost:8000/azure-di/intelligent-data/export-tables/${format}`;
         } else {
@@ -333,8 +376,8 @@ const IntelligentDataParser: React.FC = () => {
       
       // Use original filename with proper naming convention
       if (dataType === 'tables') {
-        if (mergedData) {
-          a.download = `${baseFileName}-Table-Merged.${format}`;
+        if (useMerged && mergedData) {
+          a.download = `${baseFileName}-Tables-Merged.${format}`;
         } else if (selectedTables.length > 1) {
           a.download = `${baseFileName}-Tables.zip`;
         } else {
@@ -371,6 +414,7 @@ const IntelligentDataParser: React.FC = () => {
     setCurrentPage(1);
     setSelectedTables([]);
     setSelectedPages([]);
+    setSelectedKeyValues({});
     setActiveTab('tables');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -400,18 +444,27 @@ const IntelligentDataParser: React.FC = () => {
               { num: 1, title: 'Upload PDF', icon: Upload, desc: 'Choose your file' },
               { num: 2, title: 'Preview & Extract', icon: Eye, desc: 'Start analysis' },
               { num: 3, title: 'Processing', icon: Loader2, desc: 'AI Extraction' },
-              { num: 4, title: 'Filter Data', icon: Filter, desc: 'Select & filter' },
+              { num: 4, title: 'Review & Filter', icon: Filter, desc: 'Select & filter' },
               { num: 5, title: 'Export', icon: Download, desc: 'Download files' },
             ].map(({ num, title, icon: Icon, desc }, index) => (
               <div key={num} className="flex items-start relative">
                 <div className="flex flex-col items-center">
-                  <div className={`
-                    w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 z-10 relative
-                    ${currentStep >= num 
-                      ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white shadow-lg scale-110' 
-                      : 'bg-white text-gray-400 border-2 border-gray-200'
-                    }
-                  `}>
+                  <button
+                    onClick={() => {
+                      if (num <= currentStep || (num === 2 && pdfFile) || (num === 4 && extractedData) || (num === 5 && extractedData)) {
+                        setCurrentStep(num);
+                      }
+                    }}
+                    disabled={num > currentStep && !(num === 2 && pdfFile) && !(num === 4 && extractedData) && !(num === 5 && extractedData)}
+                    className={`
+                      w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 z-10 relative
+                      ${currentStep >= num 
+                        ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white shadow-lg scale-110 hover:shadow-xl cursor-pointer' 
+                        : (num <= currentStep || (num === 2 && pdfFile) || (num === 4 && extractedData) || (num === 5 && extractedData))
+                          ? 'bg-white text-gray-400 border-2 border-gray-200 hover:border-[#00C7BE] cursor-pointer'
+                          : 'bg-white text-gray-400 border-2 border-gray-200 cursor-not-allowed'
+                      }
+                    `}>
                     {currentStep > num ? (
                       <Check className="w-6 h-6" />
                     ) : currentStep === num && (num === 3) && polling ? (
@@ -419,7 +472,7 @@ const IntelligentDataParser: React.FC = () => {
                     ) : (
                       <Icon className="w-6 h-6" />
                     )}
-                  </div>
+                  </button>
                   <div className="text-center mt-4 min-w-[140px]">
                     <div className={`font-semibold text-sm ${
                       currentStep >= num ? 'text-[#086C67]' : 'text-gray-400'
@@ -709,15 +762,35 @@ const IntelligentDataParser: React.FC = () => {
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-2xl font-bold text-gray-900 flex items-center">
                 <Filter className="w-7 h-7 mr-3 text-[#086C67]" />
-                Filter & Select Data
+                Review & Filter Data
               </h3>
               
               <button
                 onClick={() => setCurrentStep(5)}
                 className="px-8 py-4 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-xl hover:from-[#006CBE] hover:to-[#004A85] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
               >
-                🚀 Proceed to Export
+                Proceed to Export
               </button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl text-center border border-blue-200">
+                <div className="text-3xl font-bold text-blue-600 mb-2">{extractedData.total_tables}</div>
+                <div className="text-blue-800 font-medium">Tables Found</div>
+              </div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl text-center border border-green-200">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {extractedData.tables.reduce((sum, table) => sum + table.rows.length, 0)}
+                </div>
+                <div className="text-green-800 font-medium">Total Rows</div>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-2xl text-center border border-purple-200">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {extractedData.forms_data.reduce((sum, page) => sum + page.key_value_pairs.length, 0)}
+                </div>
+                <div className="text-purple-800 font-medium">Key-Value Pairs</div>
+              </div>
             </div>
 
             {/* Tab Content */}
@@ -728,13 +801,13 @@ const IntelligentDataParser: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     <button
                       onClick={() => setSelectedTables(extractedData.tables.map(t => t.table_id))}
-                      className="text-sm text-[#086C67] hover:underline"
+                      className="text-sm text-[#086C67] hover:underline hover:bg-[#00C7BE]/10 px-2 py-1 rounded transition-colors duration-200"
                     >
                       Select All
                     </button>
                     <button
                       onClick={() => setSelectedTables([])}
-                      className="text-sm text-gray-500 hover:underline"
+                      className="text-sm text-gray-500 hover:underline hover:bg-gray-100 px-2 py-1 rounded transition-colors duration-200"
                     >
                       Clear Selection
                     </button>
@@ -742,14 +815,6 @@ const IntelligentDataParser: React.FC = () => {
                       ({selectedTables.length}/{extractedData.tables.length} selected)
                     </span>
                   </div>
-                  {selectedTables.length > 1 && (
-                    <button
-                      onClick={mergeTablesData}
-                      className="px-4 py-2 bg-[#086C67] text-white rounded-full text-sm hover:bg-[#065A55] transition-colors"
-                    >
-                      Merge Selected Tables
-                    </button>
-                  )}
                 </div>
 
                 {/* Tables List */}
@@ -818,13 +883,13 @@ const IntelligentDataParser: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     <button
                       onClick={() => setSelectedPages(extractedData.forms_data.map(f => f.page_number))}
-                      className="text-sm text-[#086C67] hover:underline"
+                      className="text-sm text-[#086C67] hover:underline hover:bg-[#00C7BE]/10 px-2 py-1 rounded transition-colors duration-200"
                     >
                       Select All
                     </button>
                     <button
                       onClick={() => setSelectedPages([])}
-                      className="text-sm text-gray-500 hover:underline"
+                      className="text-sm text-gray-500 hover:underline hover:bg-gray-100 px-2 py-1 rounded transition-colors duration-200"
                     >
                       Clear Selection
                     </button>
@@ -859,9 +924,38 @@ const IntelligentDataParser: React.FC = () => {
                       
                       {pageData.key_value_pairs.length > 0 ? (
                         <div className="p-6">
+                          {/* Individual Key-Value Selection */}
+                          <div className="mb-4 flex justify-between items-center">
+                            <div className="flex items-center space-x-4">
+                              <button
+                                onClick={() => handleSelectAllKeyValues(pageData.page_number, pageData.key_value_pairs.length)}
+                                className="text-sm text-[#086C67] hover:underline hover:bg-[#00C7BE]/10 px-2 py-1 rounded transition-colors duration-200"
+                              >
+                                Select All
+                              </button>
+                              <button
+                                onClick={() => handleClearAllKeyValues(pageData.page_number)}
+                                className="text-sm text-gray-500 hover:underline hover:bg-gray-100 px-2 py-1 rounded transition-colors duration-200"
+                              >
+                                Clear All
+                              </button>
+                              <span className="text-sm text-gray-600">
+                                ({(selectedKeyValues[pageData.page_number] || []).length}/{pageData.key_value_pairs.length} pairs selected)
+                              </span>
+                            </div>
+                          </div>
+                          
                           <div className="grid gap-4">
                             {pageData.key_value_pairs.slice(0, 10).map((kvp, index) => (
                               <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center mr-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={(selectedKeyValues[pageData.page_number] || []).includes(index)}
+                                    onChange={() => handleKeyValueSelect(pageData.page_number, index)}
+                                    className="w-4 h-4 text-[#00C7BE] border-gray-300 rounded focus:ring-[#00C7BE]"
+                                  />
+                                </div>
                                 <div className="flex-1 grid grid-cols-2 gap-4">
                                   <div>
                                     <div className="text-xs font-medium text-gray-500 mb-1">Key</div>
@@ -873,13 +967,16 @@ const IntelligentDataParser: React.FC = () => {
                                   </div>
                                 </div>
                                 {kvp.confidence !== undefined && (
-                                  <span className={`text-xs px-2 py-1 rounded-full ml-4 ${
-                                    kvp.confidence >= 0.8 ? 'bg-green-100 text-green-700' :
-                                    kvp.confidence >= 0.6 ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-red-100 text-red-700'
-                                  }`}>
-                                    {(kvp.confidence * 100).toFixed(0)}%
-                                  </span>
+                                  <div className="ml-4">
+                                    <div className="text-xs font-medium text-gray-500 mb-1">Confidence Level</div>
+                                    <span className={`text-xs px-2 py-1 rounded-full ${
+                                      kvp.confidence >= 0.8 ? 'bg-green-100 text-green-700' :
+                                      kvp.confidence >= 0.6 ? 'bg-yellow-100 text-yellow-700' :
+                                      'bg-red-100 text-red-700'
+                                    }`}>
+                                      {(kvp.confidence * 100).toFixed(0)}%
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -945,58 +1042,212 @@ const IntelligentDataParser: React.FC = () => {
             {/* Export Options */}
             {activeTab === 'tables' && (
               <div className="text-center">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                  Download Tables {selectedTables.length > 1 && '(ZIP Archive)'}
+                <h4 className="text-lg font-semibold text-gray-900 mb-6">
+                  Export Tables
                 </h4>
-                {mergedData && (
-                  <div className="mb-4">
-                    <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
-                      Merged data available
-                    </span>
+                
+                {/* Export Mode Toggle (only show if multiple tables selected) */}
+                {selectedTables.length > 1 && (
+                  <div className="mb-8">
+                    <div className="inline-flex bg-gray-100 rounded-full p-1">
+                      <button
+                        onClick={() => setExportMode('individual')}
+                        className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
+                          exportMode === 'individual'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        Individual Tables
+                      </button>
+                      <button
+                        onClick={() => setExportMode('merged')}
+                        className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
+                          exportMode === 'merged'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        Merged Tables
+                      </button>
+                    </div>
                   </div>
                 )}
-                <div className="flex flex-wrap justify-center gap-4 mb-8">
-                  {['csv', 'xlsx', 'json', 'xml', 'txt'].map((format) => (
-                    <button
-                      key={format}
-                      onClick={() => exportData(format as any, 'tables')}
-                      disabled={isLoading || selectedTables.length === 0}
-                      className="flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
-                    >
-                      <FileDown className="w-5 h-5 mr-2" />
-                      {format.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
+                
+                {/* Individual Export */}
+                {exportMode === 'individual' && (
+                  <div className="p-6 bg-gray-50 rounded-2xl max-w-2xl mx-auto">
+                    <h5 className="text-md font-semibold text-gray-900 mb-4">
+                      {selectedTables.length > 1 ? 'Export as ZIP Archive' : 'Export Single Table'}
+                    </h5>
+                    <p className="text-sm text-gray-600 mb-6">
+                      {selectedTables.length > 1 
+                        ? 'Each table will be exported as a separate file within a ZIP archive.'
+                        : 'Export the selected table in your preferred format.'}
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {['csv', 'xlsx', 'json', 'txt'].map((format) => {
+                        const getButtonStyle = (fmt: string) => {
+                          switch (fmt) {
+                            case 'csv':
+                              return 'bg-gradient-to-r from-green-500 to-green-600 hover:shadow-xl hover:from-green-600 hover:to-green-700';
+                            case 'xlsx':
+                              return 'bg-gradient-to-r from-blue-500 to-blue-600 hover:shadow-xl hover:from-blue-600 hover:to-blue-700';
+                            case 'json':
+                              return 'bg-gradient-to-r from-purple-500 to-purple-600 hover:shadow-xl hover:from-purple-600 hover:to-purple-700';
+                            case 'txt':
+                              return 'bg-gradient-to-r from-gray-500 to-gray-600 hover:shadow-xl hover:from-gray-600 hover:to-gray-700';
+                            default:
+                              return 'bg-gradient-to-r from-gray-500 to-gray-600 hover:shadow-xl hover:from-gray-600 hover:to-gray-700';
+                          }
+                        };
+                        return (
+                        <button
+                          key={format}
+                          onClick={() => exportData(format as any, 'tables', false)}
+                          disabled={isLoading || selectedTables.length === 0}
+                          className={`flex items-center px-6 py-3 ${getButtonStyle(format)} text-white rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none`}
+                        >
+                          <FileDown className="w-5 h-5 mr-2" />
+                          {format.toUpperCase()}
+                        </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Merged Export */}
+                {exportMode === 'merged' && selectedTables.length > 1 && (
+                  <div className="p-6 bg-blue-50 rounded-2xl max-w-2xl mx-auto">
+                    <h5 className="text-md font-semibold text-blue-900 mb-4">
+                      Export as Single Merged File
+                    </h5>
+                    <p className="text-sm text-blue-700 mb-6">
+                      All selected tables will be combined into a single file with proper spacing between tables.
+                    </p>
+                    
+                    {/* Merge Button */}
+                    {!mergedData && (
+                      <div className="mb-6">
+                        <button
+                          onClick={mergeTablesData}
+                          disabled={isLoading}
+                          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Merging Tables...
+                            </>
+                          ) : (
+                            <>
+                              <FileType className="w-5 h-5 mr-2" />
+                              Merge Selected Tables
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Merged Success Message */}
+                    {mergedData && (
+                      <div className="mb-6">
+                        <span className="bg-green-100 text-green-800 text-sm px-4 py-2 rounded-full">
+                          ✓ Tables merged successfully - {mergedData.source_tables} tables, {mergedData.total_rows} total rows
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Download Buttons */}
+                    {mergedData && (
+                      <div className="flex flex-wrap justify-center gap-4">
+                        {['csv', 'xlsx', 'json', 'txt'].map((format) => {
+                          const getButtonStyle = (fmt: string) => {
+                            switch (fmt) {
+                              case 'csv':
+                                return 'bg-gradient-to-r from-green-500 to-green-600 hover:shadow-xl hover:from-green-600 hover:to-green-700';
+                              case 'xlsx':
+                                return 'bg-gradient-to-r from-blue-500 to-blue-600 hover:shadow-xl hover:from-blue-600 hover:to-blue-700';
+                              case 'json':
+                                return 'bg-gradient-to-r from-purple-500 to-purple-600 hover:shadow-xl hover:from-purple-600 hover:to-purple-700';
+                              case 'txt':
+                                return 'bg-gradient-to-r from-gray-500 to-gray-600 hover:shadow-xl hover:from-gray-600 hover:to-gray-700';
+                              default:
+                                return 'bg-gradient-to-r from-gray-500 to-gray-600 hover:shadow-xl hover:from-gray-600 hover:to-gray-700';
+                            }
+                          };
+                          return (
+                          <button
+                            key={`merged-${format}`}
+                            onClick={() => exportData(format as any, 'tables', true)}
+                            disabled={isLoading}
+                            className={`flex items-center px-6 py-3 ${getButtonStyle(format)} text-white rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none`}
+                          >
+                            <FileDown className="w-5 h-5 mr-2" />
+                            {format.toUpperCase()}
+                          </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'keyvalues' && (
               <div className="text-center">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                  Download Key-Value Pairs {selectedPages.length > 1 && '(ZIP Archive)'}
+                <h4 className="text-lg font-semibold text-gray-900 mb-6">
+                  Export Key-Value Pairs
                 </h4>
-                <div className="flex flex-wrap justify-center gap-4 mb-8">
-                  {['csv', 'xlsx', 'json', 'txt'].map((format) => (
-                    <button
-                      key={format}
-                      onClick={() => exportData(format as any, 'keyvalues')}
-                      disabled={isLoading || selectedPages.length === 0}
-                      className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none"
-                    >
-                      <FileDown className="w-5 h-5 mr-2" />
-                      {format.toUpperCase()}
-                    </button>
-                  ))}
+                <div className="p-6 bg-purple-50 rounded-2xl max-w-2xl mx-auto">
+                  <h5 className="text-md font-semibold text-purple-900 mb-4">
+                    {selectedPages.length > 1 ? 'Export as ZIP Archive' : 'Export Single Page'}
+                  </h5>
+                  <p className="text-sm text-purple-700 mb-6">
+                    {selectedPages.length > 1 
+                      ? 'Each page\'s key-value pairs will be exported as a separate file within a ZIP archive.'
+                      : 'Export the key-value pairs from the selected page in your preferred format.'}
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {['csv', 'xlsx', 'json', 'txt'].map((format) => {
+                      const getButtonStyle = (fmt: string) => {
+                        switch (fmt) {
+                          case 'csv':
+                            return 'bg-gradient-to-r from-green-500 to-green-600 hover:shadow-xl hover:from-green-600 hover:to-green-700';
+                          case 'xlsx':
+                            return 'bg-gradient-to-r from-blue-500 to-blue-600 hover:shadow-xl hover:from-blue-600 hover:to-blue-700';
+                          case 'json':
+                            return 'bg-gradient-to-r from-purple-500 to-purple-600 hover:shadow-xl hover:from-purple-600 hover:to-purple-700';
+                          case 'txt':
+                            return 'bg-gradient-to-r from-gray-500 to-gray-600 hover:shadow-xl hover:from-gray-600 hover:to-gray-700';
+                          default:
+                            return 'bg-gradient-to-r from-gray-500 to-gray-600 hover:shadow-xl hover:from-gray-600 hover:to-gray-700';
+                        }
+                      };
+                      return (
+                      <button
+                        key={format}
+                        onClick={() => exportData(format as any, 'keyvalues')}
+                        disabled={isLoading || selectedPages.length === 0}
+                        className={`flex items-center px-6 py-3 ${getButtonStyle(format)} text-white rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:transform-none`}
+                      >
+                        <FileDown className="w-5 h-5 mr-2" />
+                        {format.toUpperCase()}
+                      </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Reset Button */}
-            <div className="text-center">
+            <div className="text-center mt-8">
               <button
                 onClick={resetParser}
-                className="px-8 py-3 border border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                className="px-8 py-3 border-2 border-[#00C7BE] text-[#086C67] rounded-full font-semibold hover:bg-[#00C7BE] hover:text-white transition-all duration-300 transform hover:scale-105"
               >
                 Process Another Document
               </button>
