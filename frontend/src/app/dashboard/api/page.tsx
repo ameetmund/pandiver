@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 
 interface User {
@@ -57,6 +57,18 @@ interface Notification {
   message: string;
 }
 
+interface ApiStep {
+  id: string;
+  title: string;
+  endpoint: string;
+  method: 'POST' | 'GET';
+  status: 'pending' | 'loading' | 'success' | 'error';
+  curlCommand?: string;
+  response?: any;
+  timestamp?: string;
+  expanded?: boolean;
+}
+
 export default function APIPage() {
   const [user, setUser] = useState<User | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -64,8 +76,8 @@ export default function APIPage() {
   const [apiUsage, setApiUsage] = useState<ApiUsage[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState('test');
-  const [outputFormat, setOutputFormat] = useState('json');
-  const [tableMode, setTableMode] = useState('individual');
+  const [outputFormat, setOutputFormat] = useState('');
+  const [tableMode, setTableMode] = useState('');
   const [processingJobs, setProcessingJobs] = useState<ProcessingJob[]>([]);
   const [notification, setNotification] = useState<Notification | null>(null);
   const [newKeyName, setNewKeyName] = useState<string>('');
@@ -83,6 +95,11 @@ export default function APIPage() {
   const [curlExecutionResult, setCurlExecutionResult] = useState<any>(null);
   const [fileProcessingStatus, setFileProcessingStatus] = useState<FileProcessingStatus[]>([]);
   const [isProcessingMultiple, setIsProcessingMultiple] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // API Execution Timeline states
+  const [apiSteps, setApiSteps] = useState<ApiStep[]>([]);
+  const [currentJobId, setCurrentJobId] = useState<string>('');
 
   useEffect(() => {
     loadUser();
@@ -92,7 +109,7 @@ export default function APIPage() {
 
   useEffect(() => {
     if (selectedFiles.length > 0 && selectedApiKey) {
-      generateCurlCommand(selectedFiles);
+      generateLegacyCurlCommand(selectedFiles);
     }
   }, [selectedFiles, selectedApiKey, outputFormat, tableMode]);
 
@@ -125,9 +142,7 @@ export default function APIPage() {
       if (response.ok) {
         const keys = await response.json();
         setApiKeys(keys);
-        if (keys.length > 0 && !selectedApiKey) {
-          setSelectedApiKey(keys[0].real_key || keys[0].api_key);
-        }
+        // Remove auto-selection - let user choose
       } else {
         const errorText = await response.text();
         console.error('Failed to load API keys:', response.status, errorText);
@@ -230,8 +245,8 @@ export default function APIPage() {
     setSelectedFiles(files);
   };
 
-  // Generate curl command based on current settings
-  const generateCurlCommand = (files: File[]) => {
+  // Generate curl command based on current settings (legacy - kept for compatibility)
+  const generateLegacyCurlCommand = (files: File[]) => {
     if (!selectedApiKey || files.length === 0) {
       setGeneratedCurl('');
       return;
@@ -372,20 +387,196 @@ export default function APIPage() {
   const handleProcessFiles = async () => {
     if (selectedFiles.length === 0) {
       setNotification({type: 'error', message: 'Please select files to process'});
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
 
     if (!selectedApiKey) {
       setNotification({type: 'error', message: 'Please select an API key'});
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
 
-    if (selectedFiles.length === 1) {
-      // Single file processing
-      processSingleFile(selectedFiles[0]);
-    } else {
-      // Multiple file processing - sequential
-      processMultipleFiles(selectedFiles);
+    if (!outputFormat) {
+      setNotification({type: 'error', message: 'Please select an output format'});
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    if (!tableMode) {
+      setNotification({type: 'error', message: 'Please select a table mode'});
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    // Initialize the API timeline
+    initializeApiSteps();
+    
+    // Start the API execution flow
+    await executeApiFlow();
+  };
+
+  const executeApiFlow = async () => {
+    try {
+      // Step 1: Start Analysis
+      await executeAnalyzeStep();
+    } catch (error) {
+      console.error('API execution flow failed:', error);
+      setNotification({type: 'error', message: 'API execution failed'});
+      setTimeout(() => setNotification(null), 5000);
+    }
+  };
+
+  const executeAnalyzeStep = async () => {
+    const analyzeStep = apiSteps.find(s => s.id === 'analyze');
+    if (!analyzeStep) return;
+    
+    // Update step to loading
+    updateApiStep('analyze', { 
+      status: 'loading', 
+      curlCommand: generateCurlCommand(analyzeStep),
+      timestamp: new Date().toLocaleTimeString()
+    });
+
+    try {
+      const formData = new FormData();
+      selectedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/analyze`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${selectedApiKey}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        const jobId = result.job_id;
+        setCurrentJobId(jobId);
+        
+        // Update analyze step as success
+        updateApiStep('analyze', { 
+          status: 'success', 
+          response: result,
+          timestamp: new Date().toLocaleTimeString()
+        });
+
+        // Start monitoring step
+        await executeStatusMonitoring(jobId);
+      } else {
+        updateApiStep('analyze', { 
+          status: 'error', 
+          response: result,
+          timestamp: new Date().toLocaleTimeString()
+        });
+      }
+    } catch (error) {
+      updateApiStep('analyze', { 
+        status: 'error', 
+        response: { error: String(error) },
+        timestamp: new Date().toLocaleTimeString()
+      });
+    }
+  };
+
+  const executeStatusMonitoring = async (jobId: string) => {
+    const statusStep = apiSteps.find(s => s.id === 'status');
+    if (!statusStep) return;
+    
+    // Update status step to loading and expand it
+    updateApiStep('status', { 
+      status: 'loading', 
+      curlCommand: generateCurlCommand(statusStep, jobId),
+      expanded: true,
+      timestamp: new Date().toLocaleTimeString()
+    });
+
+    const pollStatus = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
+          headers: {
+            'Authorization': `Bearer ${selectedApiKey}`,
+          },
+        });
+
+        const result = await response.json();
+        
+        // Update status step with latest response
+        updateApiStep('status', { 
+          response: result,
+          timestamp: new Date().toLocaleTimeString()
+        });
+
+        if (result.status === 'SUCCEEDED') {
+          updateApiStep('status', { status: 'success' });
+          
+          // Start results step
+          await executeResultsStep(jobId);
+        } else if (result.status === 'FAILED') {
+          updateApiStep('status', { status: 'error' });
+        } else {
+          // Continue polling
+          setTimeout(pollStatus, 3000);
+        }
+      } catch (error) {
+        updateApiStep('status', { 
+          status: 'error', 
+          response: { error: String(error) },
+          timestamp: new Date().toLocaleTimeString()
+        });
+      }
+    };
+
+    setTimeout(pollStatus, 1000);
+  };
+
+  const executeResultsStep = async (jobId: string) => {
+    const resultsStep = apiSteps.find(s => s.id === 'results');
+    if (!resultsStep) return;
+    
+    // Update results step to loading and expand it
+    updateApiStep('results', { 
+      status: 'loading', 
+      curlCommand: generateCurlCommand(resultsStep, jobId),
+      expanded: true,
+      timestamp: new Date().toLocaleTimeString()
+    });
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`, {
+        headers: {
+          'Authorization': `Bearer ${selectedApiKey}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        updateApiStep('results', { 
+          status: 'success', 
+          response: result,
+          timestamp: new Date().toLocaleTimeString()
+        });
+
+        setNotification({type: 'success', message: 'Processing completed successfully!'});
+        setTimeout(() => setNotification(null), 3000);
+      } else {
+        updateApiStep('results', { 
+          status: 'error', 
+          response: result,
+          timestamp: new Date().toLocaleTimeString()
+        });
+      }
+    } catch (error) {
+      updateApiStep('results', { 
+        status: 'error', 
+        response: { error: String(error) },
+        timestamp: new Date().toLocaleTimeString()
+      });
     }
   };
 
@@ -659,6 +850,82 @@ export default function APIPage() {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // API Steps Management Functions
+  const initializeApiSteps = () => {
+    const steps: ApiStep[] = [
+      {
+        id: 'analyze',
+        title: 'Start Analysis',
+        endpoint: '/api/v1/intelligent-data/analyze',
+        method: 'POST',
+        status: 'pending',
+        expanded: true
+      },
+      {
+        id: 'status',
+        title: 'Monitor Progress',
+        endpoint: '/api/v1/intelligent-data/jobs/{job_id}/status',
+        method: 'GET',
+        status: 'pending',
+        expanded: false
+      },
+      {
+        id: 'results',
+        title: 'Get Results',
+        endpoint: '/api/v1/intelligent-data/jobs/{job_id}/results',
+        method: 'GET',
+        status: 'pending',
+        expanded: false
+      }
+    ];
+    setApiSteps(steps);
+  };
+
+  const updateApiStep = (stepId: string, updates: Partial<ApiStep>) => {
+    setApiSteps(prev => prev.map(step => 
+      step.id === stepId ? { ...step, ...updates } : step
+    ));
+  };
+
+  const toggleStepExpansion = (stepId: string) => {
+    setApiSteps(prev => prev.map(step => 
+      step.id === stepId ? { ...step, expanded: !step.expanded } : step
+    ));
+  };
+
+  const generateCurlCommand = (step: ApiStep, jobId?: string) => {
+    let endpoint = step.endpoint;
+    if (jobId) {
+      endpoint = endpoint.replace('{job_id}', jobId);
+    }
+
+    let curl = `curl -X ${step.method} "http://localhost:8000${endpoint}"`;
+    curl += ` \\\n  -H "Authorization: Bearer ${selectedApiKey}"`;
+    
+    if (step.method === 'POST' && step.id === 'analyze') {
+      selectedFiles.forEach((file, index) => {
+        curl += ` \\\n  -F "files=@${file.name}"`;
+      });
+    }
+
+    if (step.id === 'results') {
+      curl += ` \\\n  -G -d "format=${outputFormat}" -d "mode=${tableMode}"`;
+    }
+
+    return curl;
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotification({type: 'success', message: 'cURL command copied to clipboard!'});
+      setTimeout(() => setNotification(null), 2000);
+    } catch (error) {
+      setNotification({type: 'error', message: 'Failed to copy to clipboard'});
+      setTimeout(() => setNotification(null), 2000);
+    }
+  };
+
   return (
     <DashboardLayout title="API Dashboard">
       <div className="p-6">
@@ -760,6 +1027,7 @@ export default function APIPage() {
                         onChange={(e) => setOutputFormat(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                       >
+                        <option value="">Choose output format...</option>
                         <option value="json">JSON</option>
                         <option value="csv">CSV</option>
                         <option value="xlsx">Excel</option>
@@ -775,6 +1043,7 @@ export default function APIPage() {
                         onChange={(e) => setTableMode(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                       >
+                        <option value="">Choose table mode...</option>
                         <option value="individual">Individual</option>
                         <option value="merged">Merged</option>
                       </select>
@@ -783,17 +1052,29 @@ export default function APIPage() {
 
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload Multiple Files:
+                      Upload Files:
                     </label>
                     <input
                       type="file"
                       multiple
                       accept=".pdf,.png,.jpg,.jpeg"
                       onChange={handleFileChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                      className="hidden"
+                      ref={fileInputRef}
                     />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full bg-gray-50 hover:bg-gray-100 border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-lg py-8 px-4 transition-colors duration-200 flex flex-col items-center justify-center text-gray-600 hover:text-blue-600"
+                    >
+                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <span className="font-medium">Upload Single or Multiple Files</span>
+                      <span className="text-sm text-gray-500 mt-1">PDF, PNG, JPG, JPEG files supported</span>
+                    </button>
                     {selectedFiles.length > 0 && (
-                      <div className="mt-3 space-y-1">
+                      <div className="mt-4 space-y-1">
                         <p className="text-sm font-medium text-gray-700">
                           Selected Files ({selectedFiles.length}):
                         </p>
@@ -843,64 +1124,159 @@ export default function APIPage() {
                   </div>
                 </div>
 
-                {/* Right Column - Processing Results */}
+                {/* Right Column - API Execution Timeline */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Processing Results</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">API Execution Timeline</h2>
                   
-                  {fileProcessingStatus.length === 0 ? (
-                    <div className="bg-gray-100 text-gray-500 p-4 rounded-lg text-center text-sm">
-                      Upload and process files to see results here
+                  {apiSteps.length === 0 ? (
+                    <div className="bg-gray-50 text-gray-600 p-6 rounded-lg text-center">
+                      <div className="mb-4">
+                        <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-medium">Ready to Process</p>
+                      <p className="text-xs text-gray-500 mt-1">Upload files and click &quot;Process&quot; to see the API execution flow</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {fileProcessingStatus.map((status, index) => (
-                        <div key={index} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium text-gray-900 text-sm">{status.file.name}</h4>
-                            <div className="flex items-center">
-                              {status.status === 'processing' && (
-                                <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
-                              )}
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                status.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                status.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                status.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-600'
-                              }`}>
-                                {status.status.toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          {status.status === 'failed' && status.error && (
-                            <p className="text-red-600 text-sm mb-2">{status.error}</p>
+                      {apiSteps.map((step, index) => (
+                        <div key={step.id} className="relative">
+                          {/* Timeline Line */}
+                          {index !== apiSteps.length - 1 && (
+                            <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-gray-200"></div>
                           )}
                           
-                          {status.status === 'completed' && status.downloadUrls && (
-                            <div className="mt-3">
-                              <p className="text-sm font-medium text-gray-700 mb-2">Download Links:</p>
-                              <div className="space-y-1">
-                                {status.downloadUrls.tables && Object.entries(status.downloadUrls.tables).map(([format, url]) => (
-                                  <button
-                                    key={format}
-                                    onClick={() => handleDownload(url, status.job_id!, 'tables', format)}
-                                    className="inline-block text-blue-600 hover:text-blue-800 text-sm mr-4 underline cursor-pointer bg-transparent border-none"
-                                  >
-                                    Tables ({format.toUpperCase()})
-                                  </button>
-                                ))}
-                                {status.downloadUrls.key_values && Object.entries(status.downloadUrls.key_values).map(([format, url]) => (
-                                  <button
-                                    key={format}
-                                    onClick={() => handleDownload(url, status.job_id!, 'key-values', format)}
-                                    className="inline-block text-blue-600 hover:text-blue-800 text-sm mr-4 underline cursor-pointer bg-transparent border-none"
-                                  >
-                                    Key-Values ({format.toUpperCase()})
-                                  </button>
-                                ))}
+                          {/* Step Container */}
+                          <div className="relative flex items-start space-x-4">
+                            {/* Step Number & Status */}
+                            <div className={`flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
+                              step.status === 'success' ? 'bg-green-100 border-green-500 text-green-700' :
+                              step.status === 'error' ? 'bg-red-100 border-red-500 text-red-700' :
+                              step.status === 'loading' ? 'bg-blue-100 border-blue-500 text-blue-700' :
+                              'bg-gray-100 border-gray-300 text-gray-500'
+                            }`}>
+                              {step.status === 'loading' ? (
+                                <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
+                              ) : step.status === 'success' ? (
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              ) : step.status === 'error' ? (
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              ) : (
+                                index + 1
+                              )}
+                            </div>
+
+                            {/* Step Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-gray-50 rounded-lg border border-gray-200">
+                                {/* Step Header */}
+                                <button
+                                  onClick={() => toggleStepExpansion(step.id)}
+                                  className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-gray-100 rounded-t-lg transition-colors"
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                      step.method === 'POST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                                    }`}>
+                                      {step.method}
+                                    </span>
+                                    <div>
+                                      <h3 className="font-medium text-gray-900">{step.title}</h3>
+                                      <p className="text-xs text-gray-500 font-mono">
+                                        {step.endpoint.replace('{job_id}', currentJobId || '{job_id}')}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    {step.timestamp && (
+                                      <span className="text-xs text-gray-500">{step.timestamp}</span>
+                                    )}
+                                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${
+                                      step.expanded ? 'transform rotate-180' : ''
+                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </div>
+                                </button>
+
+                                {/* Expandable Content */}
+                                {step.expanded && (
+                                  <div className="px-4 pb-4 border-t border-gray-200">
+                                    {/* cURL Command */}
+                                    {step.curlCommand && (
+                                      <div className="mt-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h4 className="text-sm font-medium text-gray-700">cURL Command</h4>
+                                          <button
+                                            onClick={() => copyToClipboard(step.curlCommand!)}
+                                            className="text-xs text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>Copy</span>
+                                          </button>
+                                        </div>
+                                        <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-xs overflow-x-auto">
+                                          <pre>{step.curlCommand}</pre>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Response */}
+                                    {step.response && (
+                                      <div className="mt-3">
+                                        <h4 className="text-sm font-medium text-gray-700 mb-2">Response</h4>
+                                        <div className="bg-gray-100 p-3 rounded-lg">
+                                          <pre className="text-xs text-gray-800 overflow-x-auto">
+                                            {JSON.stringify(step.response, null, 2)}
+                                          </pre>
+                                        </div>
+                                        
+                                        {/* Download Links for final step */}
+                                        {step.id === 'results' && step.status === 'success' && step.response.download_urls && (
+                                          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                            <h5 className="text-sm font-medium text-blue-900 mb-2">Download Files</h5>
+                                            <div className="space-y-2">
+                                              {step.response.download_urls.tables && Object.entries(step.response.download_urls.tables).map(([format, url]: [string, any]) => (
+                                                <button
+                                                  key={format}
+                                                  onClick={() => handleDownload(url, currentJobId, 'tables', format)}
+                                                  className="inline-flex items-center space-x-2 text-blue-700 hover:text-blue-900 text-sm mr-4"
+                                                >
+                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                  </svg>
+                                                  <span>Tables ({format.toUpperCase()})</span>
+                                                </button>
+                                              ))}
+                                              {step.response.download_urls.key_values && Object.entries(step.response.download_urls.key_values).map(([format, url]: [string, any]) => (
+                                                <button
+                                                  key={format}
+                                                  onClick={() => handleDownload(url, currentJobId, 'key-values', format)}
+                                                  className="inline-flex items-center space-x-2 text-blue-700 hover:text-blue-900 text-sm mr-4"
+                                                >
+                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                  </svg>
+                                                  <span>Key-Values ({format.toUpperCase()})</span>
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1150,76 +1526,350 @@ export default function APIPage() {
           {/* Documentation Tab */}
           {activeTab === 'docs' && (
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">API Documentation</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-8">Intelligent Data Parser API Documentation</h2>
               
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Authentication</h3>
-                  <p className="text-sm text-gray-400 mb-4">All API requests require authentication using a Bearer token with your API key.</p>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <code className="text-sm text-gray-800">Authorization: Bearer YOUR_API_KEY</code>
+              <div className="space-y-8">
+                {/* Overview Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Overview</h3>
+                  <p className="text-gray-600 mb-4">
+                    The Intelligent Data Parser API extracts structured data from documents including tables and key-value pairs. 
+                    It supports multiple file formats and provides results in various output formats.
+                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Base URL</h4>
+                    <code className="text-blue-800 bg-blue-100 px-2 py-1 rounded">http://localhost:8000/api/v1/intelligent-data</code>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Endpoints</h3>
-                  <div className="space-y-4">
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">POST</span>
-                        <code className="text-sm font-mono">/api/v1/intelligent-data/analyze</code>
+                {/* Authentication Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Authentication</h3>
+                  <p className="text-gray-600 mb-4">All API requests require authentication using a Bearer token with your API key.</p>
+                  <div className="bg-gray-900 rounded-lg p-4">
+                    <div className="text-green-400 text-sm font-mono">
+                      <span className="text-gray-400"># Header</span><br/>
+                      Authorization: Bearer YOUR_API_KEY
+                    </div>
+                  </div>
+                  <div className="mt-3 text-sm text-gray-600">
+                    <strong>Note:</strong> Replace <code>YOUR_API_KEY</code> with your actual API key from the API Keys tab.
+                  </div>
+                </div>
+
+                {/* Endpoints Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-6">API Endpoints</h3>
+                  
+                  {/* Analyze Endpoint */}
+                  <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">POST</span>
+                      <code className="text-lg font-mono text-gray-900">/analyze</code>
+                    </div>
+                    <p className="text-gray-600 mb-4">Start intelligent data analysis for uploaded files. Supports PDF, PNG, JPG, and JPEG formats.</p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Request Parameters</h5>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-200 rounded-lg">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Parameter</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Required</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              <tr>
+                                <td className="px-4 py-2 font-mono text-sm">files</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">File[]</td>
+                                <td className="px-4 py-2 text-sm"><span className="text-red-600 font-medium">Yes</span></td>
+                                <td className="px-4 py-2 text-sm text-gray-600">Array of files to process (multipart/form-data)</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-400 mb-2">Start intelligent data analysis for uploaded files.</p>
-                      <div className="text-sm text-gray-400">
-                        <strong>Parameters:</strong>
-                        <ul className="list-disc list-inside ml-4 mt-1">
-                          <li><code>files</code> - Array of files to process (multipart/form-data)</li>
-                        </ul>
+
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Example Request</h5>
+                        <div className="bg-gray-900 rounded-lg p-4">
+                          <pre className="text-green-400 text-sm font-mono">
+{`curl -X POST "http://localhost:8000/api/v1/intelligent-data/analyze" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -F "files=@document1.pdf" \\
+  -F "files=@document2.pdf"`}
+                          </pre>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Response</h5>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <pre className="text-sm text-gray-800">
+{`{
+  "job_id": "uuid-string",
+  "status": "PENDING",
+  "message": "Analysis started successfully"
+}`}
+                          </pre>
+                        </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">GET</span>
-                        <code className="text-sm font-mono">/api/v1/intelligent-data/jobs/{'{job_id}'}/status</code>
-                      </div>
-                      <p className="text-sm text-gray-400">Get the status of a processing job.</p>
+                  {/* Job Status Endpoint */}
+                  <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">GET</span>
+                      <code className="text-lg font-mono text-gray-900">/jobs/{'{job_id}'}/status</code>
                     </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">GET</span>
-                        <code className="text-sm font-mono">/api/v1/intelligent-data/jobs/{'{job_id}'}/results</code>
+                    <p className="text-gray-600 mb-4">Get the current status of a processing job.</p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Path Parameters</h5>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-200 rounded-lg">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Parameter</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-2 font-mono text-sm">job_id</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">string</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">UUID of the processing job</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-400 mb-2">Get the results of a completed job with download URLs.</p>
-                      <div className="text-sm text-gray-400">
-                        <strong>Parameters:</strong>
-                        <ul className="list-disc list-inside ml-4 mt-1">
-                          <li><code>format</code> - Output format (csv, xlsx, json, txt)</li>
-                          <li><code>mode</code> - Processing mode (individual, merged)</li>
-                        </ul>
+
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Response</h5>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <pre className="text-sm text-gray-800">
+{`{
+  "job_id": "uuid-string",
+  "status": "SUCCEEDED|PENDING|RUNNING|FAILED",
+  "progress": 100,
+  "message": "Processing completed successfully"
+}`}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Job Results Endpoint */}
+                  <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">GET</span>
+                      <code className="text-lg font-mono text-gray-900">/jobs/{'{job_id}'}/results</code>
+                    </div>
+                    <p className="text-gray-600 mb-4">Get the results and download URLs for a completed job.</p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Query Parameters</h5>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-200 rounded-lg">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Parameter</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Default</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              <tr>
+                                <td className="px-4 py-2 font-mono text-sm">format</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">string</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">json</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">Output format: csv, xlsx, json, txt</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 font-mono text-sm">mode</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">string</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">individual</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">Processing mode: individual, merged</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Example Request</h5>
+                        <div className="bg-gray-900 rounded-lg p-4">
+                          <pre className="text-green-400 text-sm font-mono">
+{`curl -H "Authorization: Bearer YOUR_API_KEY" \\
+  "http://localhost:8000/api/v1/intelligent-data/jobs/uuid-string/results?format=csv&mode=individual"`}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Download Endpoints */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full">GET</span>
+                      <code className="text-lg font-mono text-gray-900">/download/{'{job_id}'}/{'{type}'}/{'{format}'}</code>
+                    </div>
+                    <p className="text-gray-600 mb-4">Download processed data files directly.</p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h5 className="font-semibold text-gray-900 mb-2">Path Parameters</h5>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-200 rounded-lg">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Parameter</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Values</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              <tr>
+                                <td className="px-4 py-2 font-mono text-sm">job_id</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">UUID string</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">The job identifier</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 font-mono text-sm">type</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">tables | key-values</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">Data type to download</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 font-mono text-sm">format</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">csv | xlsx | json | txt</td>
+                                <td className="px-4 py-2 text-sm text-gray-600">File format</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Response Formats</h3>
-                  <p className="text-sm text-gray-400 mb-4">The API supports multiple output formats:</p>
-                  <ul className="list-disc list-inside text-sm text-gray-400 space-y-1">
-                    <li><strong>CSV</strong> - Comma-separated values</li>
-                    <li><strong>XLSX</strong> - Excel spreadsheet</li>
-                    <li><strong>JSON</strong> - JavaScript Object Notation</li>
-                    <li><strong>TXT</strong> - Plain text format</li>
-                  </ul>
+                {/* Response Codes Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">HTTP Status Codes</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border border-gray-200 rounded-lg">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-sm">200</td>
+                          <td className="px-4 py-2 text-sm"><span className="text-green-600 font-medium">OK</span></td>
+                          <td className="px-4 py-2 text-sm text-gray-600">Request successful</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-sm">401</td>
+                          <td className="px-4 py-2 text-sm"><span className="text-red-600 font-medium">Unauthorized</span></td>
+                          <td className="px-4 py-2 text-sm text-gray-600">Invalid or missing API key</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-sm">404</td>
+                          <td className="px-4 py-2 text-sm"><span className="text-red-600 font-medium">Not Found</span></td>
+                          <td className="px-4 py-2 text-sm text-gray-600">Job ID not found</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-sm">422</td>
+                          <td className="px-4 py-2 text-sm"><span className="text-red-600 font-medium">Validation Error</span></td>
+                          <td className="px-4 py-2 text-sm text-gray-600">Invalid request parameters</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 font-mono text-sm">500</td>
+                          <td className="px-4 py-2 text-sm"><span className="text-red-600 font-medium">Server Error</span></td>
+                          <td className="px-4 py-2 text-sm text-gray-600">Internal server error</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
+                {/* Supported Formats Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Supported Formats</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">Input Formats</h4>
+                      <ul className="space-y-2">
+                        <li className="flex items-center">
+                          <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                          <span className="text-gray-700"><strong>PDF</strong> - Portable Document Format</span>
+                        </li>
+                        <li className="flex items-center">
+                          <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                          <span className="text-gray-700"><strong>PNG</strong> - Portable Network Graphics</span>
+                        </li>
+                        <li className="flex items-center">
+                          <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                          <span className="text-gray-700"><strong>JPG/JPEG</strong> - Joint Photographic Experts Group</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">Output Formats</h4>
+                      <ul className="space-y-2">
+                        <li className="flex items-center">
+                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="text-gray-700"><strong>CSV</strong> - Comma-separated values</span>
+                        </li>
+                        <li className="flex items-center">
+                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="text-gray-700"><strong>XLSX</strong> - Excel spreadsheet</span>
+                        </li>
+                        <li className="flex items-center">
+                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="text-gray-700"><strong>JSON</strong> - JavaScript Object Notation</span>
+                        </li>
+                        <li className="flex items-center">
+                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="text-gray-700"><strong>TXT</strong> - Plain text format</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Processing Modes Section */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Processing Modes</h3>
-                  <ul className="list-disc list-inside text-sm text-gray-400 space-y-1">
-                    <li><strong>Individual</strong> - Process each file separately</li>
-                    <li><strong>Merged</strong> - Combine all files into a single output</li>
-                  </ul>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Processing Modes</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-2">Individual Mode</h4>
+                      <p className="text-gray-600 text-sm mb-3">Process each uploaded file separately, generating individual output files for each input.</p>
+                      <div className="bg-gray-50 rounded p-2 text-xs text-gray-700">
+                        <strong>Use case:</strong> When you need separate results for each document
+                      </div>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-2">Merged Mode</h4>
+                      <p className="text-gray-600 text-sm mb-3">Combine data from all uploaded files into a single consolidated output file.</p>
+                      <div className="bg-gray-50 rounded p-2 text-xs text-gray-700">
+                        <strong>Use case:</strong> When you want to aggregate data from multiple documents
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
