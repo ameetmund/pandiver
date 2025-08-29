@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { pixelifySans } from '../../lib/fonts';
+import { pixelifySans } from '../lib/fonts';
 
 interface User {
   id: string;
@@ -22,13 +22,9 @@ interface SidebarItem {
   badge?: string;
 }
 
-interface Feature {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  href: string;
-  isActive: boolean;
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  title?: string;
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -42,6 +38,18 @@ const sidebarItems: SidebarItem[] = [
     ),
     href: '/dashboard',
     isActive: true
+  },
+  {
+    id: 'api',
+    title: 'API',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+    href: '/dashboard/api',
+    isActive: true,
+    badge: 'New'
   },
   {
     id: 'ai-bank-parser',
@@ -83,7 +91,7 @@ const sidebarItems: SidebarItem[] = [
     title: 'Smart Key-Value Parser',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1 1 21 9z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
       </svg>
     ),
     href: '/dashboard/smart-key-value-parser',
@@ -91,71 +99,32 @@ const sidebarItems: SidebarItem[] = [
     badge: 'Azure'
   },
   {
-    id: 'intelligent-data-parser',
-    title: 'Intelligent Data Parser',
+    id: 'table-extractor',
+    title: 'Table Extractor',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z" />
       </svg>
     ),
-    href: '/dashboard/intelligent-data-parser',
+    href: '/dashboard/table-extractor',
     isActive: true,
-    badge: 'Combined'
+    badge: 'New'
+  },
+  {
+    id: 'key-value-parser',
+    title: 'Key Value Parser',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+      </svg>
+    ),
+    href: '/dashboard/key-value-parser',
+    isActive: true,
+    badge: 'New'
   }
 ];
 
-const features: Feature[] = [
-  {
-    id: 'ai-parser',
-    title: 'AI Bank Parser',
-    description: 'Advanced AI-powered table extraction technology. Automatically detect and extract all table data with intelligent algorithms.',
-    icon: '🤖',
-    href: '/dashboard/bank-statement-aws-textract',
-    isActive: true
-  },
-  {
-    id: 'form-data-parser',
-    title: 'Form Data Parser',
-    description: 'AI-powered key-value extraction from PDF forms. Automatically detect and extract all form fields and their values.',
-    icon: '📋',
-    href: '/dashboard/form-data-parser',
-    isActive: true
-  },
-  {
-    id: 'intelligent-table-parser',
-    title: 'Intelligent Table Parser',
-    description: 'Advanced intelligent table extraction with superior accuracy for complex table structures and multi-page processing.',
-    icon: '🔷',
-    href: '/dashboard/intelligent-table-parser',
-    isActive: true
-  },
-  {
-    id: 'smart-key-value-parser',
-    title: 'Smart Key-Value Parser',
-    description: 'Smart key-value extraction with intelligent field recognition and exceptional precision for forms and documents.',
-    icon: '🔹',
-    href: '/dashboard/smart-key-value-parser',
-    isActive: true
-  },
-  {
-    id: 'intelligent-data-parser',
-    title: 'Intelligent Data Parser',
-    description: 'Combined intelligent table and key-value extraction. Single API call to extract both tabular data and form fields efficiently.',
-    icon: '🔶',
-    href: '/dashboard/intelligent-data-parser',
-    isActive: true
-  },
-  {
-    id: 'api-dashboard',
-    title: 'API Dashboard',
-    description: 'Create API keys, process files programmatically, monitor usage, and download results. Full REST API access to all parsing features.',
-    icon: '🚀',
-    href: '/dashboard/api',
-    isActive: true
-  }
-];
-
-export default function DashboardPage() {
+export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -165,7 +134,6 @@ export default function DashboardPage() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check if user is authenticated
     const token = localStorage.getItem('accessToken');
     const userData = localStorage.getItem('user');
 
@@ -186,7 +154,6 @@ export default function DashboardPage() {
   }, [router]);
 
   useEffect(() => {
-    // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (userDropdownOpen && !target.closest('[data-dropdown="user-menu"]')) {
@@ -281,12 +248,10 @@ export default function DashboardPage() {
           })}
         </nav>
 
-        {/* Toggle Button - Positioned on the side */}
+        {/* Toggle Button */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 items-center justify-center w-6 h-12 bg-white border border-slate-200 rounded-r-lg shadow-lg hover:bg-slate-50 transition-all duration-200 ${
-            sidebarCollapsed ? '-right-3' : '-right-3'
-          }`}
+          className={`hidden lg:flex absolute top-1/2 -translate-y-1/2 items-center justify-center w-6 h-12 bg-white border border-slate-200 rounded-r-lg shadow-lg hover:bg-slate-50 transition-all duration-200`}
           style={{ right: '-12px' }}
         >
           {sidebarCollapsed ? (
@@ -342,7 +307,7 @@ export default function DashboardPage() {
 
           {/* Page Title */}
           <div className="hidden lg:block">
-            <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+            <h1 className="text-xl font-semibold text-gray-900">{title || 'Dashboard'}</h1>
           </div>
 
           {/* User Menu */}
@@ -422,91 +387,10 @@ export default function DashboardPage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-auto p-6">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Welcome back, {user?.name}!
-            </h1>
-            <p className="text-gray-600">
-              Choose from our powerful tools to streamline your document processing workflow.
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-            {features.map((feature) => (
-              <Link key={feature.id} href={feature.href}>
-                <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 hover:border-[#00C7BE]/30 group cursor-pointer">
-                  <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg flex items-center justify-center mr-4">
-                      <span className="text-xl">{feature.icon}</span>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#00C7BE] transition-colors">
-                        {feature.title}
-                      </h3>
-                    </div>
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-[#00C7BE] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-600 text-sm">
-                    {feature.description}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">5</p>
-                  <p className="text-sm text-gray-600">Active Features</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">Free</p>
-                  <p className="text-sm text-gray-600">Current Plan</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {new Date(user?.created_at || '').toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-600">Member Since</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <main className="flex-1 overflow-auto">
+          {children}
         </main>
       </div>
     </div>
   );
-} 
+}

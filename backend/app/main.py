@@ -27,7 +27,7 @@ from datetime import datetime, timedelta
 import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from .models import Base, User as UserModel, UserTable
+from .models import Base, User as UserModel, UserTable, ApiKey, ApiUsage
 # from .tasks import parse_statement  # Optional celery dependency
 from .pdf_processor import get_pdf_info, extract_all_words, get_all_page_rows, analyze_row_structure
 # from .export_utils import StatementExporter  # Optional dependency
@@ -52,6 +52,7 @@ from .azure_di_endpoints import router as azure_di_router
 from .api.endpoints import router as api_router
 from .api.webhooks import router as webhooks_router
 from .api.watch_folder import router as watch_folder_router
+from .api_endpoints import router as intelligent_data_router
 
 app = FastAPI(
     title="Pandiver PDF Processing API",
@@ -73,6 +74,7 @@ app.include_router(azure_di_router, prefix="/azure-di", tags=["Azure Document In
 app.include_router(api_router, prefix="/api/v1", tags=["API - File Processing"])
 app.include_router(webhooks_router, prefix="/api/v1", tags=["API - Webhooks"])
 app.include_router(watch_folder_router, prefix="/api/v1", tags=["API - Watch Folders"])
+app.include_router(intelligent_data_router, tags=["Intelligent Data Parser API"])
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./pandiver.db'
@@ -159,7 +161,12 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 def get_current_user(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    try:
+        user_id_int = int(user_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    
+    user = db.query(UserModel).filter(UserModel.id == user_id_int).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -212,6 +219,123 @@ async def get_current_user_info(current_user: UserModel = Depends(get_current_us
         email=current_user.email,
         created_at=current_user.created_at
     )
+
+# API Key management endpoints
+class ApiKeyCreate(BaseModel):
+    key_name: str
+
+class ApiKeyResponse(BaseModel):
+    id: int
+    key_name: str
+    api_key: str
+    is_active: bool
+    created_at: datetime
+    last_used_at: Optional[datetime]
+
+class ApiUsageResponse(BaseModel):
+    id: int
+    endpoint: str
+    job_id: str
+    status: str
+    file_count: int
+    processing_time: Optional[float]
+    created_at: datetime
+    completed_at: Optional[datetime]
+
+@app.post("/auth/api-keys", response_model=ApiKeyResponse)
+async def create_api_key(
+    api_key_data: ApiKeyCreate, 
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new API key for the current user"""
+    # Generate API key
+    import secrets
+    api_key = f"pd_{secrets.token_urlsafe(32)}"
+    
+    # Create new API key record
+    new_api_key = ApiKey(
+        user_id=current_user.id,
+        key_name=api_key_data.key_name,
+        api_key=api_key,
+        is_active=True,
+        created_at=datetime.utcnow()
+    )
+    
+    db.add(new_api_key)
+    db.commit()
+    db.refresh(new_api_key)
+    
+    return ApiKeyResponse(
+        id=new_api_key.id,
+        key_name=new_api_key.key_name,
+        api_key=new_api_key.api_key,
+        is_active=new_api_key.is_active,
+        created_at=new_api_key.created_at,
+        last_used_at=new_api_key.last_used_at
+    )
+
+@app.get("/auth/api-keys", response_model=List[ApiKeyResponse])
+async def get_api_keys(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all API keys for the current user"""
+    api_keys = db.query(ApiKey).filter(ApiKey.user_id == current_user.id).all()
+    
+    return [
+        ApiKeyResponse(
+            id=key.id,
+            key_name=key.key_name,
+            api_key=key.api_key,
+            is_active=key.is_active,
+            created_at=key.created_at,
+            last_used_at=key.last_used_at
+        ) for key in api_keys
+    ]
+
+@app.delete("/auth/api-keys/{key_id}")
+async def delete_api_key(
+    key_id: int,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an API key"""
+    api_key = db.query(ApiKey).filter(
+        ApiKey.id == key_id, 
+        ApiKey.user_id == current_user.id
+    ).first()
+    
+    if not api_key:
+        raise HTTPException(status_code=404, detail="API key not found")
+    
+    db.delete(api_key)
+    db.commit()
+    
+    return {"message": "API key deleted successfully"}
+
+@app.get("/auth/usage", response_model=List[ApiUsageResponse])
+async def get_api_usage(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get API usage history for the current user"""
+    usage_records = db.query(ApiUsage).filter(
+        ApiUsage.user_id == current_user.id
+    ).order_by(ApiUsage.created_at.desc()).limit(100).all()
+    
+    return [
+        ApiUsageResponse(
+            id=usage.id,
+            endpoint=usage.endpoint,
+            job_id=usage.job_id,
+            status=usage.status,
+            file_count=usage.file_count,
+            processing_time=usage.processing_time,
+            created_at=usage.created_at,
+            completed_at=usage.completed_at
+        ) for usage in usage_records
+    ]
 
 @app.post("/statement")
 async def upload_statement(
