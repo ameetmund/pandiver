@@ -44,6 +44,7 @@ interface FileProcessingStatus {
   file: File;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   job_id?: string;
+  api_key?: string;
   downloadUrls?: {
     tables?: { [key: string]: string };
     key_values?: { [key: string]: string };
@@ -392,7 +393,8 @@ export default function APIPage() {
     // Initialize processing status
     const initialStatus: FileProcessingStatus[] = [{
       file,
-      status: 'processing'
+      status: 'processing',
+      api_key: selectedApiKey
     }];
     setFileProcessingStatus(initialStatus);
 
@@ -447,7 +449,8 @@ export default function APIPage() {
     // Initialize processing status for all files
     const initialStatus: FileProcessingStatus[] = files.map(file => ({
       file,
-      status: 'pending'
+      status: 'pending',
+      api_key: selectedApiKey
     }));
     setFileProcessingStatus(initialStatus);
 
@@ -529,8 +532,8 @@ export default function APIPage() {
 
               if (resultsResponse.ok) {
                 const downloadUrls = {
-                  tables: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/download/tables/${outputFormat}` },
-                  key_values: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/download/key-values/${outputFormat}` }
+                  tables: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/download/${jobId}/tables/${outputFormat}?mode=${tableMode}` },
+                  key_values: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/download/${jobId}/key-values/${outputFormat}` }
                 };
 
                 setFileProcessingStatus(prev => prev.map((status, index) => 
@@ -616,9 +619,20 @@ export default function APIPage() {
 
   const handleDownload = async (downloadUrl: string, jobId: string, type: string, format: string) => {
     try {
+      // Find the API key used for this job
+      const jobStatus = fileProcessingStatus.find(status => status.job_id === jobId);
+      const apiKeyToUse = jobStatus?.api_key || selectedApiKey;
+      
+      console.log('🔧 DEBUG: Download attempt:', {
+        downloadUrl,
+        jobId,
+        apiKeyToUse: apiKeyToUse ? `${apiKeyToUse.substring(0, 10)}...` : 'null',
+        jobStatus: jobStatus ? 'found' : 'not found'
+      });
+      
       const response = await fetch(downloadUrl, {
         headers: {
-          'Authorization': `Bearer ${selectedApiKey}`,
+          'Authorization': `Bearer ${apiKeyToUse}`,
         },
       });
 
@@ -867,24 +881,22 @@ export default function APIPage() {
                               <p className="text-sm font-medium text-gray-700 mb-2">Download Links:</p>
                               <div className="space-y-1">
                                 {status.downloadUrls.tables && Object.entries(status.downloadUrls.tables).map(([format, url]) => (
-                                  <a
+                                  <button
                                     key={format}
-                                    href={url}
-                                    download
-                                    className="inline-block text-blue-600 hover:text-blue-800 text-sm mr-4"
+                                    onClick={() => handleDownload(url, status.job_id!, 'tables', format)}
+                                    className="inline-block text-blue-600 hover:text-blue-800 text-sm mr-4 underline cursor-pointer bg-transparent border-none"
                                   >
                                     Tables ({format.toUpperCase()})
-                                  </a>
+                                  </button>
                                 ))}
                                 {status.downloadUrls.key_values && Object.entries(status.downloadUrls.key_values).map(([format, url]) => (
-                                  <a
+                                  <button
                                     key={format}
-                                    href={url}
-                                    download
-                                    className="inline-block text-blue-600 hover:text-blue-800 text-sm mr-4"
+                                    onClick={() => handleDownload(url, status.job_id!, 'key-values', format)}
+                                    className="inline-block text-blue-600 hover:text-blue-800 text-sm mr-4 underline cursor-pointer bg-transparent border-none"
                                   >
                                     Key-Values ({format.toUpperCase()})
-                                  </a>
+                                  </button>
                                 ))}
                               </div>
                             </div>
