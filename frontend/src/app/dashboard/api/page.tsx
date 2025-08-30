@@ -83,7 +83,6 @@ export default function APIPage() {
   const [newKeyName, setNewKeyName] = useState<string>('');
   
   // New state for enhanced features
-  const [generatedCurl, setGeneratedCurl] = useState<string>('');
   const [showExecutionPanel, setShowExecutionPanel] = useState(false);
   const [executionFlow, setExecutionFlow] = useState<Array<{
     step: string;
@@ -107,11 +106,6 @@ export default function APIPage() {
     loadApiUsage();
   }, []);
 
-  useEffect(() => {
-    if (selectedFiles.length > 0 && selectedApiKey) {
-      generateLegacyCurlCommand(selectedFiles);
-    }
-  }, [selectedFiles, selectedApiKey, outputFormat, tableMode]);
 
   const loadUser = async () => {
     try {
@@ -245,20 +239,6 @@ export default function APIPage() {
     setSelectedFiles(files);
   };
 
-  // Generate curl command based on current settings (legacy - kept for compatibility)
-  const generateLegacyCurlCommand = (files: File[]) => {
-    if (!selectedApiKey || files.length === 0) {
-      setGeneratedCurl('');
-      return;
-    }
-
-    const fileParams = files.map(file => `-F "files=@${file.name}"`).join(' ');
-    const curl = `curl -X POST "http://localhost:8000/api/v1/intelligent-data/analyze" \\
-  -H "Authorization: Bearer ${selectedApiKey}" \\
-  ${fileParams}`;
-
-    setGeneratedCurl(curl);
-  };
 
   // Execute curl command simulation with step-by-step tracking
   const executeCurlCommand = async () => {
@@ -1092,19 +1072,6 @@ export default function APIPage() {
                     )}
                   </div>
 
-                  {/* Generated cURL Command */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Generated cURL Command</h3>
-                    {generatedCurl ? (
-                      <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                        <pre>{generatedCurl}</pre>
-                      </div>
-                    ) : (
-                      <div className="bg-gray-100 text-gray-500 p-4 rounded-lg text-center text-sm">
-                        Select an API key and upload files to generate cURL command
-                      </div>
-                    )}
-                  </div>
 
                   <div className="flex space-x-4">
                     <button

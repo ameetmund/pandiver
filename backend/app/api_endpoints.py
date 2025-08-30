@@ -15,6 +15,8 @@ import asyncio
 import time
 import pandas as pd
 import io
+import zipfile
+import re
 
 from .models import User as UserModel, ApiKey, ApiUsage
 from .auth import get_current_user, get_db
@@ -234,17 +236,21 @@ async def start_intelligent_data_analysis(
     
     try:
         # Process files directly using the working azure_di_endpoints logic
+        original_filenames = []
         for file in files:
             await file.seek(0)
             file_content = await file.read()
+            original_filenames.append(file.filename)
             
             # Use the working Azure DI function directly
             from .azure_document_intelligence import start_layout_analysis
             operation_id = start_layout_analysis(file_content, file.filename)
             
-            # Store the operation ID for this job
+            # Store the operation ID and filenames for this job
             with open(os.path.join(tempfile.gettempdir(), f"job_{job_id}_operation.txt"), "w") as f:
                 f.write(operation_id)
+            with open(os.path.join(tempfile.gettempdir(), f"job_{job_id}_filenames.json"), "w") as f:
+                json.dump({"filenames": original_filenames}, f)
                 
         # Update status to indicate Azure processing has started
         usage_record.status = "IN_PROGRESS"
@@ -309,12 +315,21 @@ async def get_job_status_api(
                     tables = extract_tables_from_azure_result(operation_id)
                     forms_data = extract_key_value_pairs_from_azure_result(operation_id)
                     
+                    # Get original filenames
+                    filenames_file = os.path.join(tempfile.gettempdir(), f"job_{job_id}_filenames.json")
+                    original_filenames = []
+                    if os.path.exists(filenames_file):
+                        with open(filenames_file, "r") as f:
+                            filenames_data = json.load(f)
+                            original_filenames = filenames_data.get("filenames", [])
+                    
                     # Store results
                     results_data = {
                         "tables": tables or [],
                         "key_values": forms_data or [],
                         "processed_files": 1,
-                        "total_files": usage_record.file_count
+                        "total_files": usage_record.file_count,
+                        "original_filenames": original_filenames
                     }
                     
                     results_file = os.path.join(tempfile.gettempdir(), f"results_{job_id}.json")
@@ -461,25 +476,36 @@ async def download_tables(
                 detail="No tables found in results"
             )
         
-        # Generate file based on format and mode
-        filename = f"tables_{job_id}_{mode}.{format}"
-        file_content = generate_tables_file(tables_data, format, mode)
+        # Get original filename for proper naming (matching UI behavior)
+        original_filenames = results_data.get("original_filenames", [])
+        base_filename = get_clean_filename(original_filenames[0]) if original_filenames else "file"
+        
+        # Generate file based on format and mode - matching UI logic exactly
+        if mode == "individual":
+            # Individual mode: Always create ZIP files (matching UI behavior)
+            filename = f"{base_filename}-Tables.zip"
+            file_content = create_table_zip_file(tables_data, format, base_filename)
+            media_type = "application/zip"
+        else:  # merged
+            # Merged mode: Single file, no ZIP (matching UI behavior) 
+            filename = f"{base_filename}-Tables-Merged.{format}"
+            file_content = generate_merged_tables_content(tables_data, format)
+            
+            if format == "csv":
+                media_type = "text/csv"
+            elif format == "xlsx":
+                media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            elif format == "json":
+                media_type = "application/json"
+            elif format == "txt":
+                media_type = "text/plain"
         
         # Create temporary file for download
         temp_download_file = os.path.join(tempfile.gettempdir(), filename)
         
-        if format in ["csv", "txt"]:
-            with open(temp_download_file, "w", encoding="utf-8") as f:
-                f.write(file_content)
-            media_type = "text/csv" if format == "csv" else "text/plain"
-        elif format == "xlsx":
-            with open(temp_download_file, "wb") as f:
-                f.write(file_content)
-            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        elif format == "json":
-            with open(temp_download_file, "w", encoding="utf-8") as f:
-                f.write(file_content)
-            media_type = "application/json"
+        # Write file content
+        with open(temp_download_file, "wb") as f:
+            f.write(file_content)
         
         return FileResponse(
             temp_download_file,
@@ -535,25 +561,21 @@ async def download_key_values(
                 detail="No key-value pairs found in results"
             )
         
-        # Generate file based on format
-        filename = f"key_values_{job_id}.{format}"
-        file_content = generate_key_values_file(key_values_data, format)
+        # Get original filename for proper naming (matching UI behavior)
+        original_filenames = results_data.get("original_filenames", [])
+        base_filename = get_clean_filename(original_filenames[0]) if original_filenames else "file"
+        
+        # Key-values always create ZIP files (matching UI behavior)
+        filename = f"{base_filename}-KeyValues.zip"
+        file_content = create_key_values_zip_file(key_values_data, format, base_filename)
+        media_type = "application/zip"
         
         # Create temporary file for download
         temp_download_file = os.path.join(tempfile.gettempdir(), filename)
         
-        if format in ["csv", "txt"]:
-            with open(temp_download_file, "w", encoding="utf-8") as f:
-                f.write(file_content)
-            media_type = "text/csv" if format == "csv" else "text/plain"
-        elif format == "xlsx":
-            with open(temp_download_file, "wb") as f:
-                f.write(file_content)
-            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        elif format == "json":
-            with open(temp_download_file, "w", encoding="utf-8") as f:
-                f.write(file_content)
-            media_type = "application/json"
+        # Write file content (always binary for ZIP)
+        with open(temp_download_file, "wb") as f:
+            f.write(file_content)
         
         return FileResponse(
             temp_download_file,
@@ -570,7 +592,242 @@ async def download_key_values(
 
 # Note: Background processing removed - now using direct Azure polling like the working dashboard
 
-# File generation functions for downloads
+# Utility functions for file handling
+
+def get_clean_filename(original_filename: str) -> str:
+    """Clean filename for use in downloads - matches UI logic"""
+    if not original_filename:
+        return "file"
+    
+    # Remove extension
+    name = os.path.splitext(original_filename)[0]
+    
+    # Replace spaces and special characters with hyphens
+    cleaned_name = re.sub(r'[^\w\-_]', '-', name)
+    
+    # Remove multiple consecutive hyphens
+    cleaned_name = re.sub(r'-+', '-', cleaned_name)
+    
+    # Remove leading/trailing hyphens
+    cleaned_name = cleaned_name.strip('-')
+    
+    return cleaned_name or "file"
+
+# File generation functions for downloads (New UI-matching logic)
+
+def create_table_zip_file(tables_data: List[Dict], format: str, base_filename: str) -> bytes:
+    """Create ZIP file containing individual table files - matches UI behavior"""
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for i, table in enumerate(tables_data):
+            table_page = table.get('page_number', i)
+            filename = f"{base_filename}-Table{i+1}-page{table_page+1}.{format}"
+            
+            # Generate individual table content
+            table_content = generate_single_table_content(table, format)
+            
+            if table_content:
+                if format in ['csv', 'txt', 'json']:
+                    zip_file.writestr(filename, table_content)
+                else:  # xlsx
+                    zip_file.writestr(filename, table_content)
+    
+    return zip_buffer.getvalue()
+
+def generate_single_table_content(table: Dict, format: str):
+    """Generate content for a single table"""
+    if format == "csv":
+        if "columns" in table and "rows" in table:
+            df = pd.DataFrame(table["rows"], columns=table["columns"])
+            return df.to_csv(index=False)
+        elif "rows" in table and len(table["rows"]) > 0:
+            df = pd.DataFrame(table["rows"])
+            return df.to_csv(index=False)
+        return ""
+    
+    elif format == "xlsx":
+        output = io.BytesIO()
+        if "columns" in table and "rows" in table:
+            df = pd.DataFrame(table["rows"], columns=table["columns"])
+            df.to_excel(output, index=False, engine='openpyxl')
+        elif "rows" in table and len(table["rows"]) > 0:
+            df = pd.DataFrame(table["rows"])
+            df.to_excel(output, index=False, engine='openpyxl')
+        return output.getvalue()
+    
+    elif format == "json":
+        return json.dumps({"table": table}, indent=2)
+    
+    elif format == "txt":
+        txt_content = ""
+        if "columns" in table and "rows" in table:
+            # Add headers
+            txt_content += " | ".join(table["columns"]) + "\n"
+            txt_content += "-" * (len(" | ".join(table["columns"]))) + "\n"
+            
+            # Add rows
+            for row in table["rows"]:
+                txt_content += " | ".join([str(cell) for cell in row]) + "\n"
+        return txt_content
+    
+    return None
+
+def generate_merged_tables_content(tables_data: List[Dict], format: str) -> bytes:
+    """Generate merged table content - matches UI merged behavior"""
+    if format == "csv":
+        all_rows = []
+        all_columns = []
+        
+        # Collect all unique columns in order
+        for table in tables_data:
+            if "columns" in table:
+                for col in table["columns"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+        
+        # Collect all rows
+        for table in tables_data:
+            if "rows" in table:
+                all_rows.extend(table["rows"])
+        
+        if all_rows and all_columns:
+            df = pd.DataFrame(all_rows, columns=all_columns)
+            return df.to_csv(index=False).encode('utf-8')
+        return b""
+    
+    elif format == "xlsx":
+        output = io.BytesIO()
+        all_rows = []
+        all_columns = []
+        
+        # Collect all unique columns in order
+        for table in tables_data:
+            if "columns" in table:
+                for col in table["columns"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+        
+        # Collect all rows
+        for table in tables_data:
+            if "rows" in table:
+                all_rows.extend(table["rows"])
+        
+        if all_rows and all_columns:
+            df = pd.DataFrame(all_rows, columns=all_columns)
+            df.to_excel(output, index=False, engine='openpyxl')
+        
+        return output.getvalue()
+    
+    elif format == "json":
+        merged_data = {
+            "merged_tables": {
+                "columns": [],
+                "rows": [],
+                "source_tables": len(tables_data)
+            }
+        }
+        
+        # Collect all unique columns
+        all_columns = []
+        for table in tables_data:
+            if "columns" in table:
+                for col in table["columns"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+        
+        merged_data["merged_tables"]["columns"] = all_columns
+        
+        # Collect all rows
+        for table in tables_data:
+            if "rows" in table:
+                merged_data["merged_tables"]["rows"].extend(table["rows"])
+        
+        return json.dumps(merged_data, indent=2).encode('utf-8')
+    
+    elif format == "txt":
+        all_rows = []
+        all_columns = []
+        
+        # Collect all unique columns
+        for table in tables_data:
+            if "columns" in table:
+                for col in table["columns"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+        
+        # Collect all rows
+        for table in tables_data:
+            if "rows" in table:
+                all_rows.extend(table["rows"])
+        
+        if all_rows and all_columns:
+            txt_content = " | ".join(all_columns) + "\n"
+            txt_content += "-" * (len(" | ".join(all_columns))) + "\n"
+            
+            for row in all_rows:
+                txt_content += " | ".join([str(cell) for cell in row]) + "\n"
+            
+            return txt_content.encode('utf-8')
+        
+        return b""
+    
+    return b""
+
+def create_key_values_zip_file(key_values_data: List[Dict], format: str, base_filename: str) -> bytes:
+    """Create ZIP file containing key-value files - matches UI behavior"""
+    zip_buffer = io.BytesIO()
+    
+    # Group key-values by page
+    pages_data = {}
+    for kv_page in key_values_data:
+        page_num = kv_page.get('page_number', 0)
+        if page_num not in pages_data:
+            pages_data[page_num] = []
+        if 'key_value_pairs' in kv_page:
+            pages_data[page_num].extend(kv_page['key_value_pairs'])
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for page_num, kvs in pages_data.items():
+            if kvs:  # Only create file if there are key-values
+                filename = f"{base_filename}-KeyValue-Page{page_num+1}.{format}"
+                kv_content = generate_key_values_content_for_page(kvs, format)
+                
+                if kv_content:
+                    zip_file.writestr(filename, kv_content)
+    
+    return zip_buffer.getvalue()
+
+def generate_key_values_content_for_page(key_values: List[Dict], format: str):
+    """Generate content for key-values from a single page"""
+    if format == "csv":
+        df = pd.DataFrame(key_values)
+        return df.to_csv(index=False)
+    
+    elif format == "xlsx":
+        output = io.BytesIO()
+        df = pd.DataFrame(key_values)
+        df.to_excel(output, index=False, engine='openpyxl')
+        return output.getvalue()
+    
+    elif format == "json":
+        return json.dumps({"key_values": key_values}, indent=2)
+    
+    elif format == "txt":
+        txt_content = "Key-Value Pairs:\n" + "="*20 + "\n\n"
+        for kv in key_values:
+            key = kv.get('key', 'Unknown Key')
+            value = kv.get('value', 'Unknown Value')
+            confidence = kv.get('confidence', 0.0)
+            txt_content += f"Key: {key}\n"
+            txt_content += f"Value: {value}\n"
+            txt_content += f"Confidence: {confidence:.2f}\n"
+            txt_content += "-" * 30 + "\n"
+        return txt_content
+    
+    return None
+
+# Legacy functions (keeping for compatibility)
 
 def generate_tables_file(tables_data: List[Dict], format: str, mode: str):
     """Generate file content for tables download"""
