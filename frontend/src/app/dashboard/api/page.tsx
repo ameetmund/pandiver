@@ -52,20 +52,6 @@ interface FileProcessingStatus {
   error?: string;
 }
 
-interface IndividualFileProgress {
-  file: File;
-  fileIndex: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  job_id?: string;
-  apiSteps: ApiStep[];
-  downloadUrls?: {
-    tables?: { [mode: string]: string };
-    key_values?: { [mode: string]: string };
-  };
-  error?: string;
-  completedAt?: string;
-}
-
 interface Notification {
   type: 'success' | 'error' | 'info';
   message: string;
@@ -113,10 +99,10 @@ export default function APIPage() {
   // API Execution Timeline states
   const [apiSteps, setApiSteps] = useState<ApiStep[]>([]);
   const [currentJobId, setCurrentJobId] = useState<string>('');
-  
-  // Sequential file processing states
-  const [individualFileProgress, setIndividualFileProgress] = useState<IndividualFileProgress[]>([]);
-  const [isSequentialProcessing, setIsSequentialProcessing] = useState(false);
+
+  // Compact Design Filter States
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchFilter, setSearchFilter] = useState<string>('');
 
   useEffect(() => {
     loadUser();
@@ -407,309 +393,155 @@ export default function APIPage() {
       return;
     }
 
-    if (selectedFiles.length === 1) {
-      // Single file processing - use original timeline
-      initializeApiSteps();
-      await executeApiFlow();
-    } else {
-      // Multiple file processing - use sequential processing
-      initializeSequentialFileProcessing();
-      await processFilesSequentially();
-    }
-  };
-
-  // Sequential File Processing Functions
-  const initializeSequentialFileProcessing = () => {
-    const initialProgress: IndividualFileProgress[] = selectedFiles.map((file, index) => ({
+    // Initialize processing status for each file
+    const initialFileStatuses: FileProcessingStatus[] = selectedFiles.map(file => ({
       file,
-      fileIndex: index,
       status: 'pending',
-      apiSteps: [
-        {
-          id: 'analyze',
-          title: 'Start Analysis',
-          endpoint: '/api/v1/intelligent-data/analyze',
-          method: 'POST',
-          status: 'pending',
-          expanded: false
-        },
-        {
-          id: 'status',
-          title: 'Monitor Progress',
-          endpoint: '/api/v1/intelligent-data/jobs/{job_id}/status',
-          method: 'GET',
-          status: 'pending',
-          expanded: false
-        },
-        {
-          id: 'results',
-          title: 'Get Results',
-          endpoint: '/api/v1/intelligent-data/jobs/{job_id}/results',
-          method: 'GET',
-          status: 'pending',
-          expanded: false
-        }
-      ]
+      api_key: selectedApiKey
     }));
     
-    setIndividualFileProgress(initialProgress);
-    setIsSequentialProcessing(true);
-  };
-
-  const processFilesSequentially = async () => {
-    setNotification({type: 'info', message: `Starting sequential processing of ${selectedFiles.length} files...`});
-    setTimeout(() => setNotification(null), 3000);
-
-    for (let i = 0; i < selectedFiles.length; i++) {
-      // Update file status to processing
-      updateIndividualFileProgress(i, { status: 'processing' });
-      
-      try {
-        await processIndividualFile(i);
-        
-        // Mark file as completed
-        updateIndividualFileProgress(i, { 
-          status: 'completed',
-          completedAt: new Date().toLocaleTimeString()
-        });
-
-        // Batch notification every 2 files
-        if ((i + 1) % 2 === 0 && i + 1 < selectedFiles.length) {
-          setNotification({type: 'info', message: `${i + 1} files completed. Continuing with remaining files...`});
-          setTimeout(() => setNotification(null), 3000);
-        }
-        
-      } catch (error) {
-        updateIndividualFileProgress(i, { 
-          status: 'failed',
-          error: String(error)
-        });
-      }
-    }
-
-    setIsSequentialProcessing(false);
-    loadApiUsage(); // Refresh usage data
-    setNotification({type: 'success', message: 'All files processed successfully!'});
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  const processIndividualFile = async (fileIndex: number): Promise<void> => {
-    const file = selectedFiles[fileIndex];
+    setFileProcessingStatus(initialFileStatuses);
+    setIsProcessingMultiple(true);
     
-    // Step 1: Start Analysis
-    await executeIndividualAnalyzeStep(fileIndex, file);
+    // Process files one by one
+    try {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        
+        // Update status to processing
+        setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+          index === i ? { ...fileStatus, status: 'processing' } : fileStatus
+        ));
+        
+        try {
+          // Process individual file
+          await processIndividualFile(file, i);
+        } catch (error) {
+          console.error(`Failed to process file ${file.name}:`, error);
+          // Update status to failed
+          setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+            index === i ? { ...fileStatus, status: 'failed', error: error.message } : fileStatus
+          ));
+        }
+      }
+      
+      setNotification({type: 'success', message: 'All files processed successfully!'});
+      setTimeout(() => setNotification(null), 3000);
+      
+    } catch (error) {
+      console.error('File processing failed:', error);
+      setNotification({type: 'error', message: 'File processing failed'});
+      setTimeout(() => setNotification(null), 5000);
+    } finally {
+      setIsProcessingMultiple(false);
+    }
   };
 
-  const executeIndividualAnalyzeStep = async (fileIndex: number, file: File) => {
-    updateIndividualFileApiStep(fileIndex, 'analyze', { 
-      status: 'loading', 
-      curlCommand: generateIndividualCurlCommand(fileIndex, 'analyze'),
-      timestamp: new Date().toLocaleTimeString(),
-      expanded: true
-    });
+  const processIndividualFile = async (file: File, fileIndex: number) => {
+    const formData = new FormData();
+    formData.append('files', file);
+    formData.append('output_format', outputFormat);
+    formData.append('table_mode', tableMode);
 
     try {
-      const formData = new FormData();
-      formData.append('files', file);
-
-      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/analyze`, {
+      // Step 1: Start Analysis
+      const analyzeResponse = await fetch('http://localhost:8000/api/v1/intelligent-data/analyze', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${selectedApiKey}`,
+          'Authorization': `Bearer ${selectedApiKey}`
         },
-        body: formData,
+        body: formData
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        const jobId = result.job_id;
-        
-        // Update file progress with job ID
-        updateIndividualFileProgress(fileIndex, { job_id: jobId });
-        
-        // Update analyze step as success
-        updateIndividualFileApiStep(fileIndex, 'analyze', { 
-          status: 'success', 
-          response: result,
-          timestamp: new Date().toLocaleTimeString()
-        });
-
-        // Start monitoring step
-        await executeIndividualStatusMonitoring(fileIndex, jobId);
-      } else {
-        updateIndividualFileApiStep(fileIndex, 'analyze', { 
-          status: 'error', 
-          response: result,
-          timestamp: new Date().toLocaleTimeString()
-        });
-        throw new Error('Analysis failed');
+      if (!analyzeResponse.ok) {
+        throw new Error(`Analysis failed: ${analyzeResponse.statusText}`);
       }
+
+      const analyzeResult = await analyzeResponse.json();
+      const jobId = analyzeResult.job_id;
+
+      // Update file status with job ID
+      setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+        index === fileIndex ? { ...fileStatus, job_id: jobId } : fileStatus
+      ));
+
+      // Step 2: Monitor Progress
+      await monitorProgress(jobId, fileIndex);
+
+      // Step 3: Get Results
+      await getResults(jobId, fileIndex);
+
     } catch (error) {
-      updateIndividualFileApiStep(fileIndex, 'analyze', { 
-        status: 'error', 
-        response: { error: String(error) },
-        timestamp: new Date().toLocaleTimeString()
-      });
+      console.error(`Processing failed for file ${file.name}:`, error);
       throw error;
     }
   };
 
-  const executeIndividualStatusMonitoring = async (fileIndex: number, jobId: string) => {
-    updateIndividualFileApiStep(fileIndex, 'status', { 
-      status: 'loading', 
-      curlCommand: generateIndividualCurlCommand(fileIndex, 'status', jobId),
-      expanded: true,
-      timestamp: new Date().toLocaleTimeString()
-    });
+  const monitorProgress = async (jobId: string, fileIndex: number) => {
+    const maxAttempts = 60; // 5 minutes max wait time
+    const pollInterval = 5000; // 5 seconds
 
-    const pollStatus = async (): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        const poll = async () => {
-          try {
-            const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
-              headers: {
-                'Authorization': `Bearer ${selectedApiKey}`,
-              },
-            });
-
-            const result = await response.json();
-            
-            // Update status step with latest response
-            updateIndividualFileApiStep(fileIndex, 'status', { 
-              response: result,
-              timestamp: new Date().toLocaleTimeString()
-            });
-
-            if (result.status === 'SUCCEEDED') {
-              updateIndividualFileApiStep(fileIndex, 'status', { status: 'success' });
-              
-              // Start results step
-              await executeIndividualResultsStep(fileIndex, jobId);
-              resolve();
-            } else if (result.status === 'FAILED') {
-              updateIndividualFileApiStep(fileIndex, 'status', { status: 'error' });
-              reject(new Error('Processing failed'));
-            } else {
-              // Continue polling
-              setTimeout(poll, 3000);
-            }
-          } catch (error) {
-            updateIndividualFileApiStep(fileIndex, 'status', { 
-              status: 'error', 
-              response: { error: String(error) },
-              timestamp: new Date().toLocaleTimeString()
-            });
-            reject(error);
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
+          headers: {
+            'Authorization': `Bearer ${selectedApiKey}`
           }
-        };
+        });
 
-        setTimeout(poll, 1000);
-      });
-    };
+        if (!response.ok) {
+          throw new Error(`Monitor failed: ${response.statusText}`);
+        }
 
-    await pollStatus();
+        const result = await response.json();
+        
+        if (result.status === 'SUCCEEDED') {
+          return; // Processing complete
+        } else if (result.status === 'FAILED') {
+          throw new Error('Processing failed on server');
+        }
+
+        // Wait before next poll
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+      } catch (error) {
+        console.error(`Monitor attempt ${attempt + 1} failed:`, error);
+        if (attempt === maxAttempts - 1) {
+          throw error;
+        }
+      }
+    }
+
+    throw new Error('Processing timeout');
   };
 
-  const executeIndividualResultsStep = async (fileIndex: number, jobId: string) => {
-    updateIndividualFileApiStep(fileIndex, 'results', { 
-      status: 'loading', 
-      curlCommand: generateIndividualCurlCommand(fileIndex, 'results', jobId),
-      expanded: true,
-      timestamp: new Date().toLocaleTimeString()
-    });
-
+  const getResults = async (jobId: string, fileIndex: number) => {
     try {
       const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`, {
         headers: {
-          'Authorization': `Bearer ${selectedApiKey}`,
-        },
+          'Authorization': `Bearer ${selectedApiKey}`
+        }
       });
+
+      if (!response.ok) {
+        throw new Error(`Get results failed: ${response.statusText}`);
+      }
 
       const result = await response.json();
+      
+      // Update file status with download URLs
+      setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+        index === fileIndex ? { 
+          ...fileStatus, 
+          status: 'completed',
+          downloadUrls: result.download_urls 
+        } : fileStatus
+      ));
 
-      if (response.ok) {
-        updateIndividualFileApiStep(fileIndex, 'results', { 
-          status: 'success', 
-          response: result,
-          timestamp: new Date().toLocaleTimeString()
-        });
-
-        // Update download URLs
-        const downloadUrls = {
-          tables: { [tableMode]: `http://localhost:8000/api/v1/intelligent-data/download/${jobId}/tables/${outputFormat}?mode=${tableMode}` },
-          key_values: { [tableMode]: `http://localhost:8000/api/v1/intelligent-data/download/${jobId}/key-values/${outputFormat}` }
-        };
-
-        updateIndividualFileProgress(fileIndex, { downloadUrls });
-        
-      } else {
-        updateIndividualFileApiStep(fileIndex, 'results', { 
-          status: 'error', 
-          response: result,
-          timestamp: new Date().toLocaleTimeString()
-        });
-        throw new Error('Results retrieval failed');
-      }
     } catch (error) {
-      updateIndividualFileApiStep(fileIndex, 'results', { 
-        status: 'error', 
-        response: { error: String(error) },
-        timestamp: new Date().toLocaleTimeString()
-      });
+      console.error(`Get results failed:`, error);
       throw error;
     }
-  };
-
-  const updateIndividualFileProgress = (fileIndex: number, updates: Partial<IndividualFileProgress>) => {
-    setIndividualFileProgress(prev => prev.map((fileProgress, index) => 
-      index === fileIndex ? { ...fileProgress, ...updates } : fileProgress
-    ));
-  };
-
-  const updateIndividualFileApiStep = (fileIndex: number, stepId: string, updates: Partial<ApiStep>) => {
-    setIndividualFileProgress(prev => prev.map((fileProgress, index) => 
-      index === fileIndex ? {
-        ...fileProgress,
-        apiSteps: fileProgress.apiSteps.map(step => 
-          step.id === stepId ? { ...step, ...updates } : step
-        )
-      } : fileProgress
-    ));
-  };
-
-  const toggleIndividualStepExpansion = (fileIndex: number, stepId: string) => {
-    updateIndividualFileApiStep(fileIndex, stepId, { 
-      expanded: !individualFileProgress[fileIndex]?.apiSteps.find(s => s.id === stepId)?.expanded 
-    });
-  };
-
-  const generateIndividualCurlCommand = (fileIndex: number, stepType: string, jobId?: string) => {
-    const file = selectedFiles[fileIndex];
-    let endpoint = '';
-    let method = 'GET';
-    
-    if (stepType === 'analyze') {
-      endpoint = '/api/v1/intelligent-data/analyze';
-      method = 'POST';
-    } else if (stepType === 'status' && jobId) {
-      endpoint = `/api/v1/intelligent-data/jobs/${jobId}/status`;
-    } else if (stepType === 'results' && jobId) {
-      endpoint = `/api/v1/intelligent-data/jobs/${jobId}/results`;
-    }
-
-    let curl = `curl -X ${method} "http://localhost:8000${endpoint}"`;
-    curl += ` \\\n  -H "Authorization: Bearer ${selectedApiKey}"`;
-    
-    if (method === 'POST' && stepType === 'analyze') {
-      curl += ` \\\n  -F "files=@${file.name}"`;
-    }
-
-    if (stepType === 'results') {
-      curl += ` \\\n  -G -d "format=${outputFormat}" -d "mode=${tableMode}"`;
-    }
-
-    return curl;
   };
 
   const executeApiFlow = async () => {
@@ -1104,7 +936,7 @@ export default function APIPage() {
     }
   };
 
-  const handleDownload = async (downloadUrl: string, jobId: string, type: string, mode: string) => {
+  const handleDownload = async (downloadUrl: string, jobId: string, type: string, format: string) => {
     try {
       // Find the API key used for this job
       const jobStatus = fileProcessingStatus.find(status => status.job_id === jobId);
@@ -1128,37 +960,7 @@ export default function APIPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        
-        // Generate proper filename based on uploaded file name and requirements
-        let filename = '';
-        
-        // Find the file associated with this job
-        const associatedFile = fileProcessingStatus.find(status => status.job_id === jobId);
-        let baseFileName = jobId; // fallback to job ID
-        
-        if (associatedFile) {
-          // Remove extension from original filename
-          baseFileName = associatedFile.file.name.replace(/\.[^/.]+$/, '');
-        } else if (selectedFiles.length === 1) {
-          // Single file processing
-          baseFileName = selectedFiles[0].name.replace(/\.[^/.]+$/, '');
-        }
-        
-        // Set filename based on type and mode
-        if (type === 'tables') {
-          if (mode === 'individual') {
-            filename = `${baseFileName}_tables_individual.zip`;
-          } else { // merged
-            filename = `${baseFileName}_tables_merged.${outputFormat}`;
-          }
-        } else if (type === 'key-values') {
-          filename = `${baseFileName}_key-values.zip`;
-        } else {
-          // Fallback for any other types
-          filename = `${baseFileName}_${type}.${outputFormat}`;
-        }
-        
-        a.download = filename;
+        a.download = `${type}_${jobId}.${format}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -1252,6 +1054,117 @@ export default function APIPage() {
     }
   };
 
+  const handleFileDownload = (fileStatus: FileProcessingStatus) => {
+    if (!fileStatus.downloadUrls || !fileStatus.job_id) return;
+
+    // Get base filename without extension
+    const baseFileName = fileStatus.file.name.replace(/\.[^/.]+$/, '');
+
+    // Download tables
+    if (fileStatus.downloadUrls.tables) {
+      Object.entries(fileStatus.downloadUrls.tables).forEach(([mode, url]) => {
+        if (url) {
+          const filename = mode === 'merged' 
+            ? `${baseFileName}-merged.${outputFormat}`
+            : `${baseFileName}-tables.zip`;
+          
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      });
+    }
+
+    // Download key-values
+    if (fileStatus.downloadUrls.key_values) {
+      Object.entries(fileStatus.downloadUrls.key_values).forEach(([mode, url]) => {
+        if (url) {
+          const filename = `${baseFileName}-key-values.zip`;
+          
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      });
+    }
+
+    setNotification({type: 'success', message: `Downloaded files for ${fileStatus.file.name}`});
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleDownloadAllCompleted = () => {
+    const completedFiles = fileProcessingStatus.filter(f => f.status === 'completed' && f.downloadUrls);
+    
+    if (completedFiles.length === 0) {
+      setNotification({type: 'info', message: 'No completed files to download'});
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    completedFiles.forEach((fileStatus, index) => {
+      // Stagger downloads to avoid overwhelming the browser
+      setTimeout(() => {
+        handleFileDownload(fileStatus);
+      }, index * 500); // 500ms delay between downloads
+    });
+
+    setNotification({type: 'success', message: `Starting download of ${completedFiles.length} files...`});
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Compact Design Utility Functions
+  const getFilteredFiles = () => {
+    let filtered = fileProcessingStatus;
+
+    // Filter by search term
+    if (searchFilter.trim()) {
+      filtered = filtered.filter(fileStatus => 
+        fileStatus.file.name.toLowerCase().includes(searchFilter.toLowerCase())
+      );
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(fileStatus => fileStatus.status === statusFilter);
+    }
+
+    return filtered;
+  };
+
+  const getProcessingStats = () => {
+    const total = fileProcessingStatus.length;
+    const completed = fileProcessingStatus.filter(f => f.status === 'completed').length;
+    const processing = fileProcessingStatus.filter(f => f.status === 'processing').length;
+    const pending = fileProcessingStatus.filter(f => f.status === 'pending').length;
+    const failed = fileProcessingStatus.filter(f => f.status === 'failed').length;
+    const progressPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return { total, completed, processing, pending, failed, progressPercentage };
+  };
+
+  const getEstimatedTimeRemaining = () => {
+    const stats = getProcessingStats();
+    if (stats.processing === 0 && stats.pending === 0) return null;
+    
+    // Simple estimation: assume each file takes 2 minutes on average
+    const remainingFiles = stats.processing + stats.pending;
+    const estimatedMinutes = remainingFiles * 2;
+    
+    if (estimatedMinutes < 60) {
+      return `${estimatedMinutes}min`;
+    } else {
+      const hours = Math.floor(estimatedMinutes / 60);
+      const minutes = estimatedMinutes % 60;
+      return `${hours}h ${minutes}m`;
+    }
+  };
+
   return (
     <DashboardLayout title="API Dashboard">
       <div className="p-6">
@@ -1320,21 +1233,20 @@ export default function APIPage() {
           {/* API Testing Tab */}
           {activeTab === 'test' && (
             <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left Column - API Testing */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Test API</h2>
-                  
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select API Key:
-                    </label>
+              {/* Unified Horizontal Control Bar */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">API Configuration</h2>
+                
+                {/* Main Controls Row */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
                     <select
                       value={selectedApiKey}
                       onChange={(e) => setSelectedApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
                     >
-                      <option value="">Choose an API key...</option>
+                      <option value="">Choose API key...</option>
                       {apiKeys.map((key) => (
                         <option key={key.id} value={key.real_key || key.api_key}>
                           {key.key_name} ({key.api_key})
@@ -1342,467 +1254,264 @@ export default function APIPage() {
                       ))}
                     </select>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Output Format:
-                      </label>
-                      <select
-                        value={outputFormat}
-                        onChange={(e) => setOutputFormat(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                      >
-                        <option value="">Choose output format...</option>
-                        <option value="json">JSON</option>
-                        <option value="csv">CSV</option>
-                        <option value="xlsx">Excel</option>
-                        <option value="txt">TXT</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Table Mode:
-                      </label>
-                      <select
-                        value={tableMode}
-                        onChange={(e) => setTableMode(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                      >
-                        <option value="">Choose table mode...</option>
-                        <option value="individual">Individual</option>
-                        <option value="merged">Merged</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload Files:
-                    </label>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.png,.jpg,.jpeg"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      ref={fileInputRef}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full bg-gray-50 hover:bg-gray-100 border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-lg py-8 px-4 transition-colors duration-200 flex flex-col items-center justify-center text-gray-600 hover:text-blue-600"
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Output Format</label>
+                    <select
+                      value={outputFormat}
+                      onChange={(e) => setOutputFormat(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
                     >
-                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <span className="font-medium">Upload Single or Multiple Files</span>
-                      <span className="text-sm text-gray-500 mt-1">PDF, PNG, JPG, JPEG files supported</span>
-                    </button>
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-4 space-y-1">
-                        <p className="text-sm font-medium text-gray-700">
-                          Selected Files ({selectedFiles.length}):
-                        </p>
-                        <div className="max-h-32 overflow-y-auto">
-                          {selectedFiles.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded text-sm">
-                              <span className="text-gray-800">{file.name}</span>
-                              <span className="text-gray-800 text-xs font-medium">
-                                {(file.size / 1024 / 1024).toFixed(2)} MB
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                      <option value="">Choose format...</option>
+                      <option value="json">JSON</option>
+                      <option value="csv">CSV</option>
+                      <option value="xlsx">Excel</option>
+                      <option value="txt">TXT</option>
+                    </select>
                   </div>
-
-
-                  <div className="flex space-x-4">
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Table Mode</label>
+                    <select
+                      value={tableMode}
+                      onChange={(e) => setTableMode(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+                    >
+                      <option value="">Choose mode...</option>
+                      <option value="individual">Individual</option>
+                      <option value="merged">Merged</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
                     <button
                       onClick={handleProcessFiles}
-                      disabled={!selectedApiKey || selectedFiles.length === 0 || isProcessingMultiple || isSequentialProcessing}
-                      className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      disabled={!selectedApiKey || selectedFiles.length === 0 || !outputFormat || !tableMode}
+                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
                     >
-                      {isProcessingMultiple || isSequentialProcessing ? (
-                        <>
-                          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                          {selectedFiles.length > 1 ? 'Processing Sequentially...' : 'Processing...'}
-                        </>
-                      ) : (
-                        `Process ${selectedFiles.length > 1 ? `${selectedFiles.length} Files Sequentially` : 'File'}`
-                      )}
+                      Process File{selectedFiles.length > 1 ? 's' : ''}
                     </button>
                   </div>
                 </div>
 
-                {/* Right Column - API Execution Timeline */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">
-                    {selectedFiles.length > 1 && individualFileProgress.length > 0 ? 'Sequential File Processing' : 'API Execution Timeline'}
-                  </h2>
-                  
-                  {selectedFiles.length > 1 && individualFileProgress.length > 0 ? (
-                    /* Sequential File Processing UI */
-                    <div className="space-y-6">
-                      {individualFileProgress.map((fileProgress, fileIndex) => (
-                        <div key={fileIndex} className={`border rounded-lg ${
-                          fileProgress.status === 'completed' ? 'border-green-200 bg-green-50' :
-                          fileProgress.status === 'failed' ? 'border-red-200 bg-red-50' :
-                          fileProgress.status === 'processing' ? 'border-blue-200 bg-blue-50' :
-                          'border-gray-200 bg-gray-50'
-                        }`}>
-                          {/* File Header */}
-                          <div className="p-4 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
-                                  fileProgress.status === 'completed' ? 'bg-green-100 border-green-500 text-green-700' :
-                                  fileProgress.status === 'failed' ? 'bg-red-100 border-red-500 text-red-700' :
-                                  fileProgress.status === 'processing' ? 'bg-blue-100 border-blue-500 text-blue-700' :
-                                  'bg-gray-100 border-gray-300 text-gray-500'
-                                }`}>
-                                  {fileProgress.status === 'processing' ? (
-                                    <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full"></div>
-                                  ) : fileProgress.status === 'completed' ? (
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : fileProgress.status === 'failed' ? (
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : (
-                                    fileIndex + 1
-                                  )}
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-gray-900">{fileProgress.file.name}</h3>
-                                  <p className="text-sm text-gray-500">
-                                    File {fileIndex + 1} of {selectedFiles.length}
-                                    {fileProgress.job_id && ` • Job ID: ${fileProgress.job_id}`}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  fileProgress.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                  fileProgress.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                  fileProgress.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {fileProgress.status.toUpperCase()}
-                                </span>
-                                {fileProgress.completedAt && (
-                                  <span className="text-xs text-gray-500">{fileProgress.completedAt}</span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {fileProgress.error && (
-                              <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
-                                Error: {fileProgress.error}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* API Steps for this file */}
-                          <div className="p-4">
-                            <div className="space-y-3">
-                              {fileProgress.apiSteps.map((step, stepIndex) => (
-                                <div key={step.id} className="relative">
-                                  {/* Timeline Line */}
-                                  {stepIndex !== fileProgress.apiSteps.length - 1 && (
-                                    <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-gray-200"></div>
-                                  )}
-                                  
-                                  {/* Step Container */}
-                                  <div className="relative flex items-start space-x-4">
-                                    {/* Step Number & Status */}
-                                    <div className={`flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
-                                      step.status === 'success' ? 'bg-green-100 border-green-500 text-green-700' :
-                                      step.status === 'error' ? 'bg-red-100 border-red-500 text-red-700' :
-                                      step.status === 'loading' ? 'bg-blue-100 border-blue-500 text-blue-700' :
-                                      'bg-gray-100 border-gray-300 text-gray-500'
-                                    }`}>
-                                      {step.status === 'loading' ? (
-                                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
-                                      ) : step.status === 'success' ? (
-                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                        </svg>
-                                      ) : step.status === 'error' ? (
-                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                        </svg>
-                                      ) : (
-                                        stepIndex + 1
-                                      )}
-                                    </div>
-
-                                    {/* Step Content */}
-                                    <div className="flex-1 min-w-0">
-                                      <div className="bg-white rounded-lg border border-gray-200">
-                                        {/* Step Header */}
-                                        <button
-                                          onClick={() => toggleIndividualStepExpansion(fileIndex, step.id)}
-                                          className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-gray-50 rounded-t-lg transition-colors"
-                                        >
-                                          <div className="flex items-center space-x-3">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                              step.method === 'POST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                                            }`}>
-                                              {step.method}
-                                            </span>
-                                            <div>
-                                              <h4 className="font-medium text-gray-900">{step.title}</h4>
-                                              <p className="text-xs text-gray-500 font-mono">
-                                                {step.endpoint.replace('{job_id}', fileProgress.job_id || '{job_id}')}
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center space-x-2">
-                                            {step.timestamp && (
-                                              <span className="text-xs text-gray-500">{step.timestamp}</span>
-                                            )}
-                                            <svg className={`w-4 h-4 text-gray-400 transition-transform ${
-                                              step.expanded ? 'transform rotate-180' : ''
-                                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                          </div>
-                                        </button>
-
-                                        {/* Expandable Content */}
-                                        {step.expanded && (
-                                          <div className="px-4 pb-4 border-t border-gray-200">
-                                            {/* cURL Command */}
-                                            {step.curlCommand && (
-                                              <div className="mt-3">
-                                                <div className="flex items-center justify-between mb-2">
-                                                  <h5 className="text-sm font-medium text-gray-700">cURL Command</h5>
-                                                  <button
-                                                    onClick={() => copyToClipboard(step.curlCommand!)}
-                                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                                                  >
-                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                    </svg>
-                                                    <span>Copy</span>
-                                                  </button>
-                                                </div>
-                                                <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-xs overflow-x-auto">
-                                                  <pre>{step.curlCommand}</pre>
-                                                </div>
-                                              </div>
-                                            )}
-
-                                            {/* Response */}
-                                            {step.response && (
-                                              <div className="mt-3">
-                                                <h5 className="text-sm font-medium text-gray-700 mb-2">Response</h5>
-                                                <div className="bg-gray-100 p-3 rounded-lg">
-                                                  <pre className="text-xs text-gray-800 overflow-x-auto">
-                                                    {JSON.stringify(step.response, null, 2)}
-                                                  </pre>
-                                                </div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Download Section for completed files */}
-                            {fileProgress.status === 'completed' && fileProgress.downloadUrls && (
-                              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <h5 className="text-sm font-medium text-blue-900 mb-2">Download Files for {fileProgress.file.name}</h5>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => handleDownload(fileProgress.downloadUrls!.tables![tableMode], fileProgress.job_id!, 'tables', tableMode)}
-                                    className="inline-flex items-center space-x-2 text-blue-700 hover:text-blue-900 text-sm bg-white px-2 py-1 rounded border hover:bg-blue-50"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span>Tables ({tableMode === 'individual' ? 'ZIP' : outputFormat.toUpperCase()})</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleDownload(fileProgress.downloadUrls!.key_values![tableMode], fileProgress.job_id!, 'key-values', tableMode)}
-                                    className="inline-flex items-center space-x-2 text-blue-700 hover:text-blue-900 text-sm bg-white px-2 py-1 rounded border hover:bg-blue-50"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span>Key-Values (ZIP)</span>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : apiSteps.length === 0 ? (
-                    <div className="bg-gray-50 text-gray-600 p-6 rounded-lg text-center">
-                      <div className="mb-4">
-                        <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                {/* Professional File Upload Section */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">File Upload</h3>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    ref={fileInputRef}
+                  />
+                  <div className="flex items-center justify-center">
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                      </div>
-                      <p className="text-sm font-medium">Ready to Process</p>
-                      <p className="text-xs text-gray-500 mt-1">Upload files and click &quot;Process&quot; to see the API execution flow</p>
+                        Choose Files
+                      </button>
+                      <p className="text-xs text-gray-500 mt-2">PDF, PNG, JPG, JPEG supported</p>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {apiSteps.map((step, index) => (
-                        <div key={step.id} className="relative">
-                          {/* Timeline Line */}
-                          {index !== apiSteps.length - 1 && (
-                            <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-gray-200"></div>
-                          )}
-                          
-                          {/* Step Container */}
-                          <div className="relative flex items-start space-x-4">
-                            {/* Step Number & Status */}
-                            <div className={`flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center text-sm font-bold ${
-                              step.status === 'success' ? 'bg-green-100 border-green-500 text-green-700' :
-                              step.status === 'error' ? 'bg-red-100 border-red-500 text-red-700' :
-                              step.status === 'loading' ? 'bg-blue-100 border-blue-500 text-blue-700' :
-                              'bg-gray-100 border-gray-300 text-gray-500'
-                            }`}>
-                              {step.status === 'loading' ? (
-                                <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
-                              ) : step.status === 'success' ? (
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              ) : step.status === 'error' ? (
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                              ) : (
-                                index + 1
-                              )}
+                  </div>
+                  
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-gray-900">
+                          Selected Files ({selectedFiles.length})
+                        </h4>
+                        <button
+                          onClick={() => {
+                            setSelectedFiles([]);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="text-xs text-red-600 hover:text-red-800"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg border text-sm">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-gray-800 truncate font-medium">{file.name}</span>
                             </div>
-
-                            {/* Step Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-gray-50 rounded-lg border border-gray-200">
-                                {/* Step Header */}
-                                <button
-                                  onClick={() => toggleStepExpansion(step.id)}
-                                  className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-gray-100 rounded-t-lg transition-colors"
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                      step.method === 'POST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                                    }`}>
-                                      {step.method}
-                                    </span>
-                                    <div>
-                                      <h3 className="font-medium text-gray-900">{step.title}</h3>
-                                      <p className="text-xs text-gray-500 font-mono">
-                                        {step.endpoint.replace('{job_id}', currentJobId || '{job_id}')}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    {step.timestamp && (
-                                      <span className="text-xs text-gray-500">{step.timestamp}</span>
-                                    )}
-                                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${
-                                      step.expanded ? 'transform rotate-180' : ''
-                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </div>
-                                </button>
-
-                                {/* Expandable Content */}
-                                {step.expanded && (
-                                  <div className="px-4 pb-4 border-t border-gray-200">
-                                    {/* cURL Command */}
-                                    {step.curlCommand && (
-                                      <div className="mt-3">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <h4 className="text-sm font-medium text-gray-700">cURL Command</h4>
-                                          <button
-                                            onClick={() => copyToClipboard(step.curlCommand!)}
-                                            className="text-xs text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                                          >
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                            <span>Copy</span>
-                                          </button>
-                                        </div>
-                                        <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-xs overflow-x-auto">
-                                          <pre>{step.curlCommand}</pre>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Response */}
-                                    {step.response && (
-                                      <div className="mt-3">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-2">Response</h4>
-                                        <div className="bg-gray-100 p-3 rounded-lg">
-                                          <pre className="text-xs text-gray-800 overflow-x-auto">
-                                            {JSON.stringify(step.response, null, 2)}
-                                          </pre>
-                                        </div>
-                                        
-                                        {/* Download Links for final step */}
-                                        {step.id === 'results' && step.status === 'success' && step.response.download_urls && (
-                                          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                            <h5 className="text-sm font-medium text-blue-900 mb-2">Download Files</h5>
-                                            <div className="space-y-2">
-                                              {step.response.download_urls.tables && Object.entries(step.response.download_urls.tables).map(([format, url]: [string, any]) => (
-                                                <button
-                                                  key={format}
-                                                  onClick={() => handleDownload(url, currentJobId, 'tables', tableMode)}
-                                                  className="inline-flex items-center space-x-2 text-blue-700 hover:text-blue-900 text-sm mr-4"
-                                                >
-                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                  </svg>
-                                                  <span>Tables ({format.toUpperCase()})</span>
-                                                </button>
-                                              ))}
-                                              {step.response.download_urls.key_values && Object.entries(step.response.download_urls.key_values).map(([format, url]: [string, any]) => (
-                                                <button
-                                                  key={format}
-                                                  onClick={() => handleDownload(url, currentJobId, 'key-values', tableMode)}
-                                                  className="inline-flex items-center space-x-2 text-blue-700 hover:text-blue-900 text-sm mr-4"
-                                                >
-                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                  </svg>
-                                                  <span>Key-Values ({format.toUpperCase()})</span>
-                                                </button>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                            <span className="text-gray-500 text-xs ml-2 flex-shrink-0">
+                              {(file.size / 1024 / 1024).toFixed(1)}MB
+                            </span>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Processing Status - Compact Design */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Processing Status</h2>
+                
+                {fileProcessingStatus.length === 0 ? (
+                  <div className="bg-gray-50 text-gray-600 p-6 rounded-lg text-center">
+                    <div className="mb-4">
+                      <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium">Ready to Process</p>
+                    <p className="text-xs text-gray-500 mt-1">Upload files and click &quot;Process&quot; to see the file processing status</p>
+                  </div>
+                  ) : (
+                    <div>
+                      {/* Status Bar with Counts */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm font-medium text-gray-700">
+                            📊 {getProcessingStats().completed} Completed • {getProcessingStats().processing} Processing • {getProcessingStats().pending} Pending
+                            {getProcessingStats().failed > 0 && ` • ${getProcessingStats().failed} Failed`}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            placeholder="Search files..."
+                            value={searchFilter}
+                            onChange={(e) => setSearchFilter(e.target.value)}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                          <button 
+                            onClick={handleDownloadAllCompleted}
+                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                            disabled={getProcessingStats().completed === 0}
+                          >
+                            📥 Download All ({getProcessingStats().completed})
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Inline Progress Bar */}
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700">
+                            📈 Progress: {getProcessingStats().completed}/{getProcessingStats().total} ({getProcessingStats().progressPercentage}%)
+                          </span>
+                          {getEstimatedTimeRemaining() && (
+                            <span className="text-sm text-gray-600">⏱ {getEstimatedTimeRemaining()}</span>
+                          )}
+                        </div>
+                        <div className="w-full bg-gray-300 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{width: `${getProcessingStats().progressPercentage}%`}}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Filter Buttons */}
+                      <div className="flex items-center space-x-2 mb-4">
+                        <span className="text-sm font-medium text-gray-700">Filter:</span>
+                        {['all', 'completed', 'processing', 'pending', 'failed'].map(status => (
+                          <button
+                            key={status}
+                            onClick={() => setStatusFilter(status)}
+                            className={`px-3 py-1 text-xs rounded-full border ${
+                              statusFilter === status 
+                                ? 'bg-blue-600 text-white border-blue-600' 
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {status === 'all' ? 'All' : status === 'completed' ? '✅ Completed' : status === 'processing' ? '🔄 Processing' : status === 'pending' ? '⏳ Pending' : '❌ Failed'}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Compact Table */}
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                          <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-700 uppercase tracking-wider">
+                            <div className="col-span-4">File Name</div>
+                            <div className="col-span-2">Status</div>
+                            <div className="col-span-3">Progress</div>
+                            <div className="col-span-2">Downloads</div>
+                            <div className="col-span-1">Action</div>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {getFilteredFiles().slice(0, 25).map((fileStatus, index) => (
+                            <div key={index} className="px-4 py-3 hover:bg-gray-50">
+                              <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                                <div className="col-span-4 flex items-center space-x-2">
+                                  <span className="text-xs">📄</span>
+                                  <span className="font-medium text-gray-900 truncate">{fileStatus.file.name}</span>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                    fileStatus.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    fileStatus.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                                    fileStatus.status === 'pending' ? 'bg-gray-100 text-gray-700' :
+                                    'bg-red-100 text-red-800'
+                                  }`}>
+                                    {fileStatus.status === 'completed' ? '✅ Done' :
+                                     fileStatus.status === 'processing' ? '🔄 Processing' :
+                                     fileStatus.status === 'pending' ? '⏳ Queue' : '❌ Failed'}
+                                  </span>
+                                </div>
+                                <div className="col-span-3">
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div 
+                                      className={`h-2 rounded-full transition-all duration-300 ${
+                                        fileStatus.status === 'completed' ? 'bg-green-500' :
+                                        fileStatus.status === 'processing' ? 'bg-blue-500' :
+                                        fileStatus.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
+                                      }`}
+                                      style={{width: `${fileStatus.status === 'completed' ? 100 : fileStatus.status === 'processing' ? 50 : 0}%`}}
+                                    ></div>
+                                  </div>
+                                </div>
+                                <div className="col-span-2">
+                                  {fileStatus.status === 'completed' && fileStatus.downloadUrls ? (
+                                    <span className="text-xs text-blue-600">🔗 Available</span>
+                                  ) : (
+                                    <span className="text-xs text-gray-500">Pending</span>
+                                  )}
+                                </div>
+                                <div className="col-span-1">
+                                  {fileStatus.status === 'completed' && fileStatus.downloadUrls && (
+                                    <button 
+                                      onClick={() => handleFileDownload(fileStatus)}
+                                      className="text-blue-600 hover:text-blue-800 text-xs hover:bg-blue-50 p-1 rounded"
+                                      title="Download files"
+                                    >
+                                      📥
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {getFilteredFiles().length > 25 && (
+                          <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 text-center">
+                            <span className="text-sm text-gray-600">Showing 1-25 of {getFilteredFiles().length} files</span>
+                            <button className="ml-4 text-sm text-blue-600 hover:text-blue-800">Load More ▼</button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
               {/* Execution Flow Panel */}
               {showExecutionPanel && (
@@ -1905,13 +1614,13 @@ export default function APIPage() {
                         {fileStatus.downloadUrls && (
                           <div className="flex space-x-2 mt-2">
                             <button
-                              onClick={() => handleDownload(fileStatus.downloadUrls!.tables![outputFormat], fileStatus.job_id!, 'tables', tableMode)}
+                              onClick={() => handleDownload(fileStatus.downloadUrls!.tables![outputFormat], fileStatus.job_id!, 'tables', outputFormat)}
                               className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
                             >
                               Download Tables
                             </button>
                             <button
-                              onClick={() => handleDownload(fileStatus.downloadUrls!.key_values![outputFormat], fileStatus.job_id!, 'key-values', tableMode)}
+                              onClick={() => handleDownload(fileStatus.downloadUrls!.key_values![outputFormat], fileStatus.job_id!, 'key-values', outputFormat)}
                               className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
                             >
                               Download Key-Values
@@ -1949,13 +1658,13 @@ export default function APIPage() {
                         {job.downloadUrls && (
                           <div className="flex space-x-2 mt-3">
                             <button
-                              onClick={() => handleDownload(job.downloadUrls!.tables![outputFormat], job.job_id, 'tables', tableMode)}
+                              onClick={() => handleDownload(job.downloadUrls!.tables![outputFormat], job.job_id, 'tables', outputFormat)}
                               className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                             >
                               Download Tables
                             </button>
                             <button
-                              onClick={() => handleDownload(job.downloadUrls!.key_values![outputFormat], job.job_id, 'key-values', tableMode)}
+                              onClick={() => handleDownload(job.downloadUrls!.key_values![outputFormat], job.job_id, 'key-values', outputFormat)}
                               className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
                             >
                               Download Key-Values
