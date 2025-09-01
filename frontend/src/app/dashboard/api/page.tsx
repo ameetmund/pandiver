@@ -52,6 +52,7 @@ interface ApiCallDetails {
 interface FileProcessingStatus {
   file: File;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+  currentStage?: 'analyze' | 'monitor' | 'results';
   job_id?: string;
   api_key?: string;
   downloadUrls?: {
@@ -447,9 +448,9 @@ export default function APIPage() {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         
-        // Update status to processing
+        // Update status to processing with analyze stage
         setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
-          index === i ? { ...fileStatus, status: 'processing' } : fileStatus
+          index === i ? { ...fileStatus, status: 'processing', currentStage: 'analyze' } : fileStatus
         ));
         
         try {
@@ -530,9 +531,15 @@ export default function APIPage() {
       ));
 
       // Step 2: Monitor Progress
+      setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+        index === fileIndex ? { ...fileStatus, currentStage: 'monitor' } : fileStatus
+      ));
       await monitorProgress(jobId, fileIndex);
 
       // Step 3: Get Results
+      setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+        index === fileIndex ? { ...fileStatus, currentStage: 'results' } : fileStatus
+      ));
       await getResults(jobId, fileIndex);
 
     } catch (error) {
@@ -1181,44 +1188,6 @@ export default function APIPage() {
     }
   };
 
-  const handleFileDownload = async (fileStatus: FileProcessingStatus) => {
-    if (!fileStatus.downloadUrls || !fileStatus.job_id) return;
-
-    // Find the API key used for this job
-    const apiKeyToUse = fileStatus.api_key || selectedApiKey;
-    const baseFileName = fileStatus.file.name.replace(/\.[^/.]+$/, '');
-
-    try {
-      // Download tables
-      if (fileStatus.downloadUrls.tables) {
-        for (const [mode, url] of Object.entries(fileStatus.downloadUrls.tables)) {
-          if (url) {
-            const filename = mode === 'merged' 
-              ? `${baseFileName}-merged.${outputFormat}`
-              : `${baseFileName}-tables.zip`;
-            await downloadFileWithAuth(url, filename, apiKeyToUse);
-          }
-        }
-      }
-
-      // Download key-values
-      if (fileStatus.downloadUrls.key_values) {
-        for (const [mode, url] of Object.entries(fileStatus.downloadUrls.key_values)) {
-          if (url) {
-            const filename = `${baseFileName}-key-values.zip`;
-            await downloadFileWithAuth(url, filename, apiKeyToUse);
-          }
-        }
-      }
-
-      setNotification({type: 'success', message: `Downloaded files for ${fileStatus.file.name}`});
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      console.error('Download error:', error);
-      setNotification({type: 'error', message: `Download failed for ${fileStatus.file.name}`});
-      setTimeout(() => setNotification(null), 5000);
-    }
-  };
 
   const handleDownloadAllCompleted = async () => {
     const completedFiles = fileProcessingStatus.filter(f => f.status === 'completed' && f.downloadUrls);
@@ -1301,6 +1270,68 @@ export default function APIPage() {
     }
   };
 
+  const getFileProgressInfo = (fileStatus: FileProcessingStatus) => {
+    if (fileStatus.status === 'completed') return { percentage: 100, stage: 'Completed', stageIndex: 3 };
+    if (fileStatus.status === 'failed') return { percentage: 0, stage: 'Failed', stageIndex: 0 };
+    if (fileStatus.status === 'pending') return { percentage: 0, stage: 'Pending', stageIndex: 0 };
+    
+    // Processing stage
+    switch (fileStatus.currentStage) {
+      case 'analyze': return { percentage: 33, stage: 'Analyzing', stageIndex: 1 };
+      case 'monitor': return { percentage: 66, stage: 'Monitoring', stageIndex: 2 };
+      case 'results': return { percentage: 90, stage: 'Getting Results', stageIndex: 3 };
+      default: return { percentage: 10, stage: 'Processing', stageIndex: 1 };
+    }
+  };
+
+  const handleFileDownload = async (fileStatus: FileProcessingStatus) => {
+    if (!fileStatus.downloadUrls || !fileStatus.api_key) {
+      setNotification({ type: 'error', message: 'No download URLs available for this file' });
+      return;
+    }
+
+    const apiKeyToUse = fileStatus.api_key;
+    const baseFileName = fileStatus.file.name.replace(/\.[^/.]+$/, '');
+
+    try {
+      // Download tables based on table mode
+      if (fileStatus.downloadUrls.tables) {
+        if (tableMode === 'individual') {
+          // Individual mode: Download only individual tables (tables.zip), NO merged file
+          for (const [mode, url] of Object.entries(fileStatus.downloadUrls.tables)) {
+            if (url && mode !== 'merged') {
+              const filename = `${baseFileName}-tables.zip`;
+              await downloadFileWithAuth(url, filename, apiKeyToUse);
+            }
+          }
+        } else if (tableMode === 'merged') {
+          // Merged mode: Download only merged file, NO individual tables
+          for (const [mode, url] of Object.entries(fileStatus.downloadUrls.tables)) {
+            if (url && mode === 'merged') {
+              const filename = `${baseFileName}-merged.${outputFormat}`;
+              await downloadFileWithAuth(url, filename, apiKeyToUse);
+            }
+          }
+        }
+      }
+
+      // Always download key-value pairs (regardless of table mode)
+      if (fileStatus.downloadUrls.key_values) {
+        for (const [mode, url] of Object.entries(fileStatus.downloadUrls.key_values)) {
+          if (url) {
+            const filename = `${baseFileName}-key_values.${outputFormat}`;
+            await downloadFileWithAuth(url, filename, apiKeyToUse);
+          }
+        }
+      }
+
+      setNotification({ type: 'success', message: 'Files downloaded successfully' });
+    } catch (error) {
+      console.error('Download error:', error);
+      setNotification({ type: 'error', message: 'Failed to download files' });
+    }
+  };
+
   return (
     <DashboardLayout title="API Dashboard">
       <div className="p-6">
@@ -1370,8 +1401,19 @@ export default function APIPage() {
           {activeTab === 'test' && (
             <div className="space-y-8">
               {/* Unified Horizontal Control Bar */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">API Configuration</h2>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6 shadow-lg mb-6">
+                <div className="flex items-center mb-6">
+                  <div className="bg-blue-600 rounded-lg p-2 mr-3">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">API Configuration</h2>
+                    <p className="text-sm text-gray-600 mt-1">Configure your API settings and upload files for processing</p>
+                  </div>
+                </div>
                 
                 {/* Main Controls Row */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -1494,9 +1536,19 @@ export default function APIPage() {
                 </div>
               </div>
 
-              {/* Processing Status - Compact Design */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Processing Status</h2>
+              {/* Enhanced Processing Status Section */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6 shadow-lg">
+                <div className="flex items-center mb-6">
+                  <div className="bg-green-600 rounded-lg p-2 mr-3">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Processing Status</h2>
+                    <p className="text-sm text-gray-600 mt-1">Monitor your file processing progress and download results</p>
+                  </div>
+                </div>
                 
                 {fileProcessingStatus.length === 0 ? (
                   <div className="bg-gray-50 text-gray-600 p-6 rounded-lg text-center">
@@ -1606,16 +1658,64 @@ export default function APIPage() {
                                     </span>
                                   </div>
                                   <div className="col-span-2">
-                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                      <div 
-                                        className={`h-2 rounded-full transition-all duration-300 ${
-                                          fileStatus.status === 'completed' ? 'bg-green-500' :
-                                          fileStatus.status === 'processing' ? 'bg-blue-500' :
-                                          fileStatus.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
-                                        }`}
-                                        style={{width: `${fileStatus.status === 'completed' ? 100 : fileStatus.status === 'processing' ? 50 : 0}%`}}
-                                      ></div>
-                                    </div>
+                                    {(() => {
+                                      const progressInfo = getFileProgressInfo(fileStatus);
+                                      return (
+                                        <div className="flex items-center space-x-2">
+                                          {/* Circular Progress Indicator */}
+                                          <div className="relative w-6 h-6">
+                                            <svg className="w-6 h-6 transform -rotate-90" viewBox="0 0 24 24">
+                                              <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                fill="none"
+                                                className="text-gray-200"
+                                              />
+                                              <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                fill="none"
+                                                strokeDasharray={`${2 * Math.PI * 10}`}
+                                                strokeDashoffset={`${2 * Math.PI * 10 * (1 - progressInfo.percentage / 100)}`}
+                                                className={`transition-all duration-300 ${
+                                                  fileStatus.status === 'completed' ? 'text-green-500' :
+                                                  fileStatus.status === 'processing' ? 'text-blue-500' :
+                                                  fileStatus.status === 'failed' ? 'text-red-500' : 'text-gray-300'
+                                                }`}
+                                              />
+                                            </svg>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                              <span className="text-xs font-medium text-gray-600">
+                                                {progressInfo.stageIndex}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          {/* Progress Bar with Stage Info */}
+                                          <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-1">
+                                              <span className="text-xs text-gray-600">{progressInfo.stage}</span>
+                                              <span className="text-xs text-gray-500">{progressInfo.percentage}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                              <div 
+                                                className={`h-2 rounded-full transition-all duration-300 ${
+                                                  fileStatus.status === 'completed' ? 'bg-green-500' :
+                                                  fileStatus.status === 'processing' ? 'bg-blue-500' :
+                                                  fileStatus.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
+                                                }`}
+                                                style={{width: `${progressInfo.percentage}%`}}
+                                              ></div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                   <div className="col-span-3">
                                     {fileStatus.status === 'completed' && fileStatus.downloadUrls ? (
