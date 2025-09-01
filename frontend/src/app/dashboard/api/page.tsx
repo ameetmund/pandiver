@@ -40,6 +40,15 @@ interface ProcessingJob {
   };
 }
 
+interface ApiCallDetails {
+  curlCommand: string;
+  request: any;
+  response: any;
+  timestamp: string;
+  status: 'success' | 'error';
+  duration?: number;
+}
+
 interface FileProcessingStatus {
   file: File;
   status: 'pending' | 'processing' | 'completed' | 'failed';
@@ -50,6 +59,12 @@ interface FileProcessingStatus {
     key_values?: { [key: string]: string };
   };
   error?: string;
+  apiDetails?: {
+    analyze?: ApiCallDetails;
+    status?: ApiCallDetails;
+    results?: ApiCallDetails;
+  };
+  expanded?: boolean;
 }
 
 interface Notification {
@@ -368,6 +383,30 @@ export default function APIPage() {
     }
   };
 
+  // Helper function to generate cURL commands for API calls
+  const generateCurlCommand = (url: string, method: string, headers: any, body?: any) => {
+    let curlCommand = `curl -X ${method} "${url}"`;
+    
+    // Add headers
+    Object.entries(headers).forEach(([key, value]) => {
+      curlCommand += ` \\\n  -H "${key}: ${value}"`;
+    });
+    
+    // Add body for POST requests
+    if (body && method === 'POST') {
+      if (body instanceof FormData) {
+        // For FormData, we'll show a simplified representation
+        curlCommand += ` \\\n  -F "files=@{filename}"`;
+        curlCommand += ` \\\n  -F "output_format=${outputFormat}"`;
+        curlCommand += ` \\\n  -F "table_mode=${tableMode}"`;
+      } else {
+        curlCommand += ` \\\n  -d '${JSON.stringify(body)}'`;
+      }
+    }
+    
+    return curlCommand;
+  };
+
   const handleProcessFiles = async () => {
     if (selectedFiles.length === 0) {
       setNotification({type: 'error', message: 'Please select files to process'});
@@ -445,24 +484,49 @@ export default function APIPage() {
 
     try {
       // Step 1: Start Analysis
-      const analyzeResponse = await fetch('http://localhost:8000/api/v1/intelligent-data/analyze', {
+      const analyzeUrl = 'http://localhost:8000/api/v1/intelligent-data/analyze';
+      const analyzeHeaders = { 'Authorization': `Bearer ${selectedApiKey}` };
+      const startTime = Date.now();
+      
+      const analyzeResponse = await fetch(analyzeUrl, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${selectedApiKey}`
-        },
+        headers: analyzeHeaders,
         body: formData
       });
+
+      const analyzeResult = await analyzeResponse.json();
+      const analyzeDuration = Date.now() - startTime;
+      
+      // Store analyze API details
+      const analyzeDetails: ApiCallDetails = {
+        curlCommand: generateCurlCommand(analyzeUrl, 'POST', analyzeHeaders, formData),
+        request: { 
+          files: file.name,
+          output_format: outputFormat,
+          table_mode: tableMode 
+        },
+        response: analyzeResult,
+        timestamp: new Date().toLocaleTimeString(),
+        status: analyzeResponse.ok ? 'success' : 'error',
+        duration: analyzeDuration
+      };
 
       if (!analyzeResponse.ok) {
         throw new Error(`Analysis failed: ${analyzeResponse.statusText}`);
       }
 
-      const analyzeResult = await analyzeResponse.json();
       const jobId = analyzeResult.job_id;
 
-      // Update file status with job ID
+      // Update file status with job ID and analyze details
       setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
-        index === fileIndex ? { ...fileStatus, job_id: jobId } : fileStatus
+        index === fileIndex ? { 
+          ...fileStatus, 
+          job_id: jobId,
+          apiDetails: {
+            ...fileStatus.apiDetails,
+            analyze: analyzeDetails
+          }
+        } : fileStatus
       ));
 
       // Step 2: Monitor Progress
@@ -480,20 +544,44 @@ export default function APIPage() {
   const monitorProgress = async (jobId: string, fileIndex: number) => {
     const maxAttempts = 60; // 5 minutes max wait time
     const pollInterval = 5000; // 5 seconds
+    const statusUrl = `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`;
+    const statusHeaders = { 'Authorization': `Bearer ${selectedApiKey}` };
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
-          headers: {
-            'Authorization': `Bearer ${selectedApiKey}`
-          }
+        const startTime = Date.now();
+        const response = await fetch(statusUrl, {
+          headers: statusHeaders
         });
+
+        const result = await response.json();
+        const statusDuration = Date.now() - startTime;
+
+        // Store status API details (final response only)
+        if (result.status === 'SUCCEEDED' || result.status === 'FAILED') {
+          const statusDetails: ApiCallDetails = {
+            curlCommand: generateCurlCommand(statusUrl, 'GET', statusHeaders),
+            request: { job_id: jobId },
+            response: result,
+            timestamp: new Date().toLocaleTimeString(),
+            status: response.ok && result.status === 'SUCCEEDED' ? 'success' : 'error',
+            duration: statusDuration
+          };
+
+          setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+            index === fileIndex ? { 
+              ...fileStatus,
+              apiDetails: {
+                ...fileStatus.apiDetails,
+                status: statusDetails
+              }
+            } : fileStatus
+          ));
+        }
 
         if (!response.ok) {
           throw new Error(`Monitor failed: ${response.statusText}`);
         }
-
-        const result = await response.json();
         
         if (result.status === 'SUCCEEDED') {
           return; // Processing complete
@@ -517,24 +605,45 @@ export default function APIPage() {
 
   const getResults = async (jobId: string, fileIndex: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`, {
-        headers: {
-          'Authorization': `Bearer ${selectedApiKey}`
-        }
+      const resultsUrl = `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`;
+      const resultsHeaders = { 'Authorization': `Bearer ${selectedApiKey}` };
+      const startTime = Date.now();
+
+      const response = await fetch(resultsUrl, {
+        headers: resultsHeaders
       });
+
+      const result = await response.json();
+      const resultsDuration = Date.now() - startTime;
+
+      // Store results API details
+      const resultsDetails: ApiCallDetails = {
+        curlCommand: generateCurlCommand(resultsUrl, 'GET', resultsHeaders),
+        request: { 
+          job_id: jobId,
+          format: outputFormat,
+          mode: tableMode
+        },
+        response: result,
+        timestamp: new Date().toLocaleTimeString(),
+        status: response.ok ? 'success' : 'error',
+        duration: resultsDuration
+      };
 
       if (!response.ok) {
         throw new Error(`Get results failed: ${response.statusText}`);
       }
-
-      const result = await response.json();
       
-      // Update file status with download URLs
+      // Update file status with download URLs and results details
       setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
         index === fileIndex ? { 
           ...fileStatus, 
           status: 'completed',
-          downloadUrls: result.download_urls 
+          downloadUrls: result.download_urls,
+          apiDetails: {
+            ...fileStatus.apiDetails,
+            results: resultsDetails
+          }
         } : fileStatus
       ));
 
@@ -562,7 +671,7 @@ export default function APIPage() {
     // Update step to loading
     updateApiStep('analyze', { 
       status: 'loading', 
-      curlCommand: generateCurlCommand(analyzeStep),
+      curlCommand: generateCurlCommandForStep(analyzeStep),
       timestamp: new Date().toLocaleTimeString()
     });
 
@@ -618,7 +727,7 @@ export default function APIPage() {
     // Update status step to loading and expand it
     updateApiStep('status', { 
       status: 'loading', 
-      curlCommand: generateCurlCommand(statusStep, jobId),
+      curlCommand: generateCurlCommandForStep(statusStep, jobId),
       expanded: true,
       timestamp: new Date().toLocaleTimeString()
     });
@@ -669,7 +778,7 @@ export default function APIPage() {
     // Update results step to loading and expand it
     updateApiStep('results', { 
       status: 'loading', 
-      curlCommand: generateCurlCommand(resultsStep, jobId),
+      curlCommand: generateCurlCommandForStep(resultsStep, jobId),
       expanded: true,
       timestamp: new Date().toLocaleTimeString()
     });
@@ -936,6 +1045,29 @@ export default function APIPage() {
     }
   };
 
+  // Helper function for authenticated downloads
+  const downloadFileWithAuth = async (url: string, filename: string, apiKey: string) => {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+  };
+
   const handleDownload = async (downloadUrl: string, jobId: string, type: string, format: string) => {
     try {
       // Find the API key used for this job
@@ -949,25 +1081,20 @@ export default function APIPage() {
         jobStatus: jobStatus ? 'found' : 'not found'
       });
       
-      const response = await fetch(downloadUrl, {
-        headers: {
-          'Authorization': `Bearer ${apiKeyToUse}`,
-        },
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${type}_${jobId}.${format}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+      if (!apiKeyToUse) {
+        setNotification({type: 'error', message: 'API key not found for download'});
+        setTimeout(() => setNotification(null), 5000);
+        return;
       }
+
+      const filename = `${type}_${jobId}.${format}`;
+      await downloadFileWithAuth(downloadUrl, filename, apiKeyToUse);
+      
+      setNotification({type: 'success', message: 'Download completed'});
+      setTimeout(() => setNotification(null), 3000);
     } catch (error) {
-      setNotification({type: 'error', message: 'Download failed'});
+      console.error('Download error:', error);
+      setNotification({type: 'error', message: `Download failed: ${error}`});
       setTimeout(() => setNotification(null), 5000);
     }
   };
@@ -1021,7 +1148,7 @@ export default function APIPage() {
     ));
   };
 
-  const generateCurlCommand = (step: ApiStep, jobId?: string) => {
+  const generateCurlCommandForStep = (step: ApiStep, jobId?: string) => {
     let endpoint = step.endpoint;
     if (jobId) {
       endpoint = endpoint.replace('{job_id}', jobId);
@@ -1054,51 +1181,46 @@ export default function APIPage() {
     }
   };
 
-  const handleFileDownload = (fileStatus: FileProcessingStatus) => {
+  const handleFileDownload = async (fileStatus: FileProcessingStatus) => {
     if (!fileStatus.downloadUrls || !fileStatus.job_id) return;
 
-    // Get base filename without extension
+    // Find the API key used for this job
+    const apiKeyToUse = fileStatus.api_key || selectedApiKey;
     const baseFileName = fileStatus.file.name.replace(/\.[^/.]+$/, '');
 
-    // Download tables
-    if (fileStatus.downloadUrls.tables) {
-      Object.entries(fileStatus.downloadUrls.tables).forEach(([mode, url]) => {
-        if (url) {
-          const filename = mode === 'merged' 
-            ? `${baseFileName}-merged.${outputFormat}`
-            : `${baseFileName}-tables.zip`;
-          
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+    try {
+      // Download tables
+      if (fileStatus.downloadUrls.tables) {
+        for (const [mode, url] of Object.entries(fileStatus.downloadUrls.tables)) {
+          if (url) {
+            const filename = mode === 'merged' 
+              ? `${baseFileName}-merged.${outputFormat}`
+              : `${baseFileName}-tables.zip`;
+            await downloadFileWithAuth(url, filename, apiKeyToUse);
+          }
         }
-      });
-    }
+      }
 
-    // Download key-values
-    if (fileStatus.downloadUrls.key_values) {
-      Object.entries(fileStatus.downloadUrls.key_values).forEach(([mode, url]) => {
-        if (url) {
-          const filename = `${baseFileName}-key-values.zip`;
-          
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+      // Download key-values
+      if (fileStatus.downloadUrls.key_values) {
+        for (const [mode, url] of Object.entries(fileStatus.downloadUrls.key_values)) {
+          if (url) {
+            const filename = `${baseFileName}-key-values.zip`;
+            await downloadFileWithAuth(url, filename, apiKeyToUse);
+          }
         }
-      });
-    }
+      }
 
-    setNotification({type: 'success', message: `Downloaded files for ${fileStatus.file.name}`});
-    setTimeout(() => setNotification(null), 3000);
+      setNotification({type: 'success', message: `Downloaded files for ${fileStatus.file.name}`});
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Download error:', error);
+      setNotification({type: 'error', message: `Download failed for ${fileStatus.file.name}`});
+      setTimeout(() => setNotification(null), 5000);
+    }
   };
 
-  const handleDownloadAllCompleted = () => {
+  const handleDownloadAllCompleted = async () => {
     const completedFiles = fileProcessingStatus.filter(f => f.status === 'completed' && f.downloadUrls);
     
     if (completedFiles.length === 0) {
@@ -1107,14 +1229,22 @@ export default function APIPage() {
       return;
     }
 
-    completedFiles.forEach((fileStatus, index) => {
-      // Stagger downloads to avoid overwhelming the browser
-      setTimeout(() => {
-        handleFileDownload(fileStatus);
-      }, index * 500); // 500ms delay between downloads
-    });
-
     setNotification({type: 'success', message: `Starting download of ${completedFiles.length} files...`});
+    
+    // Process downloads sequentially to avoid overwhelming the browser
+    for (let i = 0; i < completedFiles.length; i++) {
+      try {
+        await handleFileDownload(completedFiles[i]);
+        // Small delay between downloads
+        if (i < completedFiles.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error(`Failed to download file ${completedFiles[i].file.name}:`, error);
+      }
+    }
+    
+    setNotification({type: 'success', message: `Completed download of ${completedFiles.length} files`});
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -1146,6 +1276,12 @@ export default function APIPage() {
     const progressPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return { total, completed, processing, pending, failed, progressPercentage };
+  };
+
+  const toggleApiDetails = (fileIndex: number) => {
+    setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
+      index === fileIndex ? { ...fileStatus, expanded: !fileStatus.expanded } : fileStatus
+    ));
   };
 
   const getEstimatedTimeRemaining = () => {
@@ -1442,62 +1578,177 @@ export default function APIPage() {
                           <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-700 uppercase tracking-wider">
                             <div className="col-span-4">File Name</div>
                             <div className="col-span-2">Status</div>
-                            <div className="col-span-3">Progress</div>
-                            <div className="col-span-2">Downloads</div>
-                            <div className="col-span-1">Action</div>
+                            <div className="col-span-2">Progress</div>
+                            <div className="col-span-3">Downloads</div>
+                            <div className="col-span-1">API Details</div>
                           </div>
                         </div>
                         <div className="divide-y divide-gray-200">
                           {getFilteredFiles().slice(0, 25).map((fileStatus, index) => (
-                            <div key={index} className="px-4 py-3 hover:bg-gray-50">
-                              <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                                <div className="col-span-4 flex items-center space-x-2">
-                                  <span className="text-xs">📄</span>
-                                  <span className="font-medium text-gray-900 truncate">{fileStatus.file.name}</span>
-                                </div>
-                                <div className="col-span-2">
-                                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                    fileStatus.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                    fileStatus.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                    fileStatus.status === 'pending' ? 'bg-gray-100 text-gray-700' :
-                                    'bg-red-100 text-red-800'
-                                  }`}>
-                                    {fileStatus.status === 'completed' ? '✅ Done' :
-                                     fileStatus.status === 'processing' ? '🔄 Processing' :
-                                     fileStatus.status === 'pending' ? '⏳ Queue' : '❌ Failed'}
-                                  </span>
-                                </div>
-                                <div className="col-span-3">
-                                  <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div 
-                                      className={`h-2 rounded-full transition-all duration-300 ${
-                                        fileStatus.status === 'completed' ? 'bg-green-500' :
-                                        fileStatus.status === 'processing' ? 'bg-blue-500' :
-                                        fileStatus.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
-                                      }`}
-                                      style={{width: `${fileStatus.status === 'completed' ? 100 : fileStatus.status === 'processing' ? 50 : 0}%`}}
-                                    ></div>
+                            <div key={index}>
+                              {/* Main Row */}
+                              <div className="px-4 py-3 hover:bg-gray-50">
+                                <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                                  <div className="col-span-4 flex items-center space-x-2">
+                                    <span className="text-xs">📄</span>
+                                    <span className="font-medium text-gray-900 truncate">{fileStatus.file.name}</span>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                      fileStatus.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                      fileStatus.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                                      fileStatus.status === 'pending' ? 'bg-gray-100 text-gray-700' :
+                                      'bg-red-100 text-red-800'
+                                    }`}>
+                                      {fileStatus.status === 'completed' ? '✅ Done' :
+                                       fileStatus.status === 'processing' ? '🔄 Processing' :
+                                       fileStatus.status === 'pending' ? '⏳ Queue' : '❌ Failed'}
+                                    </span>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className={`h-2 rounded-full transition-all duration-300 ${
+                                          fileStatus.status === 'completed' ? 'bg-green-500' :
+                                          fileStatus.status === 'processing' ? 'bg-blue-500' :
+                                          fileStatus.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
+                                        }`}
+                                        style={{width: `${fileStatus.status === 'completed' ? 100 : fileStatus.status === 'processing' ? 50 : 0}%`}}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  <div className="col-span-3">
+                                    {fileStatus.status === 'completed' && fileStatus.downloadUrls ? (
+                                      <div className="flex space-x-1">
+                                        <button
+                                          onClick={() => handleFileDownload(fileStatus)}
+                                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                                          title="Download both tables and key-values"
+                                        >
+                                          📥 Download All
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-gray-500">Pending</span>
+                                    )}
+                                  </div>
+                                  <div className="col-span-1">
+                                    {fileStatus.apiDetails && (
+                                      <button 
+                                        onClick={() => toggleApiDetails(index)}
+                                        className={`text-xs px-2 py-1 rounded transition-colors ${
+                                          fileStatus.expanded 
+                                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
+                                            : 'text-blue-600 hover:bg-blue-50'
+                                        }`}
+                                        title="View API call details"
+                                      >
+                                        {fileStatus.expanded ? '▼ Hide' : '📋 View'}
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="col-span-2">
-                                  {fileStatus.status === 'completed' && fileStatus.downloadUrls ? (
-                                    <span className="text-xs text-blue-600">🔗 Available</span>
-                                  ) : (
-                                    <span className="text-xs text-gray-500">Pending</span>
-                                  )}
-                                </div>
-                                <div className="col-span-1">
-                                  {fileStatus.status === 'completed' && fileStatus.downloadUrls && (
-                                    <button 
-                                      onClick={() => handleFileDownload(fileStatus)}
-                                      className="text-blue-600 hover:text-blue-800 text-xs hover:bg-blue-50 p-1 rounded"
-                                      title="Download files"
-                                    >
-                                      📥
-                                    </button>
-                                  )}
-                                </div>
                               </div>
+                              
+                              {/* Collapsible API Details */}
+                              {fileStatus.expanded && fileStatus.apiDetails && (
+                                <div className="px-4 py-4 bg-gray-50 border-t border-gray-200">
+                                  <div className="space-y-4">
+                                    {fileStatus.apiDetails.analyze && (
+                                      <div className="border border-gray-300 rounded-lg p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h4 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                                            <span className={`w-2 h-2 rounded-full ${fileStatus.apiDetails.analyze.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                            <span>1. Analysis API</span>
+                                          </h4>
+                                          <span className="text-xs text-gray-600">{fileStatus.apiDetails.analyze.timestamp}</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <div>
+                                            <label className="text-xs font-medium text-gray-700">cURL Command:</label>
+                                            <pre className="text-xs bg-black text-green-400 p-2 rounded mt-1 overflow-x-auto">{fileStatus.apiDetails.analyze.curlCommand}</pre>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="text-xs font-medium text-gray-700">Request:</label>
+                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.analyze.request, null, 2)}</pre>
+                                            </div>
+                                            <div>
+                                              <label className="text-xs font-medium text-gray-700">Response:</label>
+                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.analyze.response, null, 2)}</pre>
+                                            </div>
+                                          </div>
+                                          {fileStatus.apiDetails.analyze.duration && (
+                                            <div className="text-xs text-gray-600">Duration: {fileStatus.apiDetails.analyze.duration}ms</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {fileStatus.apiDetails.status && (
+                                      <div className="border border-gray-300 rounded-lg p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h4 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                                            <span className={`w-2 h-2 rounded-full ${fileStatus.apiDetails.status.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                            <span>2. Status Monitor API</span>
+                                          </h4>
+                                          <span className="text-xs text-gray-600">{fileStatus.apiDetails.status.timestamp}</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <div>
+                                            <label className="text-xs font-medium text-gray-700">cURL Command:</label>
+                                            <pre className="text-xs bg-black text-green-400 p-2 rounded mt-1 overflow-x-auto">{fileStatus.apiDetails.status.curlCommand}</pre>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="text-xs font-medium text-gray-700">Request:</label>
+                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.status.request, null, 2)}</pre>
+                                            </div>
+                                            <div>
+                                              <label className="text-xs font-medium text-gray-700">Response:</label>
+                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.status.response, null, 2)}</pre>
+                                            </div>
+                                          </div>
+                                          {fileStatus.apiDetails.status.duration && (
+                                            <div className="text-xs text-gray-600">Duration: {fileStatus.apiDetails.status.duration}ms</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {fileStatus.apiDetails.results && (
+                                      <div className="border border-gray-300 rounded-lg p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <h4 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                                            <span className={`w-2 h-2 rounded-full ${fileStatus.apiDetails.results.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                            <span>3. Results API</span>
+                                          </h4>
+                                          <span className="text-xs text-gray-600">{fileStatus.apiDetails.results.timestamp}</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <div>
+                                            <label className="text-xs font-medium text-gray-700">cURL Command:</label>
+                                            <pre className="text-xs bg-black text-green-400 p-2 rounded mt-1 overflow-x-auto">{fileStatus.apiDetails.results.curlCommand}</pre>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="text-xs font-medium text-gray-700">Request:</label>
+                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.results.request, null, 2)}</pre>
+                                            </div>
+                                            <div>
+                                              <label className="text-xs font-medium text-gray-700">Response:</label>
+                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.results.response, null, 2)}</pre>
+                                            </div>
+                                          </div>
+                                          {fileStatus.apiDetails.results.duration && (
+                                            <div className="text-xs text-gray-600">Duration: {fileStatus.apiDetails.results.duration}ms</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -1552,86 +1803,6 @@ export default function APIPage() {
                 </div>
               )}
 
-              {/* Multiple File Processing Status */}
-              {fileProcessingStatus.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">
-                    Multiple File Processing Status
-                    {isProcessingMultiple && (
-                      <span className="ml-2 text-sm text-blue-600">(Processing...)</span>
-                    )}
-                  </h2>
-                  
-                  <div className="space-y-3">
-                    {fileProcessingStatus.map((fileStatus, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                              fileStatus.status === 'completed' ? 'bg-green-500' :
-                              fileStatus.status === 'failed' ? 'bg-red-500' :
-                              fileStatus.status === 'processing' ? 'bg-blue-500' :
-                              'bg-gray-300'
-                            }`}>
-                              {fileStatus.status === 'completed' && (
-                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                              {fileStatus.status === 'failed' && (
-                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                              {fileStatus.status === 'processing' && (
-                                <div className="animate-spin w-2.5 h-2.5 border border-white border-t-transparent rounded-full"></div>
-                              )}
-                            </div>
-                            <span className="font-medium text-gray-900">{fileStatus.file.name}</span>
-                          </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            fileStatus.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            fileStatus.status === 'failed' ? 'bg-red-100 text-red-800' :
-                            fileStatus.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {fileStatus.status.toUpperCase()}
-                          </span>
-                        </div>
-
-                        {fileStatus.job_id && (
-                          <div className="text-xs text-gray-700 font-medium mb-2">
-                            Job ID: {fileStatus.job_id}
-                          </div>
-                        )}
-
-                        {fileStatus.error && (
-                          <div className="text-sm text-red-600 mb-2">
-                            Error: {fileStatus.error}
-                          </div>
-                        )}
-                        
-                        {fileStatus.downloadUrls && (
-                          <div className="flex space-x-2 mt-2">
-                            <button
-                              onClick={() => handleDownload(fileStatus.downloadUrls!.tables![outputFormat], fileStatus.job_id!, 'tables', outputFormat)}
-                              className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                            >
-                              Download Tables
-                            </button>
-                            <button
-                              onClick={() => handleDownload(fileStatus.downloadUrls!.key_values![outputFormat], fileStatus.job_id!, 'key-values', outputFormat)}
-                              className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
-                            >
-                              Download Key-Values
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Processing Results */}
               {processingJobs.length > 0 && (
