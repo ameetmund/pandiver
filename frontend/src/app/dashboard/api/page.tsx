@@ -1496,7 +1496,7 @@ export default function APIPage() {
                         </svg>
                         Choose Files
                       </button>
-                      <p className="text-xs text-gray-500 mt-2">PDF, PNG, JPG, JPEG supported</p>
+                      <p className="text-xs text-gray-500 mt-2">Supported format: PDF • Maximum size: 10MB</p>
                     </div>
                   </div>
                   
@@ -1662,40 +1662,12 @@ export default function APIPage() {
                                       const progressInfo = getFileProgressInfo(fileStatus);
                                       return (
                                         <div className="flex items-center space-x-2">
-                                          {/* Circular Progress Indicator */}
-                                          <div className="relative w-6 h-6">
-                                            <svg className="w-6 h-6 transform -rotate-90" viewBox="0 0 24 24">
-                                              <circle
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                fill="none"
-                                                className="text-gray-200"
-                                              />
-                                              <circle
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                fill="none"
-                                                strokeDasharray={`${2 * Math.PI * 10}`}
-                                                strokeDashoffset={`${2 * Math.PI * 10 * (1 - progressInfo.percentage / 100)}`}
-                                                className={`transition-all duration-300 ${
-                                                  fileStatus.status === 'completed' ? 'text-green-500' :
-                                                  fileStatus.status === 'processing' ? 'text-blue-500' :
-                                                  fileStatus.status === 'failed' ? 'text-red-500' : 'text-gray-300'
-                                                }`}
-                                              />
-                                            </svg>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                              <span className="text-xs font-medium text-gray-600">
-                                                {progressInfo.stageIndex}
-                                              </span>
+                                          {/* Rotating Spinner - Only show during processing */}
+                                          {fileStatus.status === 'processing' && (
+                                            <div className="relative w-6 h-6">
+                                              <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
                                             </div>
-                                          </div>
+                                          )}
                                           {/* Progress Bar with Stage Info */}
                                           <div className="flex-1">
                                             <div className="flex justify-between items-center mb-1">
