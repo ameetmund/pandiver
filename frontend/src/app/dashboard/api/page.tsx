@@ -1671,11 +1671,11 @@ export default function APIPage() {
                                           <div className="grid grid-cols-2 gap-4">
                                             <div>
                                               <label className="text-xs font-medium text-gray-700">Request:</label>
-                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.analyze.request, null, 2)}</pre>
+                                              <pre className="text-xs bg-gray-100 text-gray-800 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.analyze.request, null, 2)}</pre>
                                             </div>
                                             <div>
                                               <label className="text-xs font-medium text-gray-700">Response:</label>
-                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.analyze.response, null, 2)}</pre>
+                                              <pre className="text-xs bg-gray-100 text-gray-800 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.analyze.response, null, 2)}</pre>
                                             </div>
                                           </div>
                                           {fileStatus.apiDetails.analyze.duration && (
@@ -1702,11 +1702,11 @@ export default function APIPage() {
                                           <div className="grid grid-cols-2 gap-4">
                                             <div>
                                               <label className="text-xs font-medium text-gray-700">Request:</label>
-                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.status.request, null, 2)}</pre>
+                                              <pre className="text-xs bg-gray-100 text-gray-800 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.status.request, null, 2)}</pre>
                                             </div>
                                             <div>
                                               <label className="text-xs font-medium text-gray-700">Response:</label>
-                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.status.response, null, 2)}</pre>
+                                              <pre className="text-xs bg-gray-100 text-gray-800 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.status.response, null, 2)}</pre>
                                             </div>
                                           </div>
                                           {fileStatus.apiDetails.status.duration && (
@@ -1733,11 +1733,11 @@ export default function APIPage() {
                                           <div className="grid grid-cols-2 gap-4">
                                             <div>
                                               <label className="text-xs font-medium text-gray-700">Request:</label>
-                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.results.request, null, 2)}</pre>
+                                              <pre className="text-xs bg-gray-100 text-gray-800 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.results.request, null, 2)}</pre>
                                             </div>
                                             <div>
                                               <label className="text-xs font-medium text-gray-700">Response:</label>
-                                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.results.response, null, 2)}</pre>
+                                              <pre className="text-xs bg-gray-100 text-gray-800 p-2 rounded mt-1 overflow-x-auto">{JSON.stringify(fileStatus.apiDetails.results.response, null, 2)}</pre>
                                             </div>
                                           </div>
                                           {fileStatus.apiDetails.results.duration && (
