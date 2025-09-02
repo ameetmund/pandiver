@@ -286,7 +286,7 @@ export default function APIPage() {
     
     const droppedFiles = Array.from(event.dataTransfer.files) as File[];
     // Filter for allowed file types
-    const allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg'];
+    const allowedTypes = ['.pdf'];
     const filteredFiles = droppedFiles.filter((file: File) => {
       const extension = '.' + file.name.split('.').pop()?.toLowerCase();
       return allowedTypes.includes(extension);
@@ -295,7 +295,7 @@ export default function APIPage() {
     if (filteredFiles.length !== droppedFiles.length) {
       setNotification({
         type: 'error', 
-        message: 'Some files were filtered out. Only PDF, PNG, JPG, and JPEG files are supported.'
+        message: 'Some files were filtered out. Only PDF files are supported.'
       });
       setTimeout(() => setNotification(null), 3000);
     }
@@ -1337,18 +1337,28 @@ export default function APIPage() {
     const baseFileName = fileStatus.file.name.replace(/\.[^/.]+$/, '');
 
     try {
-      // Download tables based on table mode
-      if (fileStatus.downloadUrls.tables) {
-        if (tableMode === 'individual') {
-          // Individual mode: Download only individual tables (tables.zip), NO merged file
+      if (tableMode === 'individual') {
+        // Individual mode: Download tables.zip and key-values.zip
+        if (fileStatus.downloadUrls.tables) {
           for (const [mode, url] of Object.entries(fileStatus.downloadUrls.tables)) {
             if (url && mode !== 'merged') {
               const filename = `${baseFileName}-tables.zip`;
               await downloadFileWithAuth(url, filename, apiKeyToUse);
             }
           }
-        } else if (tableMode === 'merged') {
-          // Merged mode: Download only merged file, NO individual tables
+        }
+        // Download key-values as zip for individual mode
+        if (fileStatus.downloadUrls.key_values) {
+          for (const [mode, url] of Object.entries(fileStatus.downloadUrls.key_values)) {
+            if (url) {
+              const filename = `${baseFileName}-key_values.zip`;
+              await downloadFileWithAuth(url, filename, apiKeyToUse);
+            }
+          }
+        }
+      } else if (tableMode === 'merged') {
+        // Merged mode: Download merged file in selected format and key-values.zip
+        if (fileStatus.downloadUrls.tables) {
           for (const [mode, url] of Object.entries(fileStatus.downloadUrls.tables)) {
             if (url && mode === 'merged') {
               const filename = `${baseFileName}-merged.${outputFormat}`;
@@ -1356,14 +1366,13 @@ export default function APIPage() {
             }
           }
         }
-      }
-
-      // Always download key-value pairs (regardless of table mode)
-      if (fileStatus.downloadUrls.key_values) {
-        for (const [mode, url] of Object.entries(fileStatus.downloadUrls.key_values)) {
-          if (url) {
-            const filename = `${baseFileName}-key_values.${outputFormat}`;
-            await downloadFileWithAuth(url, filename, apiKeyToUse);
+        // Download key-values as zip for merged mode
+        if (fileStatus.downloadUrls.key_values) {
+          for (const [mode, url] of Object.entries(fileStatus.downloadUrls.key_values)) {
+            if (url) {
+              const filename = `${baseFileName}-key_values.zip`;
+              await downloadFileWithAuth(url, filename, apiKeyToUse);
+            }
           }
         }
       }
@@ -1394,10 +1403,10 @@ export default function APIPage() {
 
   // Calculate processing time from created_at and updated_at
   const getProcessingTime = (usage: any) => {
-    if (usage.updated_at && usage.created_at) {
+    if (usage.completed_at && usage.created_at) {
       const created = new Date(usage.created_at);
-      const updated = new Date(usage.updated_at);
-      const diffInSeconds = Math.floor((updated.getTime() - created.getTime()) / 1000);
+      const completed = new Date(usage.completed_at);
+      const diffInSeconds = Math.floor((completed.getTime() - created.getTime()) / 1000);
       return diffInSeconds > 0 ? `${diffInSeconds}s` : 'N/A';
     }
     return usage.processing_time ? `${usage.processing_time}s` : 'N/A';
@@ -1435,7 +1444,7 @@ export default function APIPage() {
             <div className={`mb-6 p-4 rounded-lg ${
               notification.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
               notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
-              'bg-blue-50 text-blue-700 border border-blue-200'
+              'bg-teal-50 text-teal-700 border border-teal-200'
             }`}>
               {notification.message}
             </div>
@@ -1448,7 +1457,7 @@ export default function APIPage() {
                 onClick={() => setActiveTab('test')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'test'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#00C7BE] text-[#00C7BE]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -1458,7 +1467,7 @@ export default function APIPage() {
                 onClick={() => setActiveTab('keys')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'keys'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#00C7BE] text-[#00C7BE]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -1468,7 +1477,7 @@ export default function APIPage() {
                 onClick={() => setActiveTab('docs')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'docs'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#00C7BE] text-[#00C7BE]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -1478,7 +1487,7 @@ export default function APIPage() {
                 onClick={() => setActiveTab('usage')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'usage'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[#00C7BE] text-[#00C7BE]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -1491,9 +1500,9 @@ export default function APIPage() {
           {activeTab === 'test' && (
             <div className="space-y-8">
               {/* Unified Horizontal Control Bar */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6 shadow-lg mb-6">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-6 shadow-lg mb-6">
                 <div className="flex items-center mb-6">
-                  <div className="bg-blue-600 rounded-lg p-2 mr-3">
+                  <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg p-2 mr-3">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1512,7 +1521,7 @@ export default function APIPage() {
                     <select
                       value={selectedApiKey}
                       onChange={(e) => setSelectedApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 text-sm"
                     >
                       <option value="">Choose API key...</option>
                       {apiKeys.map((key) => (
@@ -1528,7 +1537,7 @@ export default function APIPage() {
                     <select
                       value={outputFormat}
                       onChange={(e) => setOutputFormat(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 text-sm"
                     >
                       <option value="">Choose format...</option>
                       <option value="json">JSON</option>
@@ -1543,7 +1552,7 @@ export default function APIPage() {
                     <select
                       value={tableMode}
                       onChange={(e) => setTableMode(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 text-sm"
                     >
                       <option value="">Choose mode...</option>
                       <option value="individual">Individual</option>
@@ -1556,7 +1565,7 @@ export default function APIPage() {
                     <button
                       onClick={handleProcessFiles}
                       disabled={!selectedApiKey || selectedFiles.length === 0 || !outputFormat || !tableMode}
-                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
+                      className="w-full bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-4 py-2 rounded-full hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
                     >
                       Process File{selectedFiles.length > 1 ? 's' : ''}
                     </button>
@@ -1569,7 +1578,7 @@ export default function APIPage() {
                   <input
                     type="file"
                     multiple
-                    accept=".pdf,.png,.jpg,.jpeg"
+                    accept=".pdf"
                     onChange={handleFileChange}
                     className="hidden"
                     ref={fileInputRef}
@@ -1577,8 +1586,8 @@ export default function APIPage() {
                   <div
                     className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
                       isDragOver
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                        ? 'border-[#00C7BE] bg-teal-50'
+                        : 'border-gray-300 bg-gray-50 hover:border-[#00C7BE] hover:bg-teal-50'
                     }`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -1586,10 +1595,10 @@ export default function APIPage() {
                   >
                     <div className="flex flex-col items-center justify-center space-y-4">
                       <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${
-                        isDragOver ? 'bg-blue-100' : 'bg-gray-100'
+                        isDragOver ? 'bg-teal-100' : 'bg-gray-100'
                       }`}>
                         <svg 
-                          className={`w-8 h-8 transition-colors ${isDragOver ? 'text-blue-600' : 'text-gray-500'}`} 
+                          className={`w-8 h-8 transition-colors ${isDragOver ? 'text-[#00C7BE]' : 'text-gray-500'}`} 
                           fill="none" 
                           stroke="currentColor" 
                           viewBox="0 0 24 24"
@@ -1603,14 +1612,14 @@ export default function APIPage() {
                         </svg>
                       </div>
                       <div>
-                        <h4 className={`text-lg font-semibold transition-colors ${isDragOver ? 'text-blue-700' : 'text-gray-700'}`}>
+                        <h4 className={`text-lg font-semibold transition-colors ${isDragOver ? 'text-teal-700' : 'text-gray-700'}`}>
                           {isDragOver ? 'Drop files here' : 'Drag & drop your files here'}
                         </h4>
                         <p className="text-sm text-gray-500 mt-1">
                           or <button 
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-blue-600 hover:text-blue-700 font-medium underline"
+                            className="text-[#00C7BE] hover:text-teal-800 font-medium underline"
                           >
                             browse to choose files
                           </button>
@@ -1621,7 +1630,7 @@ export default function APIPage() {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          <span>PDF, PNG, JPG, JPEG</span>
+                          <span>Supported format: PDF</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1633,8 +1642,8 @@ export default function APIPage() {
                       </div>
                     </div>
                     {isDragOver && (
-                      <div className="absolute inset-0 bg-blue-100 bg-opacity-50 rounded-xl flex items-center justify-center">
-                        <div className="text-blue-700 text-lg font-semibold">Release to upload</div>
+                      <div className="absolute inset-0 bg-teal-100 bg-opacity-50 rounded-xl flex items-center justify-center">
+                        <div className="text-teal-700 text-lg font-semibold">Release to upload</div>
                       </div>
                     )}
                   </div>
@@ -1676,15 +1685,12 @@ export default function APIPage() {
               </div>
 
               {/* Enhanced Processing Status Section */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6 shadow-lg">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-6 shadow-lg">
                 <div className="flex items-center mb-6">
-                  <div className="bg-green-600 rounded-lg p-2 mr-3">
+                  <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg p-2 mr-3">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.3">
-                        <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" />
-                      </circle>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 10h1m2 0h1m2 0h1" />
                     </svg>
                   </div>
                   <div>
@@ -1709,7 +1715,12 @@ export default function APIPage() {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-4">
                           <span className="text-sm font-medium text-gray-700">
-                            📊 {getProcessingStats().completed} Completed • {getProcessingStats().processing} Processing • {getProcessingStats().pending} Pending
+                            <div className="flex items-center">
+                              <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                              </svg>
+                              {getProcessingStats().completed} Completed • {getProcessingStats().processing} Processing • {getProcessingStats().pending} Pending
+                            </div>
                             {getProcessingStats().failed > 0 && ` • ${getProcessingStats().failed} Failed`}
                           </span>
                         </div>
@@ -1719,14 +1730,14 @@ export default function APIPage() {
                             placeholder="Search files..."
                             value={searchFilter}
                             onChange={(e) => setSearchFilter(e.target.value)}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-full focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent"
                           />
                           <button 
                             onClick={handleDownloadAllCompleted}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                            className="px-3 py-1 text-sm bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full hover:scale-105 transition-transform duration-200 disabled:opacity-50"
                             disabled={getProcessingStats().completed === 0}
                           >
-                            📥 Download All ({getProcessingStats().completed})
+                            Download All ({getProcessingStats().completed})
                           </button>
                         </div>
                       </div>
@@ -1743,7 +1754,7 @@ export default function APIPage() {
                         </div>
                         <div className="w-full bg-gray-300 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] h-2 rounded-full transition-all duration-300"
                             style={{width: `${getProcessingStats().progressPercentage}%`}}
                           ></div>
                         </div>
@@ -1758,7 +1769,7 @@ export default function APIPage() {
                             onClick={() => setStatusFilter(status)}
                             className={`px-3 py-1 text-xs rounded-full border ${
                               statusFilter === status 
-                                ? 'bg-blue-600 text-white border-blue-600' 
+                                ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white border-[#00C7BE]' 
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                             }`}
                           >
@@ -1820,13 +1831,37 @@ export default function APIPage() {
                                   <div className="col-span-2">
                                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                                       fileStatus.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                      fileStatus.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                                      fileStatus.status === 'processing' ? 'bg-teal-100 text-teal-800' :
                                       fileStatus.status === 'pending' ? 'bg-gray-100 text-gray-700' :
                                       'bg-red-100 text-red-800'
                                     }`}>
-                                      {fileStatus.status === 'completed' ? '✅ Done' :
-                                       fileStatus.status === 'processing' ? '🔄 Processing' :
-                                       fileStatus.status === 'pending' ? '⏳ Queue' : '❌ Failed'}
+                                      <div className="flex items-center space-x-1">
+                                        {fileStatus.status === 'completed' && (
+                                          <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                          </svg>
+                                        )}
+                                        {fileStatus.status === 'processing' && (
+                                          <svg className="w-3 h-3 text-[#00C7BE] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                          </svg>
+                                        )}
+                                        {fileStatus.status === 'pending' && (
+                                          <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                          </svg>
+                                        )}
+                                        {fileStatus.status === 'failed' && (
+                                          <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
+                                          </svg>
+                                        )}
+                                        <span>
+                                          {fileStatus.status === 'completed' ? 'Completed' :
+                                           fileStatus.status === 'processing' ? 'Processing' :
+                                           fileStatus.status === 'pending' ? 'Pending' : 'Failed'}
+                                        </span>
+                                      </div>
                                     </span>
                                   </div>
                                   <div className="col-span-2">
@@ -1837,7 +1872,7 @@ export default function APIPage() {
                                           {/* Rotating Spinner - Only show during processing */}
                                           {fileStatus.status === 'processing' && (
                                             <div className="relative w-6 h-6">
-                                              <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+                                              <div className="w-6 h-6 border-2 border-teal-200 border-t-[#00C7BE] rounded-full animate-spin"></div>
                                             </div>
                                           )}
                                           {/* Progress Bar with Stage Info */}
@@ -1850,7 +1885,7 @@ export default function APIPage() {
                                               <div 
                                                 className={`h-2 rounded-full transition-all duration-300 ${
                                                   fileStatus.status === 'completed' ? 'bg-green-500' :
-                                                  fileStatus.status === 'processing' ? 'bg-blue-500' :
+                                                  fileStatus.status === 'processing' ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67]' :
                                                   fileStatus.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
                                                 }`}
                                                 style={{width: `${progressInfo.percentage}%`}}
@@ -1866,10 +1901,10 @@ export default function APIPage() {
                                       <div className="flex space-x-1">
                                         <button
                                           onClick={() => handleFileDownload(fileStatus)}
-                                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                                          className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-2 py-1 rounded-full text-xs hover:scale-105 transition-transform duration-200"
                                           title="Download both tables and key-values"
                                         >
-                                          📥 Download All
+                                          Download Files
                                         </button>
                                       </div>
                                     ) : (
@@ -1882,8 +1917,8 @@ export default function APIPage() {
                                         onClick={() => toggleApiDetails(index)}
                                         className={`text-xs px-2 py-1 rounded transition-colors ${
                                           fileStatus.expanded 
-                                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
-                                            : 'text-blue-600 hover:bg-blue-50'
+                                            ? 'bg-teal-100 text-teal-800 hover:bg-teal-200' 
+                                            : 'text-[#00C7BE] hover:bg-teal-50'
                                         }`}
                                         title="View API call details"
                                       >
@@ -2005,7 +2040,7 @@ export default function APIPage() {
                             {getProcessingStatusPaginationStats().hasMore && (
                               <button
                                 onClick={loadMoreProcessingFiles}
-                                className="text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-md px-3 py-1 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                                className="text-sm font-medium text-[#00C7BE] bg-white border border-teal-300 rounded-md px-3 py-1 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:ring-offset-2 transition-colors"
                               >
                                 Load More...
                               </button>
@@ -2030,14 +2065,14 @@ export default function APIPage() {
                             <div className={`w-3 h-3 rounded-full ${
                               step.status === 'success' ? 'bg-green-500' :
                               step.status === 'error' ? 'bg-red-500' :
-                              'bg-blue-500 animate-pulse'
+                              'bg-gradient-to-r from-[#00C7BE] to-[#086C67] animate-pulse'
                             }`}></div>
                             <span className="font-medium text-gray-900">{step.step}</span>
                           </div>
                           <span className={`text-sm px-2 py-1 rounded-full ${
                             step.status === 'success' ? 'bg-green-100 text-green-800' :
                             step.status === 'error' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
+                            'bg-teal-100 text-teal-800'
                           }`}>
                             {step.method} {step.endpoint}
                           </span>
@@ -2073,7 +2108,7 @@ export default function APIPage() {
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             job.status === 'SUCCEEDED' ? 'bg-green-100 text-green-800' :
                             job.status === 'FAILED' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
+                            'bg-teal-100 text-teal-800'
                           }`}>
                             {job.status}
                           </span>
@@ -2083,7 +2118,7 @@ export default function APIPage() {
                           <div className="flex space-x-2 mt-3">
                             <button
                               onClick={() => handleDownload(job.downloadUrls!.tables![outputFormat], job.job_id, 'tables', outputFormat)}
-                              className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                              className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-3 py-1 rounded text-sm hover:scale-105 transition-transform duration-200"
                             >
                               Download Tables
                             </button>
@@ -2115,11 +2150,11 @@ export default function APIPage() {
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
                     placeholder="Enter key name..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900"
                   />
                   <button
                     onClick={createApiKey}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                    className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-6 py-2 rounded-lg hover:scale-105 transition-transform duration-200"
                   >
                     Create Key
                   </button>
@@ -2148,7 +2183,7 @@ export default function APIPage() {
                               <code className="bg-gray-100 px-2 py-1 rounded text-sm text-gray-800">{key.api_key}</code>
                               <button
                                 onClick={() => copyApiKey(key.real_key || key.api_key)}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
+                                className="text-[#00C7BE] hover:text-teal-800 text-sm"
                               >
                                 Copy Full Key
                               </button>
@@ -2186,12 +2221,12 @@ export default function APIPage() {
                 <div className="border-b pb-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-4">Overview</h3>
                   <p className="text-gray-600 mb-4">
-                    The Intelligent Data Parser API extracts structured data from documents including tables and key-value pairs. 
-                    It supports multiple file formats and provides results in various output formats.
+                    The Intelligent Data Parser API extracts structured data from PDF documents including tables and key-value pairs. 
+                    It supports PDF format and provides results in various output formats.
                   </p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Base URL</h4>
-                    <code className="text-blue-800 bg-blue-100 px-2 py-1 rounded">http://localhost:8000/api/v1/intelligent-data</code>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Base URL</h4>
+                    <code className="text-gray-800 bg-gray-100 px-2 py-1 rounded">http://localhost:8000/api/v1/intelligent-data</code>
                   </div>
                 </div>
 
@@ -2220,7 +2255,7 @@ export default function APIPage() {
                       <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">POST</span>
                       <code className="text-lg font-mono text-gray-900">/analyze</code>
                     </div>
-                    <p className="text-gray-600 mb-4">Start intelligent data analysis for uploaded files. Supports PDF, PNG, JPG, and JPEG formats.</p>
+                    <p className="text-gray-600 mb-4">Start intelligent data analysis for uploaded files. Supports PDF format.</p>
                     
                     <div className="space-y-4">
                       <div>
@@ -2277,7 +2312,7 @@ export default function APIPage() {
                   {/* Job Status Endpoint */}
                   <div className="border border-gray-200 rounded-lg p-6 mb-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">GET</span>
+                      <span className="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full">GET</span>
                       <code className="text-lg font-mono text-gray-900">/jobs/{'{job_id}'}/status</code>
                     </div>
                     <p className="text-gray-600 mb-4">Get the current status of a processing job.</p>
@@ -2324,7 +2359,7 @@ export default function APIPage() {
                   {/* Job Results Endpoint */}
                   <div className="border border-gray-200 rounded-lg p-6 mb-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">GET</span>
+                      <span className="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full">GET</span>
                       <code className="text-lg font-mono text-gray-900">/jobs/{'{job_id}'}/results</code>
                     </div>
                     <p className="text-gray-600 mb-4">Get the results and download URLs for a completed job.</p>
@@ -2470,33 +2505,25 @@ export default function APIPage() {
                           <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
                           <span className="text-gray-700"><strong>PDF</strong> - Portable Document Format</span>
                         </li>
-                        <li className="flex items-center">
-                          <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-                          <span className="text-gray-700"><strong>PNG</strong> - Portable Network Graphics</span>
-                        </li>
-                        <li className="flex items-center">
-                          <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-                          <span className="text-gray-700"><strong>JPG/JPEG</strong> - Joint Photographic Experts Group</span>
-                        </li>
                       </ul>
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3">Output Formats</h4>
                       <ul className="space-y-2">
                         <li className="flex items-center">
-                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="w-3 h-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mr-3"></span>
                           <span className="text-gray-700"><strong>CSV</strong> - Comma-separated values</span>
                         </li>
                         <li className="flex items-center">
-                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="w-3 h-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mr-3"></span>
                           <span className="text-gray-700"><strong>XLSX</strong> - Excel spreadsheet</span>
                         </li>
                         <li className="flex items-center">
-                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="w-3 h-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mr-3"></span>
                           <span className="text-gray-700"><strong>JSON</strong> - JavaScript Object Notation</span>
                         </li>
                         <li className="flex items-center">
-                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                          <span className="w-3 h-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mr-3"></span>
                           <span className="text-gray-700"><strong>TXT</strong> - Plain text format</span>
                         </li>
                       </ul>
@@ -2551,9 +2578,6 @@ export default function APIPage() {
                           Status
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Files
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Processing Time
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -2574,18 +2598,10 @@ export default function APIPage() {
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               usage.status === 'SUCCEEDED' ? 'bg-green-100 text-green-800' :
                               usage.status === 'FAILED' ? 'bg-red-100 text-red-800' :
-                              'bg-blue-100 text-blue-800'
+                              'bg-teal-100 text-teal-800'
                             }`}>
                               {usage.status}
                             </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              {usage.file_count || 1} file{(usage.file_count || 1) > 1 ? 's' : ''}
-                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                             <div className="flex items-center">
@@ -2620,7 +2636,7 @@ export default function APIPage() {
                   {getUsageHistoryStats().hasMore && (
                     <button
                       onClick={loadMoreUsageHistory}
-                      className="px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-[#00C7BE] bg-white border border-teal-300 rounded-md hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:ring-offset-2 transition-colors"
                     >
                       Load More...
                     </button>

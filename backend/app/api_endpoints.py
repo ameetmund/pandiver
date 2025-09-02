@@ -282,6 +282,31 @@ async def get_job_status_api(
     """Get the status of a processing job"""
     user, api_key = user_and_key
     
+    # Track API usage for status endpoint - update existing or create new
+    existing_status_record = db.query(ApiUsage).filter(
+        ApiUsage.job_id == job_id,
+        ApiUsage.user_id == user.id,
+        ApiUsage.endpoint.like(f"%/jobs/{job_id}/status")
+    ).first()
+    
+    if existing_status_record:
+        # Update existing record with latest timestamp
+        existing_status_record.created_at = datetime.utcnow()
+        existing_status_record.completed_at = datetime.utcnow()
+    else:
+        # Create new status usage record
+        status_usage_record = ApiUsage(
+            api_key_id=api_key.id,
+            user_id=user.id,
+            endpoint=f"/api/v1/intelligent-data/jobs/{job_id}/status",
+            job_id=job_id,
+            status="SUCCEEDED",
+            file_count=1,
+            completed_at=datetime.utcnow()
+        )
+        db.add(status_usage_record)
+    db.commit()
+    
     # Verify job belongs to this user
     usage_record = db.query(ApiUsage).filter(
         ApiUsage.job_id == job_id,
@@ -375,6 +400,31 @@ async def get_job_results_api(
 ):
     """Get the results of a completed job with download URLs"""
     user, api_key = user_and_key
+    
+    # Track API usage for results endpoint - update existing or create new
+    existing_results_record = db.query(ApiUsage).filter(
+        ApiUsage.job_id == job_id,
+        ApiUsage.user_id == user.id,
+        ApiUsage.endpoint.like(f"%/jobs/{job_id}/results")
+    ).first()
+    
+    if existing_results_record:
+        # Update existing record with latest timestamp
+        existing_results_record.created_at = datetime.utcnow()
+        existing_results_record.completed_at = datetime.utcnow()
+    else:
+        # Create new results usage record
+        results_usage_record = ApiUsage(
+            api_key_id=api_key.id,
+            user_id=user.id,
+            endpoint=f"/api/v1/intelligent-data/jobs/{job_id}/results",
+            job_id=job_id,
+            status="SUCCEEDED",
+            file_count=1,
+            completed_at=datetime.utcnow()
+        )
+        db.add(results_usage_record)
+    db.commit()
     
     # Verify job belongs to this user and is completed
     usage_record = db.query(ApiUsage).filter(
