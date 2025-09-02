@@ -400,15 +400,15 @@ async def get_job_results_api(
             detail=f"Job failed: {usage_record.error_message}"
         )
     
-    # Generate download URLs (these would be temporary signed URLs in production)
+    # Generate download URLs with correct extensions (matching UI behavior)
     base_url = "http://localhost:8000/api/v1/intelligent-data"
     download_urls = {
         "tables": {
-            "individual": f"{base_url}/download/{job_id}/tables/{format}?mode=individual",
-            "merged": f"{base_url}/download/{job_id}/tables/{format}?mode=merged"
+            "individual": f"{base_url}/download/{job_id}/tables/{format}?mode=individual",  # Returns .zip
+            "merged": f"{base_url}/download/{job_id}/tables/{format}?mode=merged"  # Returns .{format}
         },
         "key_values": {
-            "all": f"{base_url}/download/{job_id}/key-values/{format}"
+            "all": f"{base_url}/download/{job_id}/key-values/{format}"  # Returns .zip
         }
     }
     
@@ -638,7 +638,10 @@ def create_table_zip_file(tables_data: List[Dict], format: str, base_filename: s
 def generate_single_table_content(table: Dict, format: str):
     """Generate content for a single table"""
     if format == "csv":
-        if "columns" in table and "rows" in table:
+        if "headers" in table and "rows" in table:
+            df = pd.DataFrame(table["rows"], columns=table["headers"])
+            return df.to_csv(index=False)
+        elif "columns" in table and "rows" in table:  # fallback for backward compatibility
             df = pd.DataFrame(table["rows"], columns=table["columns"])
             return df.to_csv(index=False)
         elif "rows" in table and len(table["rows"]) > 0:
@@ -648,7 +651,10 @@ def generate_single_table_content(table: Dict, format: str):
     
     elif format == "xlsx":
         output = io.BytesIO()
-        if "columns" in table and "rows" in table:
+        if "headers" in table and "rows" in table:
+            df = pd.DataFrame(table["rows"], columns=table["headers"])
+            df.to_excel(output, index=False, engine='openpyxl')
+        elif "columns" in table and "rows" in table:  # fallback for backward compatibility
             df = pd.DataFrame(table["rows"], columns=table["columns"])
             df.to_excel(output, index=False, engine='openpyxl')
         elif "rows" in table and len(table["rows"]) > 0:
@@ -661,7 +667,15 @@ def generate_single_table_content(table: Dict, format: str):
     
     elif format == "txt":
         txt_content = ""
-        if "columns" in table and "rows" in table:
+        if "headers" in table and "rows" in table:
+            # Add headers
+            txt_content += " | ".join(table["headers"]) + "\n"
+            txt_content += "-" * (len(" | ".join(table["headers"]))) + "\n"
+            
+            # Add rows
+            for row in table["rows"]:
+                txt_content += " | ".join([str(cell) for cell in row]) + "\n"
+        elif "columns" in table and "rows" in table:  # fallback for backward compatibility
             # Add headers
             txt_content += " | ".join(table["columns"]) + "\n"
             txt_content += "-" * (len(" | ".join(table["columns"]))) + "\n"
@@ -679,9 +693,13 @@ def generate_merged_tables_content(tables_data: List[Dict], format: str) -> byte
         all_rows = []
         all_columns = []
         
-        # Collect all unique columns in order
+        # Collect all unique headers in order (corrected from "columns" to "headers")
         for table in tables_data:
-            if "columns" in table:
+            if "headers" in table:
+                for col in table["headers"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+            elif "columns" in table:  # fallback for backward compatibility
                 for col in table["columns"]:
                     if col not in all_columns:
                         all_columns.append(col)
@@ -701,9 +719,13 @@ def generate_merged_tables_content(tables_data: List[Dict], format: str) -> byte
         all_rows = []
         all_columns = []
         
-        # Collect all unique columns in order
+        # Collect all unique headers in order (corrected from "columns" to "headers")
         for table in tables_data:
-            if "columns" in table:
+            if "headers" in table:
+                for col in table["headers"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+            elif "columns" in table:  # fallback for backward compatibility
                 for col in table["columns"]:
                     if col not in all_columns:
                         all_columns.append(col)
@@ -728,10 +750,14 @@ def generate_merged_tables_content(tables_data: List[Dict], format: str) -> byte
             }
         }
         
-        # Collect all unique columns
+        # Collect all unique headers (corrected from "columns" to "headers")
         all_columns = []
         for table in tables_data:
-            if "columns" in table:
+            if "headers" in table:
+                for col in table["headers"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+            elif "columns" in table:  # fallback for backward compatibility
                 for col in table["columns"]:
                     if col not in all_columns:
                         all_columns.append(col)
@@ -749,9 +775,13 @@ def generate_merged_tables_content(tables_data: List[Dict], format: str) -> byte
         all_rows = []
         all_columns = []
         
-        # Collect all unique columns
+        # Collect all unique headers (corrected from "columns" to "headers")
         for table in tables_data:
-            if "columns" in table:
+            if "headers" in table:
+                for col in table["headers"]:
+                    if col not in all_columns:
+                        all_columns.append(col)
+            elif "columns" in table:  # fallback for backward compatibility
                 for col in table["columns"]:
                     if col not in all_columns:
                         all_columns.append(col)

@@ -111,6 +111,7 @@ export default function APIPage() {
   const [fileProcessingStatus, setFileProcessingStatus] = useState<FileProcessingStatus[]>([]);
   const [isProcessingMultiple, setIsProcessingMultiple] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   // API Execution Timeline states
   const [apiSteps, setApiSteps] = useState<ApiStep[]>([]);
@@ -119,6 +120,15 @@ export default function APIPage() {
   // Compact Design Filter States
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState<string>('');
+
+  // Pagination states
+  const [usageHistoryPage, setUsageHistoryPage] = useState(1);
+  const USAGE_HISTORY_INITIAL_LIMIT = 10;
+  const USAGE_HISTORY_LOAD_MORE_INCREMENT = 20;
+  
+  const [processingStatusPage, setProcessingStatusPage] = useState(1);
+  const PROCESSING_STATUS_INITIAL_LIMIT = 3;
+  const PROCESSING_STATUS_LOAD_MORE_INCREMENT = 10;
 
   useEffect(() => {
     loadUser();
@@ -259,6 +269,39 @@ export default function APIPage() {
     setSelectedFiles(files);
   };
 
+  // Drag and drop handlers
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    
+    const droppedFiles = Array.from(event.dataTransfer.files) as File[];
+    // Filter for allowed file types
+    const allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg'];
+    const filteredFiles = droppedFiles.filter((file: File) => {
+      const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+      return allowedTypes.includes(extension);
+    });
+    
+    if (filteredFiles.length !== droppedFiles.length) {
+      setNotification({
+        type: 'error', 
+        message: 'Some files were filtered out. Only PDF, PNG, JPG, and JPEG files are supported.'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
+    
+    setSelectedFiles(filteredFiles);
+  };
 
   // Execute curl command simulation with step-by-step tracking
   const executeCurlCommand = async () => {
@@ -1332,6 +1375,53 @@ export default function APIPage() {
     }
   };
 
+  // Usage history pagination functions
+  const getVisibleUsageHistory = () => {
+    const itemsToShow = USAGE_HISTORY_INITIAL_LIMIT + (usageHistoryPage - 1) * USAGE_HISTORY_LOAD_MORE_INCREMENT;
+    return apiUsage.slice(0, itemsToShow);
+  };
+
+  const loadMoreUsageHistory = () => {
+    setUsageHistoryPage(prev => prev + 1);
+  };
+
+  const getUsageHistoryStats = () => {
+    const visibleCount = getVisibleUsageHistory().length;
+    const totalCount = apiUsage.length;
+    const hasMore = visibleCount < totalCount;
+    return { visibleCount, totalCount, hasMore };
+  };
+
+  // Calculate processing time from created_at and updated_at
+  const getProcessingTime = (usage: any) => {
+    if (usage.updated_at && usage.created_at) {
+      const created = new Date(usage.created_at);
+      const updated = new Date(usage.updated_at);
+      const diffInSeconds = Math.floor((updated.getTime() - created.getTime()) / 1000);
+      return diffInSeconds > 0 ? `${diffInSeconds}s` : 'N/A';
+    }
+    return usage.processing_time ? `${usage.processing_time}s` : 'N/A';
+  };
+
+  // Processing status pagination functions
+  const getVisibleProcessingFiles = () => {
+    const filtered = getFilteredFiles();
+    const itemsToShow = PROCESSING_STATUS_INITIAL_LIMIT + (processingStatusPage - 1) * PROCESSING_STATUS_LOAD_MORE_INCREMENT;
+    return filtered.slice(0, itemsToShow);
+  };
+
+  const loadMoreProcessingFiles = () => {
+    setProcessingStatusPage(prev => prev + 1);
+  };
+
+  const getProcessingStatusPaginationStats = () => {
+    const filtered = getFilteredFiles();
+    const visibleCount = getVisibleProcessingFiles().length;
+    const totalCount = filtered.length;
+    const hasMore = visibleCount < totalCount;
+    return { visibleCount, totalCount, hasMore };
+  };
+
   return (
     <DashboardLayout title="API Dashboard">
       <div className="p-6">
@@ -1473,7 +1563,7 @@ export default function APIPage() {
                   </div>
                 </div>
 
-                {/* Professional File Upload Section */}
+                {/* Modern Drag & Drop File Upload Section */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">File Upload</h3>
                   <input
@@ -1484,20 +1574,69 @@ export default function APIPage() {
                     className="hidden"
                     ref={fileInputRef}
                   />
-                  <div className="flex items-center justify-center">
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-                      >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  <div
+                    className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
+                      isDragOver
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${
+                        isDragOver ? 'bg-blue-100' : 'bg-gray-100'
+                      }`}>
+                        <svg 
+                          className={`w-8 h-8 transition-colors ${isDragOver ? 'text-blue-600' : 'text-gray-500'}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={1.5} 
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" 
+                          />
                         </svg>
-                        Choose Files
-                      </button>
-                      <p className="text-xs text-gray-500 mt-2">Supported format: PDF • Maximum size: 10MB</p>
+                      </div>
+                      <div>
+                        <h4 className={`text-lg font-semibold transition-colors ${isDragOver ? 'text-blue-700' : 'text-gray-700'}`}>
+                          {isDragOver ? 'Drop files here' : 'Drag & drop your files here'}
+                        </h4>
+                        <p className="text-sm text-gray-500 mt-1">
+                          or <button 
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-blue-600 hover:text-blue-700 font-medium underline"
+                          >
+                            browse to choose files
+                          </button>
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <div className="flex items-center space-x-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span>PDF, PNG, JPG, JPEG</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v1H8V5z" />
+                          </svg>
+                          <span>Max 10MB per file</span>
+                        </div>
+                      </div>
                     </div>
+                    {isDragOver && (
+                      <div className="absolute inset-0 bg-blue-100 bg-opacity-50 rounded-xl flex items-center justify-center">
+                        <div className="text-blue-700 text-lg font-semibold">Release to upload</div>
+                      </div>
+                    )}
                   </div>
                   
                   {selectedFiles.length > 0 && (
@@ -1541,7 +1680,11 @@ export default function APIPage() {
                 <div className="flex items-center mb-6">
                   <div className="bg-green-600 rounded-lg p-2 mr-3">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.3">
+                        <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" />
+                      </circle>
                     </svg>
                   </div>
                   <div>
@@ -1619,7 +1762,36 @@ export default function APIPage() {
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                             }`}
                           >
-                            {status === 'all' ? 'All' : status === 'completed' ? '✅ Completed' : status === 'processing' ? '🔄 Processing' : status === 'pending' ? '⏳ Pending' : '❌ Failed'}
+                            <div className="flex items-center space-x-1">
+                              {status === 'all' && (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 00-2 2m14 0V9a2 2 0 00-2-2H5a2 2 0 00-2 2v2" />
+                                </svg>
+                              )}
+                              {status === 'completed' && (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              )}
+                              {status === 'processing' && (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                              )}
+                              {status === 'pending' && (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              )}
+                              {status === 'failed' && (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                              )}
+                              <span>
+                                {status === 'all' ? 'All' : status === 'completed' ? 'Completed' : status === 'processing' ? 'Processing' : status === 'pending' ? 'Pending' : 'Failed'}
+                              </span>
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -1636,7 +1808,7 @@ export default function APIPage() {
                           </div>
                         </div>
                         <div className="divide-y divide-gray-200">
-                          {getFilteredFiles().slice(0, 25).map((fileStatus, index) => (
+                          {getVisibleProcessingFiles().map((fileStatus, index) => (
                             <div key={index}>
                               {/* Main Row */}
                               <div className="px-4 py-3 hover:bg-gray-50">
@@ -1825,10 +1997,19 @@ export default function APIPage() {
                           ))}
                         </div>
                         
-                        {getFilteredFiles().length > 25 && (
-                          <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 text-center">
-                            <span className="text-sm text-gray-600">Showing 1-25 of {getFilteredFiles().length} files</span>
-                            <button className="ml-4 text-sm text-blue-600 hover:text-blue-800">Load More ▼</button>
+                        {getFilteredFiles().length > 0 && (
+                          <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              Showing {Math.min(getVisibleProcessingFiles().length, getFilteredFiles().length)} of {getFilteredFiles().length} files
+                            </div>
+                            {getProcessingStatusPaginationStats().hasMore && (
+                              <button
+                                onClick={loadMoreProcessingFiles}
+                                className="text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-md px-3 py-1 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                              >
+                                Load More...
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -2355,8 +2536,9 @@ export default function APIPage() {
               {apiUsage.length === 0 ? (
                 <p className="text-gray-700 text-center py-8">No API usage recorded yet.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -2380,7 +2562,7 @@ export default function APIPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {apiUsage.map((usage) => (
+                      {getVisibleUsageHistory().map((usage) => (
                         <tr key={usage.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {usage.endpoint}
@@ -2398,19 +2580,53 @@ export default function APIPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {usage.file_count}
+                            <div className="flex items-center">
+                              <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              {usage.file_count || 1} file{(usage.file_count || 1) > 1 ? 's' : ''}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {usage.processing_time ? `${usage.processing_time}s` : 'N/A'}
+                            <div className="flex items-center">
+                              <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {getProcessingTime(usage)}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {new Date(usage.created_at).toLocaleString()}
+                            <div className="flex items-center">
+                              <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h8l4 4v11a3 3 0 01-3 3h-4M8 7H6a2 2 0 00-2 2v11a3 3 0 003 3h2M8 7v8a2 2 0 002 2h2" />
+                              </svg>
+                              <div>
+                                <div>{new Date(usage.created_at).toLocaleDateString()}</div>
+                                <div className="text-xs text-gray-500">{new Date(usage.created_at).toLocaleTimeString()}</div>
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                
+                {/* Pagination Controls */}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {Math.min(getVisibleUsageHistory().length, apiUsage.length)} of {apiUsage.length} entries
+                  </div>
+                  {getUsageHistoryStats().hasMore && (
+                    <button
+                      onClick={loadMoreUsageHistory}
+                      className="px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                    >
+                      Load More...
+                    </button>
+                  )}
+                </div>
+                </>
               )}
             </div>
           )}
