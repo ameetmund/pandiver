@@ -44,51 +44,16 @@ const sidebarItems: SidebarItem[] = [
     isActive: true
   },
   {
-    id: 'ai-bank-parser',
-    title: 'AI Bank Parser',
+    id: 'api',
+    title: 'API',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     ),
-    href: '/dashboard/bank-statement-aws-textract',
+    href: '/dashboard/api',
     isActive: true,
-    badge: 'AI'
-  },
-  {
-    id: 'form-data-parser',
-    title: 'Form Data Parser',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-    href: '/dashboard/form-data-parser',
-    isActive: true
-  },
-  {
-    id: 'intelligent-table-parser',
-    title: 'Intelligent Table Parser',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z" />
-      </svg>
-    ),
-    href: '/dashboard/intelligent-table-parser',
-    isActive: true,
-    badge: 'Azure'
-  },
-  {
-    id: 'smart-key-value-parser',
-    title: 'Smart Key-Value Parser',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1 1 21 9z" />
-      </svg>
-    ),
-    href: '/dashboard/smart-key-value-parser',
-    isActive: true,
-    badge: 'Azure'
+    badge: 'New'
   },
   {
     id: 'intelligent-data-parser',
@@ -105,38 +70,6 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 const features: Feature[] = [
-  {
-    id: 'ai-parser',
-    title: 'AI Bank Parser',
-    description: 'Advanced AI-powered table extraction technology. Automatically detect and extract all table data with intelligent algorithms.',
-    icon: '🤖',
-    href: '/dashboard/bank-statement-aws-textract',
-    isActive: true
-  },
-  {
-    id: 'form-data-parser',
-    title: 'Form Data Parser',
-    description: 'AI-powered key-value extraction from PDF forms. Automatically detect and extract all form fields and their values.',
-    icon: '📋',
-    href: '/dashboard/form-data-parser',
-    isActive: true
-  },
-  {
-    id: 'intelligent-table-parser',
-    title: 'Intelligent Table Parser',
-    description: 'Advanced intelligent table extraction with superior accuracy for complex table structures and multi-page processing.',
-    icon: '🔷',
-    href: '/dashboard/intelligent-table-parser',
-    isActive: true
-  },
-  {
-    id: 'smart-key-value-parser',
-    title: 'Smart Key-Value Parser',
-    description: 'Smart key-value extraction with intelligent field recognition and exceptional precision for forms and documents.',
-    icon: '🔹',
-    href: '/dashboard/smart-key-value-parser',
-    isActive: true
-  },
   {
     id: 'intelligent-data-parser',
     title: 'Intelligent Data Parser',
@@ -469,7 +402,7 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">5</p>
+                  <p className="text-2xl font-bold text-gray-900">2</p>
                   <p className="text-sm text-gray-600">Active Features</p>
                 </div>
               </div>

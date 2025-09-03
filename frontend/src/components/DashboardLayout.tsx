@@ -52,75 +52,16 @@ const sidebarItems: SidebarItem[] = [
     badge: 'New'
   },
   {
-    id: 'ai-bank-parser',
-    title: 'AI Bank Parser',
+    id: 'intelligent-data-parser',
+    title: 'Intelligent Data Parser',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
       </svg>
     ),
-    href: '/dashboard/bank-statement-aws-textract',
+    href: '/dashboard/intelligent-data-parser',
     isActive: true,
-    badge: 'AI'
-  },
-  {
-    id: 'form-data-parser',
-    title: 'Form Data Parser',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-    href: '/dashboard/form-data-parser',
-    isActive: true
-  },
-  {
-    id: 'intelligent-table-parser',
-    title: 'Intelligent Table Parser',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z" />
-      </svg>
-    ),
-    href: '/dashboard/intelligent-table-parser',
-    isActive: true,
-    badge: 'Azure'
-  },
-  {
-    id: 'smart-key-value-parser',
-    title: 'Smart Key-Value Parser',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-      </svg>
-    ),
-    href: '/dashboard/smart-key-value-parser',
-    isActive: true,
-    badge: 'Azure'
-  },
-  {
-    id: 'table-extractor',
-    title: 'Table Extractor',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z" />
-      </svg>
-    ),
-    href: '/dashboard/table-extractor',
-    isActive: true,
-    badge: 'New'
-  },
-  {
-    id: 'key-value-parser',
-    title: 'Key Value Parser',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-      </svg>
-    ),
-    href: '/dashboard/key-value-parser',
-    isActive: true,
-    badge: 'New'
+    badge: 'Combined'
   }
 ];
 

@@ -131,10 +131,46 @@ export default function APIPage() {
   const PROCESSING_STATUS_LOAD_MORE_INCREMENT = 10;
 
   useEffect(() => {
-    loadUser();
-    loadApiKeys();
-    loadApiUsage();
+    const initializeData = async () => {
+      // Wait a bit to ensure localStorage is ready
+      const token = localStorage.getItem('accessToken');
+      const userData = localStorage.getItem('user');
+      
+      if (!token || !userData) {
+        console.log('No token or user data found, redirecting to login');
+        return;
+      }
+      
+      // Load data sequentially to avoid race conditions
+      await loadUser();
+      await loadApiKeys();
+      await loadApiUsage();
+    };
+    
+    initializeData();
   }, []);
+
+  // Add effect to reload data when user becomes available
+  useEffect(() => {
+    if (user) {
+      loadApiKeys();
+      loadApiUsage();
+    }
+  }, [user]);
+
+  // Add window focus event to reload data when user returns to tab
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Window focused, refreshing data...');
+      if (user) {
+        loadApiKeys();
+        loadApiUsage();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user]);
 
 
   const loadUser = async () => {
@@ -159,35 +195,64 @@ export default function APIPage() {
     try {
       const token = localStorage.getItem('accessToken');
       console.log('Loading API keys with token:', token ? 'Token present' : 'No token');
+      
+      if (!token) {
+        console.log('No access token available, skipping API keys load');
+        return;
+      }
+      
       const response = await fetch('http://localhost:8000/auth/api-keys', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('API keys response status:', response.status);
+      
       if (response.ok) {
         const keys = await response.json();
         setApiKeys(keys);
-        // Remove auto-selection - let user choose
+        console.log('API keys loaded successfully:', keys.length, 'keys');
+      } else if (response.status === 401) {
+        console.error('Unauthorized - token may be invalid');
+        // Optionally clear invalid token
+        // localStorage.removeItem('accessToken');
+        // window.location.href = '/auth/login';
       } else {
         const errorText = await response.text();
         console.error('Failed to load API keys:', response.status, errorText);
+        // Keep existing keys on failure to prevent data loss
       }
     } catch (error) {
-      console.error('Failed to load API keys:', error);
+      console.error('Network error loading API keys:', error);
+      // Keep existing keys on network errors
     }
   };
 
   const loadApiUsage = async () => {
     try {
       const token = localStorage.getItem('accessToken');
+      
+      if (!token) {
+        console.log('No access token available, skipping usage history load');
+        return;
+      }
+      
       const response = await fetch('http://localhost:8000/auth/usage', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
       if (response.ok) {
         const usage = await response.json();
         setApiUsage(usage);
+        console.log('Usage history loaded successfully:', usage.length, 'entries');
+      } else if (response.status === 401) {
+        console.error('Unauthorized - token may be invalid for usage data');
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to load API usage:', response.status, errorText);
+        // Keep existing usage data on failure to prevent data loss
       }
     } catch (error) {
-      console.error('Failed to load API usage:', error);
+      console.error('Network error loading API usage:', error);
+      // Keep existing usage data on network errors
     }
   };
 
