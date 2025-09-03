@@ -367,7 +367,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl">
             {features.map((feature) => (
               <Link key={feature.id} href={feature.href}>
                 <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 hover:border-[#00C7BE]/30 group cursor-pointer">
