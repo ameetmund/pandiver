@@ -35,4 +35,8 @@ croniter==2.0.*  # For cron-style scheduling
 pydantic[email]==2.7.*  # For enhanced validation
 
 # Azure Document Intelligence dependencies
-azure-ai-documentintelligence==1.0.*  # For Azure Document Intelligence SDK 
+azure-ai-documentintelligence==1.0.*  # For Azure Document Intelligence SDK
+
+# Azure AI Translator dependencies  
+azure-ai-translation-text==1.0.*  # For Azure AI Translator Text API
+azure-storage-blob==12.19.*  # For Azure Blob Storage integration 

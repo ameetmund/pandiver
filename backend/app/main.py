@@ -27,7 +27,7 @@ from datetime import datetime, timedelta
 import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from .models import Base, User as UserModel, UserTable, ApiKey, ApiUsage
+from .models import Base, User as UserModel, UserTable, ApiKey, ApiUsage, PDFSplitterJob, PDFTranslationJob
 # from .tasks import parse_statement  # Optional celery dependency
 from .pdf_processor import get_pdf_info, extract_all_words, get_all_page_rows, analyze_row_structure
 # from .export_utils import StatementExporter  # Optional dependency
@@ -54,6 +54,10 @@ from .api.webhooks import router as webhooks_router
 from .api.watch_folder import router as watch_folder_router
 from .api_endpoints import router as intelligent_data_router
 
+# Import new PDF features
+from .pdf_splitter_endpoints import router as pdf_splitter_router
+from .pdf_translation_endpoints import router as pdf_translation_router
+
 app = FastAPI(
     title="Pandiver PDF Processing API",
     description="Advanced PDF processing and transaction extraction API with support for single/bulk processing, webhooks, and watch folders",
@@ -76,6 +80,10 @@ app.include_router(webhooks_router, prefix="/api/v1", tags=["API - Webhooks"])
 app.include_router(watch_folder_router, prefix="/api/v1", tags=["API - Watch Folders"])
 app.include_router(intelligent_data_router, tags=["Intelligent Data Parser API"])
 
+# Include new PDF feature routes
+app.include_router(pdf_splitter_router, tags=["PDF Splitter"])
+app.include_router(pdf_translation_router, tags=["PDF Translator"])
+
 # Database setup
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./pandiver.db'
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -96,6 +104,14 @@ security = HTTPBearer()
 # In-memory user storage (replace with database in production)
 
 def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_db_session():
+    """Helper function for background tasks to get DB session"""
     db = SessionLocal()
     try:
         yield db
