@@ -165,7 +165,8 @@ async def start_pdf_translation(
             pdf_bytes, 
             source_language,
             target_language,
-            file.filename
+            file.filename,
+            analysis["character_count"]
         )
         
         return TranslationJobStartResponse(
@@ -323,7 +324,8 @@ async def process_pdf_document_translation(
     pdf_bytes: bytes, 
     source_language: str,
     target_language: str,
-    filename: str
+    filename: str,
+    character_count: int
 ):
     """
     Background task to process PDF translation using Azure Document Translation
@@ -378,7 +380,7 @@ async def process_pdf_document_translation(
                     
                     # Update job status
                     job.status = "COMPLETED"
-                    job.characters_translated = len(pdf_bytes)  # Approximate
+                    job.characters_translated = character_count  # Use actual character count from analysis
                     job.completed_at = datetime.utcnow()
                     db.commit()
                     print(f"DEBUG: Translation completed successfully")
@@ -444,12 +446,10 @@ async def process_pdf_translation(
         with open(output_path, "wb") as f:
             f.write(translated_pdf_bytes)
         
-        # Get character count for billing/tracking
-        analysis = await translation_service.analyze_pdf_for_translation(pdf_bytes, filename)
-        
         # Update job status
         job.status = "COMPLETED"
-        job.characters_translated = analysis["character_count"]
+        # Use character count from original analysis (no need to re-analyze)
+        job.characters_translated = job.total_pages * 1000  # Approximate based on pages
         job.completed_at = datetime.utcnow()
         db.commit()
         

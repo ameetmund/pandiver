@@ -254,7 +254,7 @@ export default function PDFSplitterPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#00C7BE] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#086C67] font-semibold">Loading...</p>
+          <p className="text-[#086C67] font-semibold">Loading</p>
         </div>
       </div>
     );
@@ -299,9 +299,16 @@ export default function PDFSplitterPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mb-6">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m16 16 2 2" />
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <circle cx="6" cy="18" r="3"/>
+                <circle cx="18" cy="18" r="3"/>
+                <circle cx="12" cy="12" r="1"/>
+                <path d="M12 12L9 15"/>
+                <path d="M12 12L15 15"/>
+                <path d="M12 12L6 3"/>
+                <path d="M12 12L18 3"/>
+                <path d="M18 3L19 3L18.5 3.5"/>
+                <path d="M6 3L5 3L5.5 3.5"/>
               </svg>
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-4">
@@ -363,8 +370,16 @@ export default function PDFSplitterPage() {
                         Choose a PDF file or drag and drop it here
                       </p>
                       <div className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <circle cx="6" cy="18" r="3"/>
+                          <circle cx="18" cy="18" r="3"/>
+                          <circle cx="12" cy="12" r="1"/>
+                          <path d="M12 12L9 15"/>
+                          <path d="M12 12L15 15"/>
+                          <path d="M12 12L6 3"/>
+                          <path d="M12 12L18 3"/>
+                          <path d="M18 3L19 3L18.5 3.5"/>
+                          <path d="M6 3L5 3L5.5 3.5"/>
                         </svg>
                         Choose PDF File
                       </div>
@@ -384,7 +399,7 @@ export default function PDFSplitterPage() {
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Analyze</h3>
@@ -402,12 +417,12 @@ export default function PDFSplitterPage() {
                   {isAnalyzing ? (
                     <span className="flex items-center">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Analyzing PDF...
+                      Analyzing PDF
                     </span>
                   ) : (
                     <span className="flex items-center">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                       </svg>
                       Analyze PDF
                     </span>
@@ -515,12 +530,20 @@ export default function PDFSplitterPage() {
                   {isExtracting ? (
                     <span className="flex items-center">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Processing...
+                      Processing
                     </span>
                   ) : (
                     <span className="flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <circle cx="6" cy="18" r="3"/>
+                        <circle cx="18" cy="18" r="3"/>
+                        <circle cx="12" cy="12" r="1"/>
+                        <path d="M12 12L9 15"/>
+                        <path d="M12 12L15 15"/>
+                        <path d="M12 12L6 3"/>
+                        <path d="M12 12L18 3"/>
+                        <path d="M18 3L19 3L18.5 3.5"/>
+                        <path d="M6 3L5 3L5.5 3.5"/>
                       </svg>
                       Extract {selectedPages.length} Page{selectedPages.length === 1 ? '' : 's'}
                     </span>
@@ -535,7 +558,7 @@ export default function PDFSplitterPage() {
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center">
               <div className="mb-8">
                 {job.status === 'COMPLETED' ? (
-                  <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -560,7 +583,7 @@ export default function PDFSplitterPage() {
                 <p className="text-gray-600 mb-6">
                   {job.status === 'COMPLETED' ? 'Your pages have been extracted successfully!' : 
                    job.status === 'FAILED' ? 'There was an error extracting your pages.' :
-                   'Please wait while we extract your selected pages...'}
+                   'Please wait while we extract your selected pages'}
                 </p>
                 
                 <div className="bg-gray-50 rounded-2xl p-6 max-w-md mx-auto mb-8">
@@ -599,7 +622,7 @@ export default function PDFSplitterPage() {
                   {job.status === 'COMPLETED' && (
                     <button
                       onClick={downloadResult}
-                      className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center"
+                      className="px-8 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
