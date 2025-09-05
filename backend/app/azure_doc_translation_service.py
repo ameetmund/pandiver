@@ -3,6 +3,7 @@ import uuid
 import json
 import asyncio
 import aiohttp
+import urllib.parse
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from fastapi import HTTPException
@@ -35,8 +36,10 @@ class AzureDocumentTranslationService:
     async def upload_pdf_to_blob(self, pdf_bytes: bytes, filename: str) -> str:
         """Upload PDF to Azure Blob Storage and return the URL with SAS token"""
         try:
-            # Generate unique filename to avoid conflicts
-            unique_filename = f"{uuid.uuid4()}_{filename}"
+            # Generate unique filename with timestamp to avoid conflicts
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            job_uuid = str(uuid.uuid4())[:8]  # Short UUID
+            unique_filename = f"{timestamp}_{job_uuid}_{filename}"
             blob_url = f"{self.blob_src_url}/{unique_filename}?{self.src_sas_token}"
             
             # Upload using direct HTTP request
@@ -55,43 +58,60 @@ class AzureDocumentTranslationService:
                         )
             
             # Return URL without SAS for the translation job (we'll add it later)
-            return f"{self.blob_src_url}/{unique_filename}"
+            return f"{self.blob_src_url}/{unique_filename}", unique_filename
             
         except Exception as e:
             logger.error(f"Error uploading PDF to blob: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to upload PDF: {str(e)}")
     
     async def start_document_translation(self, source_url: str, target_language: str, 
-                                       source_language: str = "auto") -> str:
+                                       source_language: str = "auto", job_id: str = None) -> tuple[str, str]:
         """Start Azure Document Translation job and return job ID"""
         try:
             print(f"DEBUG: start_document_translation called with source_language='{source_language}'")
+            print(f"DEBUG: source_url parameter received: {source_url}")
+            
             # Construct URLs with SAS tokens
-            # For Azure Document Translation, source URL should point to container, not specific file
-            source_url_with_sas = f"{self.blob_src_url}?{self.src_sas_token}"
-            target_url_with_sas = f"{self.blob_out_url}?{self.out_sas_token}"
+            # Use container URL for source but specify the exact file in the translation request
+            source_container_url_with_sas = f"{self.blob_src_url}?{self.src_sas_token}"
+            # Create unique subfolder for each job to prevent conflicts
+            # Use the actual job_id if provided, otherwise generate UUID
+            if job_id:
+                folder_name = job_id
+                print(f"DEBUG: Using job_id as folder_name: {folder_name}")
+            else:
+                folder_name = str(uuid.uuid4())[:8]
+                print(f"DEBUG: Generated random folder_name: {folder_name}")
+            target_url_with_sas = f"{self.blob_out_url}/{folder_name}?{self.out_sas_token}"
             glossary_url_with_sas = f"{self.blob_config_url}?{self.config_sas_token}"
             
-            print(f"DEBUG: Source URL: {source_url_with_sas}")
+            print(f"DEBUG: Source Container URL: {source_container_url_with_sas}")
             print(f"DEBUG: Target URL: {target_url_with_sas}")
             print(f"DEBUG: Glossary URL: {glossary_url_with_sas}")
             
-            # Test if we can access the source URL
+            # Extract filename from source_url for filtering
+            specific_filename = source_url.split('/')[-1]
+            print(f"DEBUG: Specific filename to process: {specific_filename}")
+            
+            # Test if we can access the source container URL
             async with aiohttp.ClientSession() as test_session:
                 try:
-                    async with test_session.head(source_url_with_sas) as test_response:
-                        print(f"DEBUG: Source URL access test - Status: {test_response.status}")
+                    async with test_session.head(source_container_url_with_sas) as test_response:
+                        print(f"DEBUG: Source container access test - Status: {test_response.status}")
                         if test_response.status != 200:
-                            print(f"DEBUG: Source URL not accessible - Headers: {dict(test_response.headers)}")
+                            print(f"DEBUG: Source container not accessible - Headers: {dict(test_response.headers)}")
                 except Exception as e:
-                    print(f"DEBUG: Failed to test source URL access: {str(e)}")
+                    print(f"DEBUG: Failed to test source container access: {str(e)}")
             
-            # Prepare the translation request
+            # Prepare the translation request with file filtering
             translation_request = {
                 "inputs": [
                     {
                         "source": {
-                            "sourceUrl": source_url_with_sas
+                            "sourceUrl": source_container_url_with_sas,
+                            "filter": {
+                                "prefix": specific_filename
+                            }
                         },
                         "targets": [
                             {
@@ -130,7 +150,7 @@ class AzureDocumentTranslationService:
                         logger.error(f"Azure Document Translation API error: {error_text}")
                         raise HTTPException(
                             status_code=500, 
-                            detail=f"Failed to start translation: {error_text}"
+                            detail=f"Azure translation failed: {error_text}"
                         )
                     
                     # Extract job ID from response
@@ -143,7 +163,7 @@ class AzureDocumentTranslationService:
                             detail="No job ID returned from translation service"
                         )
                     
-                    return job_id
+                    return job_id, folder_name
             
         except Exception as e:
             logger.error(f"Error starting document translation: {str(e)}")
@@ -181,10 +201,10 @@ class AzureDocumentTranslationService:
             logger.error(f"Error getting translation status: {str(e)}")
             return {"status": "Error", "error": str(e)}
     
-    async def get_translated_document_url(self, job_id: str, original_filename: str) -> Optional[str]:
+    async def get_translated_document_url(self, job_id: str, original_filename: str, output_folder: str = None) -> Optional[str]:
         """Get the URL of the translated document from the job details"""
         try:
-            # Get documents list for the job
+            # Get documents list for the specific job
             api_url = f"{self.doc_translator_endpoint}/translator/document/batches/{job_id}/documents?api-version=2024-05-01"
             headers = {
                 'Ocp-Apim-Subscription-Key': self.doc_translator_key,
@@ -194,18 +214,67 @@ class AzureDocumentTranslationService:
             async with aiohttp.ClientSession() as session:
                 async with session.get(api_url, headers=headers) as response:
                     if response.status != 200:
+                        logger.error(f"Failed to get documents for job {job_id}: {response.status}")
                         return None
                     
                     data = await response.json()
                     documents = data.get("value", [])
                     
-                    # Find the translated document
+                    print(f"DEBUG: Found {len(documents)} documents for job {job_id}")
+                    
+                    # Find the successfully translated document for this specific job
+                    # Azure returns both source and target documents, we want the target
+                    # First try to match by exact unique filename
                     for doc in documents:
-                        if doc.get("status") == "Succeeded":
-                            target_url = doc.get("path")
-                            if target_url:
-                                # Add SAS token for download
-                                return f"{target_url}?{self.out_sas_token}"
+                        doc_path = doc.get("path", "")
+                        doc_status = doc.get("status", "")
+                        source_path = doc.get("sourcePath", "")
+                        
+                        print(f"DEBUG: Document - Path: {doc_path}, Status: {doc_status}, SourcePath: {source_path}")
+                        
+                        # Look for the target document with exact unique filename match
+                        # If output_folder is provided, look specifically in that folder
+                        folder_match = True
+                        if output_folder:
+                            folder_match = f"/out/{output_folder}" in doc_path
+                        else:
+                            folder_match = "/out/" in doc_path
+                        
+                        # Handle URL encoding in paths (e.g., %20 for spaces)
+                        decoded_path = urllib.parse.unquote(doc_path)
+                            
+                        if (doc_status == "Succeeded" and 
+                            doc_path and 
+                            folder_match and 
+                            original_filename in decoded_path):
+                            
+                            print(f"DEBUG: Found matching translated document: {doc_path}")
+                            # Add SAS token for download
+                            return f"{doc_path}?{self.out_sas_token}"
+                    
+                    # If exact filename match not found, try to find by base filename (fallback)
+                    base_filename = original_filename.split("_", 2)[-1] if "_" in original_filename else original_filename
+                    for doc in documents:
+                        doc_path = doc.get("path", "")
+                        doc_status = doc.get("status", "")
+                        
+                        # Apply same folder logic for fallback
+                        folder_match = True
+                        if output_folder:
+                            folder_match = f"/out/{output_folder}" in doc_path
+                        else:
+                            folder_match = "/out/" in doc_path
+                        
+                        # Handle URL encoding in paths
+                        decoded_path = urllib.parse.unquote(doc_path)
+                        
+                        if (doc_status == "Succeeded" and 
+                            doc_path and 
+                            folder_match and
+                            base_filename.lower() in decoded_path.lower()):
+                            
+                            print(f"DEBUG: Using fallback translated document: {doc_path}")
+                            return f"{doc_path}?{self.out_sas_token}"
                     
                     return None
             

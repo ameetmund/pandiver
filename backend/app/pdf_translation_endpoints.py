@@ -343,14 +343,14 @@ async def process_pdf_document_translation(
         db.commit()
         
         # Step 1: Upload PDF to Azure Blob Storage
-        source_url = await doc_translation_service.upload_pdf_to_blob(pdf_bytes, filename)
-        print(f"DEBUG: Uploaded PDF to blob storage: {source_url}")
+        source_url, unique_filename = await doc_translation_service.upload_pdf_to_blob(pdf_bytes, filename)
+        print(f"DEBUG: Uploaded PDF to blob storage: {source_url} with unique filename: {unique_filename}")
         
         # Step 2: Start Azure Document Translation job
-        azure_job_id = await doc_translation_service.start_document_translation(
-            source_url, target_language, source_language
+        azure_job_id, output_folder = await doc_translation_service.start_document_translation(
+            source_url, target_language, source_language, job_id
         )
-        print(f"DEBUG: Started Azure translation job: {azure_job_id}")
+        print(f"DEBUG: Started Azure translation job: {azure_job_id} with output folder: {output_folder}")
         
         # Step 3: Poll for completion (with timeout)
         max_wait_time = 600  # 10 minutes max
@@ -367,7 +367,7 @@ async def process_pdf_document_translation(
             if status_info["status"] == "Succeeded":
                 # Step 4: Get translated document URL and save location info
                 document_url = await doc_translation_service.get_translated_document_url(
-                    azure_job_id, filename
+                    azure_job_id, unique_filename, output_folder
                 )
                 
                 if document_url:

@@ -48,7 +48,7 @@ export default function PDFTranslatorPage() {
   const [supportedLanguages, setSupportedLanguages] = useState<SupportedLanguages | null>(null);
   const [sourceLanguage, setSourceLanguage] = useState<string>('auto');
   const [targetLanguage, setTargetLanguage] = useState<string>('');
-  const [translationMethod, setTranslationMethod] = useState<string>('text');
+  const [translationMethod] = useState<string>('document');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [job, setJob] = useState<TranslationJob | null>(null);
@@ -175,7 +175,7 @@ export default function PDFTranslatorPage() {
       formData.append('file', file);
       formData.append('source_language', sourceLanguage);
       formData.append('target_language', targetLanguage);
-      formData.append('translation_method', translationMethod);
+      formData.append('translation_method', 'document');
 
       const response = await fetch('http://localhost:8000/api/v1/pdf-translator/translate', {
         method: 'POST',
@@ -197,7 +197,7 @@ export default function PDFTranslatorPage() {
         source_language: sourceLanguage,
         target_language: targetLanguage,
         detected_language: analysis?.detected_language,
-        translation_method: translationMethod,
+        translation_method: 'document',
         total_pages: analysis?.total_pages || 0,
         characters_translated: 0,
         created_at: new Date().toISOString(),
@@ -292,8 +292,8 @@ export default function PDFTranslatorPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-teal-600 font-semibold">Loading...</p>
+          <div className="w-16 h-16 border-4 border-[#00C7BE] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#086C67] font-semibold">Loading...</p>
         </div>
       </div>
     );
@@ -316,7 +316,7 @@ export default function PDFTranslatorPage() {
             </Link>
             
             <div className="flex items-center space-x-6">
-              <Link href="/dashboard" className="px-4 py-2 text-purple-600 font-medium border border-purple-600 rounded-full hover:bg-purple-600 hover:text-white transition-all duration-300">
+              <Link href="/dashboard" className="px-4 py-2 text-[#086C67] font-medium border border-[#086C67] rounded-full hover:bg-[#086C67] hover:text-white transition-all duration-300">
                 Dashboard
               </Link>
               <button
@@ -324,7 +324,7 @@ export default function PDFTranslatorPage() {
                   localStorage.removeItem('accessToken'); 
                   window.location.href = '/auth/login'; 
                 }}
-                className="px-6 py-2 bg-gradient-to-r from-teal-500 to-purple-500 text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="px-6 py-2 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
               >
                 Logout
               </button>
@@ -337,12 +337,12 @@ export default function PDFTranslatorPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mb-6">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
               </svg>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-4">
               PDF Translator
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -376,7 +376,7 @@ export default function PDFTranslatorPage() {
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-3xl shadow-xl p-12 border border-gray-100">
                 <div className="text-center">
-                  <div className="border-2 border-dashed border-teal-500 rounded-2xl p-12 hover:border-purple-500 transition-colors">
+                  <div className="border-2 border-dashed border-[#00C7BE] rounded-2xl p-12 hover:border-[#086C67] transition-colors">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -389,7 +389,7 @@ export default function PDFTranslatorPage() {
                       id="pdf-upload"
                     />
                     <label htmlFor="pdf-upload" className="cursor-pointer flex flex-col items-center">
-                      <div className="w-20 h-20 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mb-6">
+                      <div className="w-20 h-20 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mb-6">
                         <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
@@ -400,7 +400,7 @@ export default function PDFTranslatorPage() {
                       <p className="text-gray-600 mb-6">
                         Choose a PDF file or drag and drop it here
                       </p>
-                      <div className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      <div className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                         </svg>
@@ -420,7 +420,7 @@ export default function PDFTranslatorPage() {
           {file && !analysis && !job && (
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
@@ -435,7 +435,7 @@ export default function PDFTranslatorPage() {
                 <button
                   onClick={analyzeFile}
                   disabled={isAnalyzing}
-                  className="px-8 py-4 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                  className="px-8 py-4 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                 >
                   {isAnalyzing ? (
                     <span className="flex items-center">
@@ -466,7 +466,7 @@ export default function PDFTranslatorPage() {
           {analysis && !job && (
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -481,15 +481,15 @@ export default function PDFTranslatorPage() {
               {analysis.translatable ? (
                 <div className="space-y-8">
                   {/* Document Analysis */}
-                  <div className="bg-gradient-to-br from-teal-50 to-purple-50 rounded-2xl p-6 border border-teal-100">
+                  <div className="bg-gradient-to-br from-[#00C7BE]/10 to-[#086C67]/10 rounded-2xl p-6 border border-[#00C7BE]/20">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4">Document Analysis</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Detected Language:</span>
-                        <div className="font-medium text-teal-600">
+                        <div className="font-medium text-[#086C67]">
                           {getLanguageName(analysis.detected_language)}
                           {analysis.language_confidence > 0 && (
-                            <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full ml-2">
+                            <span className="text-xs bg-[#00C7BE]/20 text-[#086C67] px-2 py-1 rounded-full ml-2">
                               {Math.round(analysis.language_confidence * 100)}% confidence
                             </span>
                           )}
@@ -497,18 +497,10 @@ export default function PDFTranslatorPage() {
                       </div>
                       <div>
                         <span className="text-gray-600">Character Count:</span>
-                        <div className="font-medium text-purple-600">{analysis.character_count.toLocaleString()}</div>
+                        <div className="font-medium text-[#086C67]">{analysis.character_count.toLocaleString()}</div>
                       </div>
                     </div>
                     
-                    {analysis.sample_text && (
-                      <div className="mt-4">
-                        <span className="text-sm font-medium text-gray-700">Sample Text:</span>
-                        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-lg border border-white/50 mt-2">
-                          <p className="text-sm text-gray-800 italic">"{analysis.sample_text}"</p>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Language Selection */}
@@ -520,7 +512,7 @@ export default function PDFTranslatorPage() {
                       <select
                         value={sourceLanguage}
                         onChange={(e) => setSourceLanguage(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-[#00C7BE] bg-white text-gray-900"
                       >
                         <option value="auto">Auto-detect</option>
                         {supportedLanguages && Object.entries(supportedLanguages.languages).map(([code, lang]) => (
@@ -538,7 +530,7 @@ export default function PDFTranslatorPage() {
                       <select
                         value={targetLanguage}
                         onChange={(e) => setTargetLanguage(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#086C67] focus:border-[#086C67] bg-white text-gray-900"
                       >
                         <option value="">Select target language</option>
                         {supportedLanguages && Object.entries(supportedLanguages.languages).map(([code, lang]) => (
@@ -550,41 +542,6 @@ export default function PDFTranslatorPage() {
                     </div>
                   </div>
 
-                  {/* Translation Method */}
-                  <div className="bg-gray-50 rounded-2xl p-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-4">
-                      Translation Method
-                    </label>
-                    <div className="space-y-3">
-                      <label className="flex items-start cursor-pointer">
-                        <input
-                          type="radio"
-                          name="translation_method"
-                          value="text"
-                          checked={translationMethod === 'text'}
-                          onChange={(e) => setTranslationMethod(e.target.value)}
-                          className="mt-1 mr-3 text-teal-500"
-                        />
-                        <div>
-                          <div className="font-medium text-gray-900">Text Translation</div>
-                          <div className="text-sm text-gray-600">Faster processing with basic formatting preserved</div>
-                        </div>
-                      </label>
-                      <label className="flex items-start cursor-not-allowed opacity-50">
-                        <input
-                          type="radio"
-                          name="translation_method"
-                          value="document"
-                          disabled
-                          className="mt-1 mr-3"
-                        />
-                        <div>
-                          <div className="font-medium text-gray-900">Document Translation</div>
-                          <div className="text-sm text-gray-600">Coming soon - Full formatting preservation</div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex justify-center space-x-6">
@@ -598,7 +555,7 @@ export default function PDFTranslatorPage() {
                     <button
                       onClick={startTranslation}
                       disabled={!targetLanguage || isTranslating}
-                      className="px-8 py-3 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                      className="px-8 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                     >
                       {isTranslating ? (
                         <span className="flex items-center">
@@ -629,7 +586,7 @@ export default function PDFTranslatorPage() {
                   </p>
                   <button
                     onClick={resetForm}
-                    className="px-6 py-3 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                    className="px-6 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                   >
                     Try Another Document
                   </button>
@@ -655,7 +612,7 @@ export default function PDFTranslatorPage() {
                     </svg>
                   </div>
                 ) : (
-                  <div className="w-20 h-20 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                     <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
@@ -679,7 +636,7 @@ export default function PDFTranslatorPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Translation:</span>
-                      <span className="font-medium text-teal-600">
+                      <span className="font-medium text-[#086C67]">
                         {getLanguageName(job.source_language)} → {getLanguageName(job.target_language)}
                       </span>
                     </div>
@@ -692,7 +649,7 @@ export default function PDFTranslatorPage() {
                     {job.characters_translated > 0 && (
                       <div className="flex justify-between">
                         <span>Progress:</span>
-                        <span className="font-medium text-purple-600">
+                        <span className="font-medium text-[#086C67]">
                           {job.characters_translated.toLocaleString()} characters
                         </span>
                       </div>

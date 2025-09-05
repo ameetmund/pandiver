@@ -253,8 +253,8 @@ export default function PDFSplitterPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-blue-600 font-semibold">Loading...</p>
+          <div className="w-16 h-16 border-4 border-[#00C7BE] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#086C67] font-semibold">Loading...</p>
         </div>
       </div>
     );
@@ -277,7 +277,7 @@ export default function PDFSplitterPage() {
             </Link>
             
             <div className="flex items-center space-x-6">
-              <Link href="/dashboard" className="px-4 py-2 text-blue-600 font-medium border border-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300">
+              <Link href="/dashboard" className="px-4 py-2 text-[#086C67] font-medium border border-[#086C67] rounded-full hover:bg-[#086C67] hover:text-white transition-all duration-300">
                 Dashboard
               </Link>
               <button
@@ -285,7 +285,7 @@ export default function PDFSplitterPage() {
                   localStorage.removeItem('accessToken'); 
                   window.location.href = '/auth/login'; 
                 }}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="px-6 py-2 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
               >
                 Logout
               </button>
@@ -298,12 +298,13 @@ export default function PDFSplitterPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full mb-6">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m16 16 2 2" />
               </svg>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#086C67] to-[#00C7BE] bg-clip-text text-transparent mb-4">
               PDF Page Splitter
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -337,7 +338,7 @@ export default function PDFSplitterPage() {
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-3xl shadow-xl p-12 border border-gray-100">
                 <div className="text-center">
-                  <div className="border-2 border-dashed border-blue-500 rounded-2xl p-12 hover:border-teal-500 transition-colors">
+                  <div className="border-2 border-dashed border-[#00C7BE] rounded-2xl p-12 hover:border-[#086C67] transition-colors">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -350,7 +351,7 @@ export default function PDFSplitterPage() {
                       id="pdf-upload"
                     />
                     <label htmlFor="pdf-upload" className="cursor-pointer flex flex-col items-center">
-                      <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mb-6">
+                      <div className="w-20 h-20 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mb-6">
                         <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
@@ -361,7 +362,7 @@ export default function PDFSplitterPage() {
                       <p className="text-gray-600 mb-6">
                         Choose a PDF file or drag and drop it here
                       </p>
-                      <div className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      <div className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -381,7 +382,7 @@ export default function PDFSplitterPage() {
           {file && !analysis && !job && (
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
@@ -396,7 +397,7 @@ export default function PDFSplitterPage() {
                 <button
                   onClick={analyzeFile}
                   disabled={isAnalyzing}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                  className="px-8 py-4 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                 >
                   {isAnalyzing ? (
                     <span className="flex items-center">
@@ -427,7 +428,7 @@ export default function PDFSplitterPage() {
           {analysis && !job && (
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                   </svg>
@@ -441,7 +442,7 @@ export default function PDFSplitterPage() {
               <div className="flex justify-center space-x-4 mb-8">
                 <button
                   onClick={selectAllPages}
-                  className="px-6 py-2 bg-blue-50 text-blue-600 rounded-full font-medium hover:bg-blue-100 transition-colors"
+                  className="px-6 py-2 bg-[#00C7BE]/10 text-[#086C67] rounded-full font-medium hover:bg-[#00C7BE]/20 transition-colors"
                 >
                   Select All
                 </button>
@@ -451,7 +452,7 @@ export default function PDFSplitterPage() {
                 >
                   Clear Selection
                 </button>
-                <span className="px-6 py-2 bg-gradient-to-r from-blue-50 to-teal-50 text-blue-600 rounded-full font-medium">
+                <span className="px-6 py-2 bg-gradient-to-r from-[#00C7BE]/10 to-[#086C67]/10 text-[#086C67] rounded-full font-medium">
                   {selectedPages.length} pages selected
                 </span>
               </div>
@@ -463,8 +464,8 @@ export default function PDFSplitterPage() {
                     key={page.page_number}
                     className={`relative border-2 rounded-2xl p-3 cursor-pointer transition-all duration-200 ${
                       selectedPages.includes(page.page_number)
-                        ? 'border-blue-500 bg-blue-50 shadow-lg transform scale-105'
-                        : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                        ? 'border-[#00C7BE] bg-[#00C7BE]/10 shadow-lg transform scale-105'
+                        : 'border-gray-200 hover:border-[#00C7BE] hover:shadow-md'
                     }`}
                     onClick={() => togglePageSelection(page.page_number)}
                   >
@@ -475,7 +476,7 @@ export default function PDFSplitterPage() {
                         className="w-full h-full object-contain rounded-xl"
                       />
                       {selectedPages.includes(page.page_number) && (
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#00C7BE] rounded-full flex items-center justify-center shadow-lg">
                           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -509,7 +510,7 @@ export default function PDFSplitterPage() {
                 <button
                   onClick={extractPages}
                   disabled={selectedPages.length === 0 || isExtracting}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                  className="px-8 py-3 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                 >
                   {isExtracting ? (
                     <span className="flex items-center">
@@ -546,7 +547,7 @@ export default function PDFSplitterPage() {
                     </svg>
                   </div>
                 ) : (
-                  <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-full flex items-center justify-center mx-auto mb-6">
                     <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
