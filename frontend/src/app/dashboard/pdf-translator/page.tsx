@@ -292,8 +292,8 @@ export default function PDFTranslatorPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#00C7BE] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#086C67] font-semibold">Loading...</p>
+          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-teal-600 font-semibold">Loading...</p>
         </div>
       </div>
     );
@@ -316,7 +316,7 @@ export default function PDFTranslatorPage() {
             </Link>
             
             <div className="flex items-center space-x-6">
-              <Link href="/dashboard" className="px-4 py-2 text-[#086C67] font-medium border border-[#086C67] rounded-full hover:bg-[#086C67] hover:text-white transition-all duration-300">
+              <Link href="/dashboard" className="px-4 py-2 text-purple-600 font-medium border border-purple-600 rounded-full hover:bg-purple-600 hover:text-white transition-all duration-300">
                 Dashboard
               </Link>
               <button
@@ -324,7 +324,7 @@ export default function PDFTranslatorPage() {
                   localStorage.removeItem('accessToken'); 
                   window.location.href = '/auth/login'; 
                 }}
-                className="px-6 py-2 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="px-6 py-2 bg-gradient-to-r from-teal-500 to-purple-500 text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
               >
                 Logout
               </button>
@@ -333,304 +333,403 @@ export default function PDFTranslatorPage() {
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">PDF Translator</h1>
-          <p className="text-gray-600">
-            Translate PDF documents between languages using Azure AI Translator. 
-            Maintain document structure while converting content.
-          </p>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800">{error}</p>
-          </div>
-        )}
-
-        {/* File Upload Section */}
-        {!analysis && !job && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload PDF Document</h2>
-            
-            <div className="space-y-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={(e) => {
-                  const selectedFile = e.target.files?.[0];
-                  if (selectedFile) handleFileSelect(selectedFile);
-                }}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#00C7BE] file:text-white hover:file:bg-[#086C67] file:cursor-pointer"
-              />
-              
-              {file && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-700">
-                    <strong>Selected:</strong> {file.name}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Size: {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-              )}
-
-              <button
-                onClick={analyzeFile}
-                disabled={!file || isAnalyzing}
-                className="w-full bg-[#00C7BE] text-white py-3 px-6 rounded-lg font-medium hover:bg-[#086C67] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isAnalyzing ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Analyzing Document...
-                  </div>
-                ) : (
-                  'Analyze Document'
-                )}
-              </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full mb-6">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
             </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              PDF Translator
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Professional document translation powered by advanced AI. Upload your PDF and translate it to any supported language while maintaining document structure.
+            </p>
           </div>
-        )}
 
-        {/* Translation Configuration Section */}
-        {analysis && !job && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Translation Settings</h2>
-            
-            {/* Document Analysis Results */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Document Analysis</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Error Display */}
+          {error && (
+            <div className="mb-8 max-w-4xl mx-auto">
+              <div className="bg-red-50 border border-red-200 rounded-3xl p-6 flex items-start">
+                <svg className="w-6 h-6 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
                 <div>
-                  <p className="text-sm text-gray-600">Filename:</p>
-                  <p className="font-medium">{analysis.filename}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Pages:</p>
-                  <p className="font-medium">{analysis.total_pages}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Detected Language:</p>
-                  <p className="font-medium">
-                    {getLanguageName(analysis.detected_language)} 
-                    {analysis.language_confidence > 0 && (
-                      <span className="text-sm text-gray-500 ml-2">
-                        ({Math.round(analysis.language_confidence * 100)}% confidence)
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Character Count:</p>
-                  <p className="font-medium">{analysis.character_count.toLocaleString()}</p>
+                  <h3 className="font-semibold text-red-800 mb-1">Error</h3>
+                  <p className="text-red-700">{error}</p>
+                  <button
+                    onClick={() => setError('')}
+                    className="mt-3 text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Dismiss
+                  </button>
                 </div>
               </div>
-              
-              {analysis.sample_text && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600 mb-2">Sample Text:</p>
-                  <p className="text-sm bg-white p-3 rounded border italic">
-                    "{analysis.sample_text}"
-                  </p>
-                </div>
-              )}
             </div>
+          )}
 
-            {analysis.translatable ? (
-              <div className="space-y-6">
-                {/* Language Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Source Language
-                    </label>
-                    <select
-                      value={sourceLanguage}
-                      onChange={(e) => setSourceLanguage(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-[#00C7BE]"
-                    >
-                      <option value="auto">Auto-detect</option>
-                      {supportedLanguages && Object.entries(supportedLanguages.languages).map(([code, lang]) => (
-                        <option key={code} value={code}>
-                          {lang.name} ({lang.native_name})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Target Language *
-                    </label>
-                    <select
-                      value={targetLanguage}
-                      onChange={(e) => setTargetLanguage(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-[#00C7BE]"
-                    >
-                      <option value="">Select target language</option>
-                      {supportedLanguages && Object.entries(supportedLanguages.languages).map(([code, lang]) => (
-                        <option key={code} value={code}>
-                          {lang.name} ({lang.native_name})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Translation Method */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Translation Method
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="translation_method"
-                        value="text"
-                        checked={translationMethod === 'text'}
-                        onChange={(e) => setTranslationMethod(e.target.value)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">
-                        Text Translation (Faster, basic formatting)
-                      </span>
-                    </label>
-                    <label className="flex items-center opacity-50 cursor-not-allowed">
-                      <input
-                        type="radio"
-                        name="translation_method"
-                        value="document"
-                        disabled
-                        className="mr-2"
-                      />
-                      <span className="text-sm">
-                        Document Translation (Coming soon - preserves formatting)
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex justify-between items-center">
-                  <button
-                    onClick={resetForm}
-                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Start Over
-                  </button>
-                  
-                  <button
-                    onClick={startTranslation}
-                    disabled={!targetLanguage || isTranslating}
-                    className="px-8 py-3 bg-[#00C7BE] text-white rounded-lg font-medium hover:bg-[#086C67] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isTranslating ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Starting Translation...
+          {/* Step 1: Upload */}
+          {!file && (
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-3xl shadow-xl p-12 border border-gray-100">
+                <div className="text-center">
+                  <div className="border-2 border-dashed border-teal-500 rounded-2xl p-12 hover:border-purple-500 transition-colors">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const selectedFile = e.target.files?.[0];
+                        if (selectedFile) handleFileSelect(selectedFile);
+                      }}
+                      className="hidden"
+                      id="pdf-upload"
+                    />
+                    <label htmlFor="pdf-upload" className="cursor-pointer flex flex-col items-center">
+                      <div className="w-20 h-20 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mb-6">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
                       </div>
-                    ) : (
-                      'Start Translation'
-                    )}
-                  </button>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                        Upload PDF Document
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        Choose a PDF file or drag and drop it here
+                      </p>
+                      <div className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                        </svg>
+                        Choose PDF File
+                      </div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-6">
+                    Supported format: PDF • Maximum size: 10MB
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </div>
+          )}
+
+          {/* Step 2: Analyze */}
+          {file && !analysis && !job && (
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Document Not Translatable</h3>
-                <p className="text-gray-600 mb-4">
-                  This PDF doesn't contain enough extractable text for translation. 
-                  The document might be image-based or have very little text content.
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Analyze</h3>
+                <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+                  Your PDF "<span className="font-medium">{file.name}</span>" is ready for analysis. We'll detect the document language and prepare it for translation.
                 </p>
-                <button
-                  onClick={resetForm}
-                  className="px-6 py-3 bg-[#00C7BE] text-white rounded-lg font-medium hover:bg-[#086C67] transition-colors"
-                >
-                  Try Another Document
-                </button>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Translation Status Section */}
-        {job && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Translation Status</h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {job.original_filename}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {getLanguageName(job.source_language)} → {getLanguageName(job.target_language)}
-                  </p>
-                  {job.translated_filename && (
-                    <p className="text-sm text-gray-600">
-                      Output: {job.translated_filename}
-                    </p>
-                  )}
-                  {job.characters_translated > 0 && (
-                    <p className="text-sm text-gray-600">
-                      {job.characters_translated.toLocaleString()} characters translated
-                    </p>
-                  )}
-                </div>
-                
-                <div className="text-right">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    job.status === 'COMPLETED' 
-                      ? 'bg-green-100 text-green-800'
-                      : job.status === 'FAILED'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {job.status === 'PROCESSING' && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
-                    )}
-                    {job.status}
-                  </div>
-                </div>
-              </div>
-
-              {job.error_message && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800">{job.error_message}</p>
-                </div>
-              )}
-
-              <div className="flex justify-between">
+              
+              <div className="flex justify-center space-x-6">
                 <button
-                  onClick={resetForm}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={analyzeFile}
+                  disabled={isAnalyzing}
+                  className="px-8 py-4 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
                 >
-                  Translate Another Document
+                  {isAnalyzing ? (
+                    <span className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Analyzing Document...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                      Analyze Document
+                    </span>
+                  )}
                 </button>
                 
-                {job.status === 'COMPLETED' && (
-                  <button
-                    onClick={downloadResult}
-                    className="px-8 py-3 bg-[#00C7BE] text-white rounded-lg font-medium hover:bg-[#086C67] transition-colors"
-                  >
-                    Download Translated PDF
-                  </button>
-                )}
+                <button
+                  onClick={resetForm}
+                  className="px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Choose Different File
+                </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Step 3: Configure Translation */}
+          {analysis && !job && (
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Configure Translation</h3>
+                <p className="text-gray-600">
+                  Document: <span className="font-medium">{analysis.filename}</span> • <span className="font-medium">{analysis.total_pages}</span> pages
+                </p>
+              </div>
+
+              {analysis.translatable ? (
+                <div className="space-y-8">
+                  {/* Document Analysis */}
+                  <div className="bg-gradient-to-br from-teal-50 to-purple-50 rounded-2xl p-6 border border-teal-100">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Document Analysis</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Detected Language:</span>
+                        <div className="font-medium text-teal-600">
+                          {getLanguageName(analysis.detected_language)}
+                          {analysis.language_confidence > 0 && (
+                            <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full ml-2">
+                              {Math.round(analysis.language_confidence * 100)}% confidence
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Character Count:</span>
+                        <div className="font-medium text-purple-600">{analysis.character_count.toLocaleString()}</div>
+                      </div>
+                    </div>
+                    
+                    {analysis.sample_text && (
+                      <div className="mt-4">
+                        <span className="text-sm font-medium text-gray-700">Sample Text:</span>
+                        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-lg border border-white/50 mt-2">
+                          <p className="text-sm text-gray-800 italic">"{analysis.sample_text}"</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Language Selection */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Source Language
+                      </label>
+                      <select
+                        value={sourceLanguage}
+                        onChange={(e) => setSourceLanguage(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      >
+                        <option value="auto">Auto-detect</option>
+                        {supportedLanguages && Object.entries(supportedLanguages.languages).map(([code, lang]) => (
+                          <option key={code} value={code}>
+                            {lang.name} ({lang.native_name})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Target Language *
+                      </label>
+                      <select
+                        value={targetLanguage}
+                        onChange={(e) => setTargetLanguage(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        <option value="">Select target language</option>
+                        {supportedLanguages && Object.entries(supportedLanguages.languages).map(([code, lang]) => (
+                          <option key={code} value={code}>
+                            {lang.name} ({lang.native_name})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Translation Method */}
+                  <div className="bg-gray-50 rounded-2xl p-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-4">
+                      Translation Method
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex items-start cursor-pointer">
+                        <input
+                          type="radio"
+                          name="translation_method"
+                          value="text"
+                          checked={translationMethod === 'text'}
+                          onChange={(e) => setTranslationMethod(e.target.value)}
+                          className="mt-1 mr-3 text-teal-500"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900">Text Translation</div>
+                          <div className="text-sm text-gray-600">Faster processing with basic formatting preserved</div>
+                        </div>
+                      </label>
+                      <label className="flex items-start cursor-not-allowed opacity-50">
+                        <input
+                          type="radio"
+                          name="translation_method"
+                          value="document"
+                          disabled
+                          className="mt-1 mr-3"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900">Document Translation</div>
+                          <div className="text-sm text-gray-600">Coming soon - Full formatting preservation</div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-center space-x-6">
+                    <button
+                      onClick={resetForm}
+                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      Start Over
+                    </button>
+                    
+                    <button
+                      onClick={startTranslation}
+                      disabled={!targetLanguage || isTranslating}
+                      className="px-8 py-3 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                    >
+                      {isTranslating ? (
+                        <span className="flex items-center">
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Starting Translation...
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                          </svg>
+                          Start Translation
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Document Not Translatable</h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                    This PDF doesn't contain enough extractable text for translation. The document might be image-based or have very little text content.
+                  </p>
+                  <button
+                    onClick={resetForm}
+                    className="px-6 py-3 bg-gradient-to-r from-teal-500 to-purple-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                  >
+                    Try Another Document
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 4: Processing & Download */}
+          {job && (
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center">
+              <div className="mb-8">
+                {job.status === 'COMPLETED' ? (
+                  <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : job.status === 'FAILED' ? (
+                  <div className="w-20 h-20 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 bg-gradient-to-r from-teal-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  {job.status === 'COMPLETED' ? 'Translation Complete!' : 
+                   job.status === 'FAILED' ? 'Translation Failed' : 'Processing Translation'}
+                </h3>
+                
+                <p className="text-gray-600 mb-6">
+                  {job.status === 'COMPLETED' ? 'Your document has been translated successfully!' : 
+                   job.status === 'FAILED' ? 'There was an error translating your document.' :
+                   'Please wait while we translate your document...'}
+                </p>
+                
+                <div className="bg-gray-50 rounded-2xl p-6 max-w-md mx-auto mb-8">
+                  <div className="text-sm text-gray-600 space-y-2">
+                    <div className="flex justify-between">
+                      <span>File:</span>
+                      <span className="font-medium">{job.original_filename}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Translation:</span>
+                      <span className="font-medium text-teal-600">
+                        {getLanguageName(job.source_language)} → {getLanguageName(job.target_language)}
+                      </span>
+                    </div>
+                    {job.translated_filename && (
+                      <div className="flex justify-between">
+                        <span>Output:</span>
+                        <span className="font-medium">{job.translated_filename}</span>
+                      </div>
+                    )}
+                    {job.characters_translated > 0 && (
+                      <div className="flex justify-between">
+                        <span>Progress:</span>
+                        <span className="font-medium text-purple-600">
+                          {job.characters_translated.toLocaleString()} characters
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {job.error_message && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 max-w-md mx-auto">
+                    <p className="text-red-800 text-sm">{job.error_message}</p>
+                  </div>
+                )}
+                
+                <div className="flex justify-center space-x-6">
+                  <button
+                    onClick={resetForm}
+                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Translate Another Document
+                  </button>
+                  
+                  {job.status === 'COMPLETED' && (
+                    <button
+                      onClick={downloadResult}
+                      className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download Translated PDF
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

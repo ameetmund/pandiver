@@ -253,8 +253,8 @@ export default function PDFSplitterPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#00C7BE] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#086C67] font-semibold">Loading...</p>
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-blue-600 font-semibold">Loading...</p>
         </div>
       </div>
     );
@@ -277,7 +277,7 @@ export default function PDFSplitterPage() {
             </Link>
             
             <div className="flex items-center space-x-6">
-              <Link href="/dashboard" className="px-4 py-2 text-[#086C67] font-medium border border-[#086C67] rounded-full hover:bg-[#086C67] hover:text-white transition-all duration-300">
+              <Link href="/dashboard" className="px-4 py-2 text-blue-600 font-medium border border-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300">
                 Dashboard
               </Link>
               <button
@@ -285,7 +285,7 @@ export default function PDFSplitterPage() {
                   localStorage.removeItem('accessToken'); 
                   window.location.href = '/auth/login'; 
                 }}
-                className="px-6 py-2 bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
               >
                 Logout
               </button>
@@ -294,234 +294,323 @@ export default function PDFSplitterPage() {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">PDF Page Splitter</h1>
-          <p className="text-gray-600">
-            Extract specific pages from PDF documents. Select the pages you want and create a new PDF file.
-          </p>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800">{error}</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full mb-6">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent mb-4">
+              PDF Page Splitter
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Extract specific pages from PDF documents with professional precision. Upload your PDF and select exactly which pages you need.
+            </p>
           </div>
-        )}
 
-        {/* File Upload Section */}
-        {!analysis && !job && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload PDF File</h2>
-            
-            <div className="space-y-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={(e) => {
-                  const selectedFile = e.target.files?.[0];
-                  if (selectedFile) handleFileSelect(selectedFile);
-                }}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#00C7BE] file:text-white hover:file:bg-[#086C67] file:cursor-pointer"
-              />
-              
-              {file && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-700">
-                    <strong>Selected:</strong> {file.name}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Size: {(file.size / 1024 / 1024).toFixed(2)} MB
+          {/* Error Display */}
+          {error && (
+            <div className="mb-8 max-w-4xl mx-auto">
+              <div className="bg-red-50 border border-red-200 rounded-3xl p-6 flex items-start">
+                <svg className="w-6 h-6 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <h3 className="font-semibold text-red-800 mb-1">Error</h3>
+                  <p className="text-red-700">{error}</p>
+                  <button
+                    onClick={() => setError('')}
+                    className="mt-3 text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Upload */}
+          {!file && (
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-3xl shadow-xl p-12 border border-gray-100">
+                <div className="text-center">
+                  <div className="border-2 border-dashed border-blue-500 rounded-2xl p-12 hover:border-teal-500 transition-colors">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const selectedFile = e.target.files?.[0];
+                        if (selectedFile) handleFileSelect(selectedFile);
+                      }}
+                      className="hidden"
+                      id="pdf-upload"
+                    />
+                    <label htmlFor="pdf-upload" className="cursor-pointer flex flex-col items-center">
+                      <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mb-6">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                        Upload PDF Document
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        Choose a PDF file or drag and drop it here
+                      </p>
+                      <div className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Choose PDF File
+                      </div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-6">
+                    Supported format: PDF • Maximum size: 10MB
                   </p>
                 </div>
-              )}
-
-              <button
-                onClick={analyzeFile}
-                disabled={!file || isAnalyzing}
-                className="w-full bg-[#00C7BE] text-white py-3 px-6 rounded-lg font-medium hover:bg-[#086C67] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isAnalyzing ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Analyzing PDF...
-                  </div>
-                ) : (
-                  'Analyze PDF'
-                )}
-              </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Page Selection Section */}
-        {analysis && !job && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Select Pages to Extract</h2>
-                <p className="text-gray-600">
-                  Document: {analysis.filename} ({analysis.total_pages} pages)
+          {/* Step 2: Preview & Analyze */}
+          {file && !analysis && !job && (
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Analyze</h3>
+                <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+                  Your PDF "<span className="font-medium">{file.name}</span>" is ready for analysis. We'll extract page thumbnails and preview content so you can select exactly which pages to extract.
                 </p>
               </div>
               
-              <div className="flex space-x-3">
+              <div className="flex justify-center space-x-6">
+                <button
+                  onClick={analyzeFile}
+                  disabled={isAnalyzing}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                >
+                  {isAnalyzing ? (
+                    <span className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Analyzing PDF...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Analyze PDF
+                    </span>
+                  )}
+                </button>
+                
+                <button
+                  onClick={resetForm}
+                  className="px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Choose Different File
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Page Selection */}
+          {analysis && !job && (
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Select Pages to Extract</h3>
+                <p className="text-gray-600">
+                  Document: <span className="font-medium">{analysis.filename}</span> • <span className="font-medium">{analysis.total_pages}</span> pages
+                </p>
+              </div>
+              
+              <div className="flex justify-center space-x-4 mb-8">
                 <button
                   onClick={selectAllPages}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-6 py-2 bg-blue-50 text-blue-600 rounded-full font-medium hover:bg-blue-100 transition-colors"
                 >
                   Select All
                 </button>
                 <button
                   onClick={clearSelection}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-6 py-2 bg-gray-50 text-gray-600 rounded-full font-medium hover:bg-gray-100 transition-colors"
                 >
                   Clear Selection
                 </button>
+                <span className="px-6 py-2 bg-gradient-to-r from-blue-50 to-teal-50 text-blue-600 rounded-full font-medium">
+                  {selectedPages.length} pages selected
+                </span>
+              </div>
+
+              {/* Page Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-8">
+                {analysis.pages.map((page) => (
+                  <div
+                    key={page.page_number}
+                    className={`relative border-2 rounded-2xl p-3 cursor-pointer transition-all duration-200 ${
+                      selectedPages.includes(page.page_number)
+                        ? 'border-blue-500 bg-blue-50 shadow-lg transform scale-105'
+                        : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                    }`}
+                    onClick={() => togglePageSelection(page.page_number)}
+                  >
+                    <div className="aspect-[3/4] relative mb-3">
+                      <img
+                        src={page.thumbnail}
+                        alt={`Page ${page.page_number}`}
+                        className="w-full h-full object-contain rounded-xl"
+                      />
+                      {selectedPages.includes(page.page_number) && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-gray-900 mb-1">
+                        Page {page.page_number}
+                      </p>
+                      {page.text_preview && (
+                        <p className="text-xs text-gray-500 truncate" title={page.text_preview}>
+                          {page.text_preview}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-center space-x-6">
+                <button
+                  onClick={resetForm}
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Start Over
+                </button>
+                
+                <button
+                  onClick={extractPages}
+                  disabled={selectedPages.length === 0 || isExtracting}
+                  className="px-8 py-3 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                >
+                  {isExtracting ? (
+                    <span className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Extract {selectedPages.length} Page{selectedPages.length === 1 ? '' : 's'}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
+          )}
 
-            {selectedPages.length > 0 && (
-              <div className="mb-6 p-4 bg-[#00C7BE]/10 border border-[#00C7BE]/20 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <strong>Selected pages:</strong> {selectedPages.sort((a, b) => a - b).join(', ')}
+          {/* Step 4: Processing & Download */}
+          {job && (
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center">
+              <div className="mb-8">
+                {job.status === 'COMPLETED' ? (
+                  <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : job.status === 'FAILED' ? (
+                  <div className="w-20 h-20 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  {job.status === 'COMPLETED' ? 'Extraction Complete!' : 
+                   job.status === 'FAILED' ? 'Extraction Failed' : 'Processing Document'}
+                </h3>
+                
+                <p className="text-gray-600 mb-6">
+                  {job.status === 'COMPLETED' ? 'Your pages have been extracted successfully!' : 
+                   job.status === 'FAILED' ? 'There was an error extracting your pages.' :
+                   'Please wait while we extract your selected pages...'}
                 </p>
-              </div>
-            )}
-
-            {/* Page Thumbnails Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-6">
-              {analysis.pages.map((page) => (
-                <div
-                  key={page.page_number}
-                  className={`relative border-2 rounded-lg p-2 cursor-pointer transition-all duration-200 ${
-                    selectedPages.includes(page.page_number)
-                      ? 'border-[#00C7BE] bg-[#00C7BE]/10'
-                      : 'border-gray-200 hover:border-[#00C7BE]/50'
-                  }`}
-                  onClick={() => togglePageSelection(page.page_number)}
-                >
-                  <div className="aspect-[3/4] relative mb-2">
-                    <img
-                      src={page.thumbnail}
-                      alt={`Page ${page.page_number}`}
-                      className="w-full h-full object-contain rounded"
-                    />
-                    {selectedPages.includes(page.page_number) && (
-                      <div className="absolute top-1 right-1 w-6 h-6 bg-[#00C7BE] rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
+                
+                <div className="bg-gray-50 rounded-2xl p-6 max-w-md mx-auto mb-8">
+                  <div className="text-sm text-gray-600 space-y-2">
+                    <div className="flex justify-between">
+                      <span>File:</span>
+                      <span className="font-medium">{job.original_filename}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Selected Pages:</span>
+                      <span className="font-medium">{job.selected_pages.join(', ')}</span>
+                    </div>
+                    {job.output_filename && (
+                      <div className="flex justify-between">
+                        <span>Output:</span>
+                        <span className="font-medium">{job.output_filename}</span>
                       </div>
                     )}
                   </div>
-                  
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900 mb-1">
-                      Page {page.page_number}
-                    </p>
-                    {page.text_preview && (
-                      <p className="text-xs text-gray-500 truncate" title={page.text_preview}>
-                        {page.text_preview}
-                      </p>
-                    )}
-                  </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Extract Button */}
-            <div className="flex justify-between items-center">
-              <button
-                onClick={resetForm}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Start Over
-              </button>
-              
-              <button
-                onClick={extractPages}
-                disabled={selectedPages.length === 0 || isExtracting}
-                className="px-8 py-3 bg-[#00C7BE] text-white rounded-lg font-medium hover:bg-[#086C67] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isExtracting ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Processing...
+                {job.error_message && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 max-w-md mx-auto">
+                    <p className="text-red-800 text-sm">{job.error_message}</p>
                   </div>
-                ) : (
-                  `Extract ${selectedPages.length} Page${selectedPages.length === 1 ? '' : 's'}`
                 )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Job Status Section */}
-        {job && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Extraction Status</h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {job.original_filename}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Pages: {job.selected_pages.join(', ')}
-                  </p>
-                  {job.output_filename && (
-                    <p className="text-sm text-gray-600">
-                      Output: {job.output_filename}
-                    </p>
+                
+                <div className="flex justify-center space-x-6">
+                  <button
+                    onClick={resetForm}
+                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Extract More Pages
+                  </button>
+                  
+                  {job.status === 'COMPLETED' && (
+                    <button
+                      onClick={downloadResult}
+                      className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download PDF
+                    </button>
                   )}
                 </div>
-                
-                <div className="text-right">
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    job.status === 'COMPLETED' 
-                      ? 'bg-green-100 text-green-800'
-                      : job.status === 'FAILED'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {job.status === 'PROCESSING' && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
-                    )}
-                    {job.status}
-                  </div>
-                </div>
-              </div>
-
-              {job.error_message && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800">{job.error_message}</p>
-                </div>
-              )}
-
-              <div className="flex justify-between">
-                <button
-                  onClick={resetForm}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Extract More Pages
-                </button>
-                
-                {job.status === 'COMPLETED' && (
-                  <button
-                    onClick={downloadResult}
-                    className="px-8 py-3 bg-[#00C7BE] text-white rounded-lg font-medium hover:bg-[#086C67] transition-colors"
-                  >
-                    Download PDF
-                  </button>
-                )}
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
