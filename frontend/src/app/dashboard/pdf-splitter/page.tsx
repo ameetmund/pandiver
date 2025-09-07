@@ -17,6 +17,14 @@ interface PDFAnalysis {
   pages: PageInfo[];
 }
 
+interface ApiKey {
+  id: string;
+  name: string;
+  api_key: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 interface Job {
   job_id: string;
   status: string;
@@ -38,8 +46,26 @@ export default function PDFSplitterPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const loadApiKeys = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    
+    try {
+      const response = await fetch('http://localhost:8000/auth/api-keys', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const keys = await response.json();
+        setApiKeys(keys);
+      }
+    } catch (err) {
+      console.error('Failed to load API keys:', err);
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -55,6 +81,8 @@ export default function PDFSplitterPage() {
         if (!response.ok) throw new Error('Auth failed');
         await response.json();
         setIsAuthenticated(true);
+        // Load API keys after authentication
+        loadApiKeys();
       } catch {
         localStorage.removeItem('accessToken');
         window.location.href = '/auth/login';
@@ -83,19 +111,19 @@ export default function PDFSplitterPage() {
     setError('');
 
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        router.push('/auth/login');
+      const activeApiKey = apiKeys.find(key => key.is_active);
+      if (!activeApiKey) {
+        setError('No active API key found. Please create an API key in the API section.');
         return;
       }
 
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter/analyze', {
+      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter-api/analyze', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${activeApiKey.api_key}`,
         },
         body: formData,
       });
@@ -138,20 +166,20 @@ export default function PDFSplitterPage() {
     setError('');
 
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        router.push('/auth/login');
+      const activeApiKey = apiKeys.find(key => key.is_active);
+      if (!activeApiKey) {
+        setError('No active API key found. Please create an API key in the API section.');
         return;
       }
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('page_numbers', JSON.stringify(selectedPages));
+      formData.append('selected_pages', JSON.stringify(selectedPages));
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter/extract', {
+      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter-api/split', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${activeApiKey.api_key}`,
         },
         body: formData,
       });
@@ -180,13 +208,13 @@ export default function PDFSplitterPage() {
   };
 
   const pollJobStatus = async (jobId: string) => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
+    const activeApiKey = apiKeys.find(key => key.is_active);
+    if (!activeApiKey) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter/jobs/${jobId}/status`, {
+      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter-api/jobs/${jobId}/status`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${activeApiKey.api_key}`,
         },
       });
 
@@ -207,15 +235,15 @@ export default function PDFSplitterPage() {
     if (!job?.job_id) return;
 
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        router.push('/auth/login');
+      const activeApiKey = apiKeys.find(key => key.is_active);
+      if (!activeApiKey) {
+        setError('No active API key found. Please create an API key in the API section.');
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter/download/${job.job_id}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter-api/download/${job.job_id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${activeApiKey.api_key}`,
         },
       });
 
