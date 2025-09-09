@@ -222,9 +222,7 @@ export default function PDFTranslatorAPIPage() {
           name: details.name
         }));
         setLanguages(languagesArray);
-        if (languagesArray.length > 0 && !targetLanguage) {
-          setTargetLanguage(languagesArray.find((l: Language) => l.code === 'es')?.code || languagesArray[0].code);
-        }
+        // Don't auto-select any target language - let user choose
       }
     } catch (error) {
       console.error('Failed to fetch languages:', error);
@@ -678,7 +676,7 @@ export default function PDFTranslatorAPIPage() {
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-900 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 {tab.label}
@@ -694,12 +692,11 @@ export default function PDFTranslatorAPIPage() {
             {/* API Configuration Section */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-100 rounded-xl border border-blue-200 p-6 shadow-lg">
               <div className="flex items-center mb-6">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                    </svg>
-                  </div>
+                <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg p-2 mr-3">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                 </div>
                 <div className="ml-4">
                   <h2 className="text-xl font-bold text-gray-900">API configuration</h2>
@@ -716,7 +713,7 @@ export default function PDFTranslatorAPIPage() {
                     <select
                       value={selectedApiKey}
                       onChange={(e) => setSelectedApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                     >
                       <option value="">Select an API key</option>
                       {apiKeys.map((key) => (
@@ -738,10 +735,10 @@ export default function PDFTranslatorAPIPage() {
                       multiple
                       accept=".pdf"
                       onChange={handleFileSelect}
-                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                     />
                     {selectedFiles.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-600">
+                      <div className="mt-2 text-sm text-gray-900">
                         Selected: {selectedFiles.map(f => f.name).join(', ')}
                       </div>
                     )}
@@ -754,7 +751,7 @@ export default function PDFTranslatorAPIPage() {
                       <select
                         value={sourceLanguage}
                         onChange={(e) => setSourceLanguage(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                       >
                         <option value="auto">Auto-detect</option>
                         {Array.isArray(languages) && languages.map((lang) => (
@@ -769,7 +766,7 @@ export default function PDFTranslatorAPIPage() {
                       <select
                         value={targetLanguage}
                         onChange={(e) => setTargetLanguage(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                       >
                         <option value="">Select target language</option>
                         {Array.isArray(languages) && languages.map((lang) => (
@@ -802,16 +799,16 @@ export default function PDFTranslatorAPIPage() {
                     <h3 className="font-medium text-gray-900 mb-3">Quick Stats</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Files selected:</span>
-                        <span className="font-medium">{selectedFiles.length}</span>
+                        <span className="text-gray-900">Files selected:</span>
+                        <span className="font-medium text-gray-900">{selectedFiles.length}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Translation jobs:</span>
-                        <span className="font-medium">{processingJobs.length}</span>
+                        <span className="text-gray-900">Translation jobs:</span>
+                        <span className="font-medium text-gray-900">{processingJobs.length}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Languages available:</span>
-                        <span className="font-medium">{languages.length}</span>
+                        <span className="text-gray-900">Languages available:</span>
+                        <span className="font-medium text-gray-900">{languages.length}</span>
                       </div>
                     </div>
                   </div>
@@ -822,12 +819,10 @@ export default function PDFTranslatorAPIPage() {
             {/* Enhanced Processing Status Section */}
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-6 shadow-lg">
               <div className="flex items-center mb-6">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-md bg-gray-600 text-white">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
+                <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg p-2 mr-3">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
                 </div>
                 <div className="ml-4">
                   <h2 className="text-xl font-bold text-gray-900">Processing status</h2>
@@ -880,7 +875,7 @@ export default function PDFTranslatorAPIPage() {
                             </div>
                             <div>
                               <div className="font-medium text-gray-900">{fileStatus.file.name}</div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-gray-900">
                                 {fileStatus.currentStage && (
                                   <span className="capitalize">{fileStatus.currentStage}</span>
                                 )}
@@ -926,9 +921,9 @@ export default function PDFTranslatorAPIPage() {
                                     <h4 className="font-medium text-gray-900 capitalize">{step} API Call</h4>
                                     <div className="flex items-center space-x-2">
                                       {details.duration && (
-                                        <span className="text-xs text-gray-500">{details.duration}ms</span>
+                                        <span className="text-xs text-gray-900">{details.duration}ms</span>
                                       )}
-                                      <span className="text-xs text-gray-500">{details.timestamp}</span>
+                                      <span className="text-xs text-gray-900">{details.timestamp}</span>
                                     </div>
                                   </div>
                                   
@@ -945,7 +940,7 @@ export default function PDFTranslatorAPIPage() {
                                     <div>
                                       <div className="text-xs font-medium text-gray-700 mb-1">Response:</div>
                                       <div className="bg-white border rounded p-2 text-xs">
-                                        <pre className="whitespace-pre-wrap">{JSON.stringify(details.response, null, 2)}</pre>
+                                        <pre className="whitespace-pre-wrap text-gray-900">{JSON.stringify(details.response, null, 2)}</pre>
                                       </div>
                                     </div>
                                   )}
@@ -987,11 +982,11 @@ export default function PDFTranslatorAPIPage() {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Languages</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">File</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Languages</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Created</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -1000,7 +995,7 @@ export default function PDFTranslatorAPIPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {job.original_filename}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {job.source_language} → {job.target_language}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1010,10 +1005,10 @@ export default function PDFTranslatorAPIPage() {
                                 {formatStatus(job.status).text}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {new Date(job.created_at).toLocaleDateString()}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {job.status === 'COMPLETED' && (
                                 <button
                                   onClick={() => downloadResult(job.job_id, job.output_filename || `${job.original_filename}_translated.pdf`)}
@@ -1046,7 +1041,7 @@ export default function PDFTranslatorAPIPage() {
                     placeholder="Key name"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                   />
                   <button
                     onClick={createApiKey}
@@ -1061,11 +1056,11 @@ export default function PDFTranslatorAPIPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Key</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Created</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -1074,10 +1069,10 @@ export default function PDFTranslatorAPIPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {key.key_name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                           {key.api_key.substring(0, 20)}...
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {new Date(key.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1087,7 +1082,7 @@ export default function PDFTranslatorAPIPage() {
                             {key.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <button
                             onClick={() => deleteApiKey(key.id)}
                             className="text-red-600 hover:text-red-800"
@@ -1110,31 +1105,31 @@ export default function PDFTranslatorAPIPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-8">PDF Translator API Documentation</h2>
             
             <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold mb-4">Authentication</h3>
-              <p className="mb-4">All API requests require authentication using Bearer token:</p>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Authentication</h3>
+              <p className="mb-4 text-gray-900">All API requests require authentication using Bearer token:</p>
               <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-6">
                 <code>Authorization: Bearer YOUR_API_KEY</code>
               </div>
 
-              <h3 className="text-lg font-semibold mb-4">Base URL</h3>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Base URL</h3>
               <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-6">
                 <code>http://localhost:8000/api/v1/pdf-translator-api</code>
               </div>
 
               <div className="space-y-8">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">1. Get Supported Languages</h3>
-                  <p className="mb-4">Get a list of all supported languages for translation.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">1. Get Supported Languages</h3>
+                  <p className="mb-4 text-gray-900">Get a list of all supported languages for translation.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/languages" \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
                   </div>
-                  <p><strong>Note:</strong> Replace <code>YOUR_API_KEY</code> with your actual API key from the API Keys tab.</p>
+                  <p className="text-gray-900"><strong>Note:</strong> Replace <code>YOUR_API_KEY</code> with your actual API key from the API Keys tab.</p>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">2. Analyze PDF</h3>
-                  <p className="mb-4">Analyze a PDF to detect its language before translation.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">2. Analyze PDF</h3>
+                  <p className="mb-4 text-gray-900">Analyze a PDF to detect its language before translation.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-translator-api/analyze" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -1143,8 +1138,8 @@ export default function PDFTranslatorAPIPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">3. Translate PDF</h3>
-                  <p className="mb-4">Start a PDF translation job.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">3. Translate PDF</h3>
+                  <p className="mb-4 text-gray-900">Start a PDF translation job.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-translator-api/translate" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -1156,8 +1151,8 @@ export default function PDFTranslatorAPIPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">4. Check Job Status</h3>
-                  <p className="mb-4">Check the status of a translation job.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">4. Check Job Status</h3>
+                  <p className="mb-4 text-gray-900">Check the status of a translation job.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/jobs/{job_id}/status" \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
@@ -1165,8 +1160,8 @@ export default function PDFTranslatorAPIPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">5. Download Result</h3>
-                  <p className="mb-4">Download the translated PDF file.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">5. Download Result</h3>
+                  <p className="mb-4 text-gray-900">Download the translated PDF file.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/download/{job_id}" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -1175,8 +1170,8 @@ export default function PDFTranslatorAPIPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">6. List Jobs</h3>
-                  <p className="mb-4">List all your translation jobs.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">6. List Jobs</h3>
+                  <p className="mb-4 text-gray-900">List all your translation jobs.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/jobs" \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
@@ -1184,15 +1179,15 @@ export default function PDFTranslatorAPIPage() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-semibold mb-4">Language Options</h3>
-              <ul className="list-disc list-inside space-y-2 mb-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Language Options</h3>
+              <ul className="list-disc list-inside space-y-2 mb-6 text-gray-900">
                 <li><strong>Source language:</strong> Use "auto" for automatic detection or specify a language code</li>
                 <li><strong>Target language:</strong> Must be a supported language code (e.g., "es", "fr", "de")</li>
                 <li><strong>Translation method:</strong> Currently supports "document" method</li>
               </ul>
 
-              <h3 className="text-lg font-semibold mb-4">Response Format</h3>
-              <p className="mb-4">All API responses are in JSON format. Successful responses return relevant data, while errors return details about what went wrong.</p>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Response Format</h3>
+              <p className="mb-4 text-gray-900">All API responses are in JSON format. Successful responses return relevant data, while errors return details about what went wrong.</p>
             </div>
           </div>
         )}
@@ -1206,12 +1201,12 @@ export default function PDFTranslatorAPIPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Endpoint</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Files</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Endpoint</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Job ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Files</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1220,7 +1215,7 @@ export default function PDFTranslatorAPIPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {usage.endpoint}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                         {usage.job_id.substring(0, 8)}...
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1230,13 +1225,13 @@ export default function PDFTranslatorAPIPage() {
                           {formatStatus(usage.status).text}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {usage.file_count}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatProcessingTime(usage)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(usage.created_at).toLocaleDateString()}
                       </td>
                     </tr>
@@ -1245,7 +1240,7 @@ export default function PDFTranslatorAPIPage() {
               </table>
               
               {apiUsage.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-900">
                   No usage history available
                 </div>
               )}
