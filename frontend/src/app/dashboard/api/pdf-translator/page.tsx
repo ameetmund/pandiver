@@ -974,57 +974,6 @@ export default function PDFTranslatorAPIPage() {
                 </div>
               )}
 
-              {/* Previous Processing Jobs */}
-              {processingJobs.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Previous Jobs</h3>
-                  <div className="bg-white border rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">File</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Languages</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Created</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {processingJobs.slice(0, 10).map((job) => (
-                          <tr key={job.job_id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {job.original_filename}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {job.source_language} → {job.target_language}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                formatStatus(job.status).color
-                              }`}>
-                                {formatStatus(job.status).text}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {new Date(job.created_at).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {job.status === 'COMPLETED' && (
-                                <button
-                                  onClick={() => downloadResult(job.job_id, job.output_filename || `${job.original_filename}_translated.pdf`)}
-                                  className="text-blue-600 hover:text-blue-800"
-                                >
-                                  Download
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1201,45 +1150,67 @@ export default function PDFTranslatorAPIPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Endpoint</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Job ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Files</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">File</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Endpoint</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Job ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Languages</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {apiUsage.map((usage) => (
-                    <tr key={usage.id}>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {processingJobs.map((job) => (
+                    <tr key={job.job_id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(job.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(job.created_at).toLocaleTimeString()}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {usage.endpoint}
+                        {job.original_filename}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        PDF Translator
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                        {usage.job_id.substring(0, 8)}...
+                        {job.job_id.substring(0, 8)}...
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          formatStatus(usage.status).color
+                          formatStatus(job.status).color
                         }`}>
-                          {formatStatus(usage.status).text}
+                          {formatStatus(job.status).text}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {usage.file_count}
+                        {job.source_language} → {job.target_language}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatProcessingTime(usage)}
+                        {job.completed_at && job.created_at ? 
+                          `${((new Date(job.completed_at).getTime() - new Date(job.created_at).getTime()) / 1000).toFixed(6)}s` : 
+                          'N/A'
+                        }
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(usage.created_at).toLocaleDateString()}
+                        {job.status === 'COMPLETED' && (
+                          <button
+                            onClick={() => downloadResult(job.job_id, job.output_filename || `${job.original_filename}_translated.pdf`)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Download
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               
-              {apiUsage.length === 0 && (
+              {processingJobs.length === 0 && (
                 <div className="text-center py-8 text-gray-900">
                   No usage history available
                 </div>
