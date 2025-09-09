@@ -658,7 +658,7 @@ export default function PDFSplitterAPIPage() {
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-900 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 {tab.label}
@@ -674,15 +674,14 @@ export default function PDFSplitterAPIPage() {
             {/* API Configuration Section */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-100 rounded-xl border border-blue-200 p-6 shadow-lg">
               <div className="flex items-center mb-6">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                    </svg>
-                  </div>
+                <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg p-2 mr-3">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                 </div>
-                <div className="ml-4">
-                  <h2 className="text-xl font-bold text-gray-900">API configuration</h2>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">API Configuration</h2>
                   <p className="text-sm text-gray-600 mt-1">Configure your API settings and upload files for processing</p>
                 </div>
               </div>
@@ -696,7 +695,7 @@ export default function PDFSplitterAPIPage() {
                     <select
                       value={selectedApiKey}
                       onChange={(e) => setSelectedApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                     >
                       <option value="">Select an API key</option>
                       {apiKeys.map((key) => (
@@ -718,7 +717,7 @@ export default function PDFSplitterAPIPage() {
                       multiple
                       accept=".pdf"
                       onChange={handleFileSelect}
-                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                     />
                     {selectedFiles.length > 0 && (
                       <div className="mt-2 text-sm text-gray-600">
@@ -731,7 +730,7 @@ export default function PDFSplitterAPIPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Page Selection</label>
                     <div className="space-y-2">
-                      <label className="flex items-center">
+                      <label className="flex items-center text-gray-900">
                         <input
                           type="radio"
                           name="pageSelection"
@@ -742,7 +741,7 @@ export default function PDFSplitterAPIPage() {
                         />
                         Extract all pages
                       </label>
-                      <label className="flex items-center">
+                      <label className="flex items-center text-gray-900">
                         <input
                           type="radio"
                           name="pageSelection"
@@ -759,10 +758,10 @@ export default function PDFSplitterAPIPage() {
                           placeholder="1,3,5"
                           value={specificPages}
                           onChange={(e) => setSpecificPages(e.target.value)}
-                          className="ml-6 px-3 py-1 border border-gray-300 rounded text-sm w-32"
+                          className="ml-6 px-3 py-1 border border-gray-300 rounded text-sm w-32 text-gray-900 bg-white"
                         />
                       )}
-                      <label className="flex items-center">
+                      <label className="flex items-center text-gray-900">
                         <input
                           type="radio"
                           name="pageSelection"
@@ -780,16 +779,16 @@ export default function PDFSplitterAPIPage() {
                             placeholder="Start"
                             value={rangeStart}
                             onChange={(e) => setRangeStart(e.target.value)}
-                            className="px-3 py-1 border border-gray-300 rounded text-sm w-20"
+                            className="px-3 py-1 border border-gray-300 rounded text-sm w-20 text-gray-900 bg-white"
                             min="1"
                           />
-                          <span>to</span>
+                          <span className="text-gray-900">to</span>
                           <input
                             type="number"
                             placeholder="End"
                             value={rangeEnd}
                             onChange={(e) => setRangeEnd(e.target.value)}
-                            className="px-3 py-1 border border-gray-300 rounded text-sm w-20"
+                            className="px-3 py-1 border border-gray-300 rounded text-sm w-20 text-gray-900 bg-white"
                             min="1"
                           />
                         </div>
@@ -818,12 +817,12 @@ export default function PDFSplitterAPIPage() {
                     <h3 className="font-medium text-gray-900 mb-3">Quick Stats</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Files selected:</span>
-                        <span className="font-medium">{selectedFiles.length}</span>
+                        <span className="text-gray-900">Files selected:</span>
+                        <span className="font-medium text-gray-900">{selectedFiles.length}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Processing jobs:</span>
-                        <span className="font-medium">{processingJobs.length}</span>
+                        <span className="text-gray-900">Processing jobs:</span>
+                        <span className="font-medium text-gray-900">{processingJobs.length}</span>
                       </div>
                     </div>
                   </div>
@@ -834,15 +833,14 @@ export default function PDFSplitterAPIPage() {
             {/* Enhanced Processing Status Section */}
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-6 shadow-lg">
               <div className="flex items-center mb-6">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-md bg-gray-600 text-white">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
+                <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg p-2 mr-3">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 10h1m2 0h1m2 0h1" />
+                  </svg>
                 </div>
-                <div className="ml-4">
-                  <h2 className="text-xl font-bold text-gray-900">Processing status</h2>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Processing Status</h2>
                   <p className="text-sm text-gray-600 mt-1">Monitor your file processing progress and download results</p>
                 </div>
               </div>
@@ -892,7 +890,7 @@ export default function PDFSplitterAPIPage() {
                             </div>
                             <div>
                               <div className="font-medium text-gray-900">{fileStatus.file.name}</div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-gray-900">
                                 {fileStatus.currentStage && (
                                   <span className="capitalize">{fileStatus.currentStage}</span>
                                 )}
@@ -941,9 +939,9 @@ export default function PDFSplitterAPIPage() {
                                     <h4 className="font-medium text-gray-900 capitalize">{step} API Call</h4>
                                     <div className="flex items-center space-x-2">
                                       {details.duration && (
-                                        <span className="text-xs text-gray-500">{details.duration}ms</span>
+                                        <span className="text-xs text-gray-900">{details.duration}ms</span>
                                       )}
-                                      <span className="text-xs text-gray-500">{details.timestamp}</span>
+                                      <span className="text-xs text-gray-900">{details.timestamp}</span>
                                     </div>
                                   </div>
                                   
@@ -960,7 +958,7 @@ export default function PDFSplitterAPIPage() {
                                     <div>
                                       <div className="text-xs font-medium text-gray-700 mb-1">Response:</div>
                                       <div className="bg-white border rounded p-2 text-xs">
-                                        <pre className="whitespace-pre-wrap">{JSON.stringify(details.response, null, 2)}</pre>
+                                        <pre className="whitespace-pre-wrap text-gray-900">{JSON.stringify(details.response, null, 2)}</pre>
                                       </div>
                                     </div>
                                   )}
@@ -1002,11 +1000,11 @@ export default function PDFSplitterAPIPage() {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pages</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">File</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Pages</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Created</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -1015,7 +1013,7 @@ export default function PDFSplitterAPIPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {job.original_filename}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {job.selected_pages.length} of {job.total_pages}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1025,10 +1023,10 @@ export default function PDFSplitterAPIPage() {
                                 {formatStatus(job.status).text}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {new Date(job.created_at).toLocaleDateString()}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {job.status === 'COMPLETED' && (
                                 <button
                                   onClick={() => downloadResult(job.job_id, job.output_filename || `${job.original_filename}_split.pdf`)}
@@ -1076,11 +1074,11 @@ export default function PDFSplitterAPIPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Key</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Created</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -1089,10 +1087,10 @@ export default function PDFSplitterAPIPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {key.key_name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                           {key.api_key.substring(0, 20)}...
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {new Date(key.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1102,7 +1100,7 @@ export default function PDFSplitterAPIPage() {
                             {key.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <button
                             onClick={() => deleteApiKey(key.id)}
                             className="text-red-600 hover:text-red-800"
@@ -1125,32 +1123,32 @@ export default function PDFSplitterAPIPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-8">PDF Page Splitter API Documentation</h2>
             
             <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold mb-4">Authentication</h3>
-              <p className="mb-4">All API requests require authentication using Bearer token:</p>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Authentication</h3>
+              <p className="mb-4 text-gray-900">All API requests require authentication using Bearer token:</p>
               <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-6">
                 <code>Authorization: Bearer YOUR_API_KEY</code>
               </div>
 
-              <h3 className="text-lg font-semibold mb-4">Base URL</h3>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Base URL</h3>
               <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-6">
                 <code>http://localhost:8000/api/v1/pdf-splitter-api</code>
               </div>
 
               <div className="space-y-8">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">1. Analyze PDF</h3>
-                  <p className="mb-4">Analyze a PDF to get page information before splitting.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">1. Analyze PDF</h3>
+                  <p className="mb-4 text-gray-900">Analyze a PDF to get page information before splitting.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-splitter-api/analyze" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -F "file=@document.pdf"`}</pre>
                   </div>
-                  <p><strong>Note:</strong> Replace <code>YOUR_API_KEY</code> with your actual API key from the API Keys tab.</p>
+                  <p className="text-gray-900"><strong>Note:</strong> Replace <code>YOUR_API_KEY</code> with your actual API key from the API Keys tab.</p>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">2. Split PDF</h3>
-                  <p className="mb-4">Split a PDF by extracting specific pages.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">2. Split PDF</h3>
+                  <p className="mb-4 text-gray-900">Split a PDF by extracting specific pages.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-splitter-api/split" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -1160,8 +1158,8 @@ export default function PDFSplitterAPIPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">3. Check Job Status</h3>
-                  <p className="mb-4">Check the status of a splitting job.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">3. Check Job Status</h3>
+                  <p className="mb-4 text-gray-900">Check the status of a splitting job.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-splitter-api/jobs/{job_id}/status" \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
@@ -1169,8 +1167,8 @@ export default function PDFSplitterAPIPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">4. Download Result</h3>
-                  <p className="mb-4">Download the split PDF file.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">4. Download Result</h3>
+                  <p className="mb-4 text-gray-900">Download the split PDF file.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-splitter-api/download/{job_id}" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -1179,8 +1177,8 @@ export default function PDFSplitterAPIPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">5. List Jobs</h3>
-                  <p className="mb-4">List all your splitting jobs.</p>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">5. List Jobs</h3>
+                  <p className="mb-4 text-gray-900">List all your splitting jobs.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
                     <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-splitter-api/jobs" \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
@@ -1188,15 +1186,15 @@ export default function PDFSplitterAPIPage() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-semibold mb-4">Page Selection Options</h3>
-              <ul className="list-disc list-inside space-y-2 mb-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Page Selection Options</h3>
+              <ul className="list-disc list-inside space-y-2 mb-6 text-gray-900">
                 <li><strong>All pages:</strong> Leave selected_pages empty or pass all page numbers</li>
                 <li><strong>Specific pages:</strong> Pass an array like <code>[1,3,5,7]</code></li>
                 <li><strong>Page range:</strong> Pass consecutive pages like <code>[2,3,4,5]</code></li>
               </ul>
 
-              <h3 className="text-lg font-semibold mb-4">Response Format</h3>
-              <p className="mb-4">All API responses are in JSON format. Successful responses return relevant data, while errors return details about what went wrong.</p>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Response Format</h3>
+              <p className="mb-4 text-gray-900">All API responses are in JSON format. Successful responses return relevant data, while errors return details about what went wrong.</p>
             </div>
           </div>
         )}
@@ -1210,13 +1208,13 @@ export default function PDFSplitterAPIPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Endpoint</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Files</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pages</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Endpoint</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Job ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Files</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Pages</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1225,7 +1223,7 @@ export default function PDFSplitterAPIPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {usage.endpoint}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                         {usage.job_id.substring(0, 8)}...
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1235,16 +1233,16 @@ export default function PDFSplitterAPIPage() {
                           {formatStatus(usage.status).text}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {usage.file_count}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {usage.pages_extracted}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatProcessingTime(usage)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(usage.created_at).toLocaleDateString()}
                       </td>
                     </tr>
@@ -1253,7 +1251,7 @@ export default function PDFSplitterAPIPage() {
               </table>
               
               {apiUsage.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-900">
                   No usage history available
                 </div>
               )}
