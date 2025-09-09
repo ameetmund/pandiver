@@ -99,6 +99,8 @@ export default function PDFTranslatorAPIPage() {
   const [fileProcessingStatus, setFileProcessingStatus] = useState<FileProcessingStatus[]>([]);
   const [isProcessingMultiple, setIsProcessingMultiple] = useState(false);
   const [processingStatusPage, setProcessingStatusPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(10);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -639,6 +641,18 @@ export default function PDFTranslatorAPIPage() {
     }
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotification({type: 'success', message: 'API key copied to clipboard'});
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      setNotification({type: 'error', message: 'Failed to copy API key'});
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
   if (!user) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
@@ -668,7 +682,7 @@ export default function PDFTranslatorAPIPage() {
               { id: 'test', label: 'API Testing' },
               { id: 'keys', label: `API Keys (${apiKeys.length})` },
               { id: 'docs', label: 'Documentation' },
-              { id: 'usage', label: `Usage History (${apiUsage.length})` }
+              { id: 'usage', label: 'History & Download' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1019,7 +1033,18 @@ export default function PDFTranslatorAPIPage() {
                           {key.key_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                          {key.api_key.substring(0, 20)}...
+                          <div className="flex items-center space-x-2">
+                            <span className="break-all">{key.api_key}</span>
+                            <button
+                              onClick={() => copyToClipboard(key.api_key)}
+                              className="ml-2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                              title="Copy to clipboard"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            </button>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {new Date(key.created_at).toLocaleDateString()}
@@ -1141,10 +1166,37 @@ export default function PDFTranslatorAPIPage() {
           </div>
         )}
 
-        {/* Usage History Tab */}
+        {/* History & Download Tab */}
         {activeTab === 'usage' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">API Usage History</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">History & Download</h2>
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                📝 The maximum number of historical jobs that can be viewed is limited to 100.
+              </p>
+            </div>
+            
+            {/* Page Size Selector */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <label htmlFor="pageSize" className="text-sm font-medium text-gray-900">Show:</label>
+                <select
+                  id="pageSize"
+                  value={historyPageSize}
+                  onChange={(e) => {
+                    setHistoryPageSize(Number(e.target.value));
+                    setHistoryPage(1);
+                  }}
+                  className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-sm text-gray-900">entries</span>
+              </div>
+            </div>
             
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -1162,60 +1214,117 @@ export default function PDFTranslatorAPIPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {processingJobs.map((job) => (
-                    <tr key={job.job_id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(job.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(job.created_at).toLocaleTimeString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {job.original_filename}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        PDF Translator
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                        {job.job_id.substring(0, 8)}...
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          formatStatus(job.status).color
-                        }`}>
-                          {formatStatus(job.status).text}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.source_language} → {job.target_language}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.completed_at && job.created_at ? 
-                          `${((new Date(job.completed_at).getTime() - new Date(job.created_at).getTime()) / 1000).toFixed(6)}s` : 
-                          'N/A'
-                        }
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {job.status === 'COMPLETED' && (
-                          <button
-                            onClick={() => downloadResult(job.job_id, job.output_filename || `${job.original_filename}_translated.pdf`)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            Download
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const limitedJobs = processingJobs.slice(0, 100);
+                    const startIndex = (historyPage - 1) * historyPageSize;
+                    const endIndex = startIndex + historyPageSize;
+                    const paginatedJobs = limitedJobs.slice(startIndex, endIndex);
+                    
+                    return paginatedJobs.map((job) => (
+                      <tr key={job.job_id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(job.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(job.created_at).toLocaleTimeString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {job.original_filename}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                          {job.status === 'COMPLETED' 
+                            ? `/pdf-translator-api/download/${job.job_id}`
+                            : `/pdf-translator-api/translate`
+                          }
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                          {job.job_id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            formatStatus(job.status).color
+                          }`}>
+                            {formatStatus(job.status).text}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {job.source_language} → {job.target_language}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {job.completed_at && job.created_at ? 
+                            `${((new Date(job.completed_at).getTime() - new Date(job.created_at).getTime()) / 1000).toFixed(6)}s` : 
+                            'N/A'
+                          }
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {job.status === 'COMPLETED' && (
+                            <button
+                              onClick={() => downloadResult(job.job_id, job.output_filename || `${job.original_filename}_translated.pdf`)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              Download
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
               
               {processingJobs.length === 0 && (
                 <div className="text-center py-8 text-gray-900">
-                  No usage history available
+                  No history available
                 </div>
               )}
             </div>
+            
+            {/* Pagination Controls */}
+            {processingJobs.length > 0 && (
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-sm text-gray-900">
+                  Showing {Math.min((historyPage - 1) * historyPageSize + 1, Math.min(processingJobs.length, 100))} to{' '}
+                  {Math.min(historyPage * historyPageSize, Math.min(processingJobs.length, 100))} of{' '}
+                  {Math.min(processingJobs.length, 100)} entries
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setHistoryPage(Math.max(1, historyPage - 1))}
+                    disabled={historyPage === 1}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
+                  {(() => {
+                    const totalPages = Math.ceil(Math.min(processingJobs.length, 100) / historyPageSize);
+                    const pages = [];
+                    for (let i = 1; i <= totalPages; i++) {
+                      pages.push(
+                        <button
+                          key={i}
+                          onClick={() => setHistoryPage(i)}
+                          className={`px-3 py-1 border rounded-md text-sm ${
+                            historyPage === i
+                              ? 'bg-blue-500 text-white border-blue-500'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {i}
+                        </button>
+                      );
+                    }
+                    return pages;
+                  })()}
+                  <button
+                    onClick={() => setHistoryPage(Math.min(Math.ceil(Math.min(processingJobs.length, 100) / historyPageSize), historyPage + 1))}
+                    disabled={historyPage >= Math.ceil(Math.min(processingJobs.length, 100) / historyPageSize)}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
