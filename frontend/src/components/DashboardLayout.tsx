@@ -20,6 +20,11 @@ interface SidebarItem {
   href: string;
   isActive: boolean;
   badge?: string;
+  subItems?: {
+    id: string;
+    title: string;
+    href: string;
+  }[];
 }
 
 interface DashboardLayoutProps {
@@ -49,7 +54,24 @@ const sidebarItems: SidebarItem[] = [
     ),
     href: '/dashboard/api',
     isActive: true,
-    badge: 'New'
+    badge: 'New',
+    subItems: [
+      {
+        id: 'api-intelligent-data-parser',
+        title: 'Intelligent Data Parser',
+        href: '/dashboard/api/intelligent-data-parser'
+      },
+      {
+        id: 'api-pdf-splitter',
+        title: 'PDF Page Splitter',
+        href: '/dashboard/api/pdf-splitter'
+      },
+      {
+        id: 'api-pdf-translator',
+        title: 'PDF Translator',
+        href: '/dashboard/api/pdf-translator'
+      }
+    ]
   },
   {
     id: 'intelligent-data-parser',
@@ -71,11 +93,24 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['api']));
   const router = useRouter();
   const pathname = usePathname();
 
+  const toggleExpandedItem = (itemId: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
     if (!token || !userData) {
@@ -93,6 +128,13 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       setIsLoading(false);
     }
   }, [router]);
+
+  // Auto-expand API menu when user is on a sub-page
+  useEffect(() => {
+    if (pathname.startsWith('/dashboard/api/') && pathname !== '/dashboard/api') {
+      setExpandedItems(prev => new Set(prev).add('api'));
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -160,31 +202,89 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         <nav className="flex-1 px-4 py-6 space-y-2 relative">
           {sidebarItems.map((item) => {
             const isActive = pathname === item.href;
+            const isExpanded = expandedItems.has(item.id);
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            
+            // Check if any sub-item is active
+            const hasActiveSubItem = hasSubItems && item.subItems!.some(subItem => pathname === subItem.href);
+            const shouldHighlight = isActive || hasActiveSubItem;
+            
             return (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white shadow-md' 
-                    : 'text-slate-700 hover:bg-white/50 hover:text-slate-900'
-                } ${sidebarCollapsed ? 'justify-center' : 'justify-start'}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span className={`${sidebarCollapsed ? '' : 'mr-3'}`}>
-                  {item.icon}
-                </span>
-                {!sidebarCollapsed && (
-                  <>
-                    <span className="flex-1">{item.title}</span>
-                    {item.badge && (
-                      <span className="px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded-full font-semibold">
-                        {item.badge}
-                      </span>
+              <div key={item.id} className="space-y-1">
+                {/* Main item */}
+                <div className="flex items-center">
+                  <Link
+                    href={item.href}
+                    className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex-1 ${
+                      shouldHighlight 
+                        ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white shadow-md' 
+                        : 'text-slate-700 hover:bg-white/50 hover:text-slate-900'
+                    } ${sidebarCollapsed ? 'justify-center' : 'justify-start'}`}
+                    onClick={(e) => {
+                      if (hasSubItems && !sidebarCollapsed) {
+                        // For items with subitems, first click expands, second click navigates
+                        if (!isExpanded) {
+                          e.preventDefault();
+                          toggleExpandedItem(item.id);
+                        } else {
+                          // Allow navigation to main item when expanded
+                          setMobileMenuOpen(false);
+                        }
+                      } else {
+                        setMobileMenuOpen(false);
+                      }
+                    }}
+                  >
+                    <span className={`${sidebarCollapsed ? '' : 'mr-3'}`}>
+                      {item.icon}
+                    </span>
+                    {!sidebarCollapsed && (
+                      <>
+                        <span className="flex-1">{item.title}</span>
+                        {item.badge && (
+                          <span className="px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded-full font-semibold mr-2">
+                            {item.badge}
+                          </span>
+                        )}
+                        {hasSubItems && (
+                          <svg 
+                            className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        )}
+                      </>
                     )}
-                  </>
+                  </Link>
+                </div>
+                
+                {/* Sub-items */}
+                {hasSubItems && isExpanded && !sidebarCollapsed && (
+                  <div className="ml-8 space-y-1">
+                    {item.subItems!.map((subItem) => {
+                      const subIsActive = pathname === subItem.href;
+                      return (
+                        <Link
+                          key={subItem.id}
+                          href={subItem.href}
+                          className={`flex items-center px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                            subIsActive 
+                              ? 'bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white shadow-sm' 
+                              : 'text-slate-600 hover:bg-white/30 hover:text-slate-800'
+                          }`}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <span className="w-2 h-2 bg-current rounded-full mr-3 opacity-60"></span>
+                          {subItem.title}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              </Link>
+              </div>
             );
           })}
         </nav>
