@@ -122,18 +122,20 @@ export default function APIPage() {
   const [searchFilter, setSearchFilter] = useState<string>('');
 
   // Pagination states
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(10);
   const [usageHistoryPage, setUsageHistoryPage] = useState(1);
-  const USAGE_HISTORY_INITIAL_LIMIT = 10;
-  const USAGE_HISTORY_LOAD_MORE_INCREMENT = 20;
   
   const [processingStatusPage, setProcessingStatusPage] = useState(1);
   const PROCESSING_STATUS_INITIAL_LIMIT = 3;
   const PROCESSING_STATUS_LOAD_MORE_INCREMENT = 10;
+  const USAGE_HISTORY_INITIAL_LIMIT = 3;
+  const USAGE_HISTORY_LOAD_MORE_INCREMENT = 10;
 
   useEffect(() => {
     const initializeData = async () => {
       // Wait a bit to ensure localStorage is ready
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
       
       if (!token || !userData) {
@@ -175,7 +177,7 @@ export default function APIPage() {
 
   const loadUser = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       if (!token) return;
 
       const response = await fetch('http://localhost:8000/auth/me', {
@@ -193,7 +195,7 @@ export default function APIPage() {
 
   const loadApiKeys = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       console.log('Loading API keys with token:', token ? 'Token present' : 'No token');
       
       if (!token) {
@@ -234,7 +236,7 @@ export default function APIPage() {
 
   const loadApiUsage = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       
       if (!token) {
         console.log('No access token available, skipping usage history load');
@@ -271,7 +273,7 @@ export default function APIPage() {
     }
 
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       console.log('Creating API key with token:', token ? `Token present (${token.substring(0, 20)}...)` : 'No token');
       console.log('Full token:', token);
       const response = await fetch('http://localhost:8000/auth/api-keys', {
@@ -311,7 +313,7 @@ export default function APIPage() {
 
   const deleteApiKey = async (keyId: number) => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8000/auth/api-keys/${keyId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -1455,14 +1457,78 @@ export default function APIPage() {
     }
   };
 
-  // Usage history pagination functions
-  const getVisibleUsageHistory = () => {
-    const itemsToShow = USAGE_HISTORY_INITIAL_LIMIT + (usageHistoryPage - 1) * USAGE_HISTORY_LOAD_MORE_INCREMENT;
-    return apiUsage.slice(0, itemsToShow);
+  // History pagination functions
+  const getHistoryJobs = () => {
+    // Convert fileProcessingStatus to job-based data with multiple entries per file
+    const jobs: any[] = [];
+    
+    fileProcessingStatus.forEach((status) => {
+      if (status.job_id) {
+        // Create job entries for each API call
+        const baseJob = {
+          file: status.file,
+          status: status.status,
+          job_id: status.job_id,
+          created_at: new Date().toISOString(), // You may want to get this from actual data
+          pages: 1, // Default, you may want to calculate this
+          duration: 0.001, // Default, you may want to calculate this
+        };
+        
+        // Add different endpoint entries
+        if (status.status === 'completed') {
+          jobs.push({
+            ...baseJob,
+            endpoint: `/intelligent-data/analyze`,
+          });
+          jobs.push({
+            ...baseJob,
+            endpoint: `/jobs/${status.job_id}/status`,
+          });
+          jobs.push({
+            ...baseJob,
+            endpoint: `/jobs/${status.job_id}/results`,
+          });
+          if (status.downloadUrls) {
+            jobs.push({
+              ...baseJob,
+              endpoint: `/download/${status.job_id}/tables/csv`,
+            });
+            jobs.push({
+              ...baseJob,
+              endpoint: `/download/${status.job_id}/key-values/csv`,
+            });
+          }
+        } else {
+          jobs.push({
+            ...baseJob,
+            endpoint: `/intelligent-data/analyze`,
+          });
+        }
+      }
+    });
+    
+    return jobs;
+  };
+
+  const getPaginatedHistory = () => {
+    const allJobs = getHistoryJobs();
+    const startIndex = (historyPage - 1) * historyPageSize;
+    const endIndex = Math.min(startIndex + historyPageSize, 100); // Limit to 100 total
+    return allJobs.slice(startIndex, endIndex);
+  };
+
+  const getTotalHistoryPages = () => {
+    const totalJobs = Math.min(getHistoryJobs().length, 100);
+    return Math.ceil(totalJobs / historyPageSize);
   };
 
   const loadMoreUsageHistory = () => {
     setUsageHistoryPage(prev => prev + 1);
+  };
+
+  const getVisibleUsageHistory = () => {
+    const itemsToShow = USAGE_HISTORY_INITIAL_LIMIT + (usageHistoryPage - 1) * USAGE_HISTORY_LOAD_MORE_INCREMENT;
+    return apiUsage.slice(0, itemsToShow);
   };
 
   const getUsageHistoryStats = () => {
@@ -1562,7 +1628,7 @@ export default function APIPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Usage History ({apiUsage.length})
+                History & Download
               </button>
             </nav>
           </div>
@@ -1571,7 +1637,8 @@ export default function APIPage() {
           {activeTab === 'test' && (
             <div className="space-y-8">
               {/* Unified Horizontal Control Bar */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-6 shadow-lg mb-6">
+              {/* API Configuration Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-100 rounded-xl border border-blue-200 p-6 shadow-lg">
                 <div className="flex items-center mb-6">
                   <div className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] rounded-lg p-2 mr-3">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1579,22 +1646,23 @@ export default function APIPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">API Configuration</h2>
-                    <p className="text-sm text-gray-600 mt-1">Configure your API settings and upload files for processing</p>
-                  </div>
+                <div className="ml-4">
+                  <h2 className="text-xl font-bold text-gray-900">API configuration</h2>
+                  <p className="text-sm text-gray-600 mt-1">Configure your API settings and upload files for processing</p>
+                </div>
                 </div>
                 
-                {/* Main Controls Row */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
                     <select
                       value={selectedApiKey}
                       onChange={(e) => setSelectedApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                     >
-                      <option value="">Choose API key...</option>
+                      <option value="">Select an API key</option>
                       {apiKeys.map((key) => (
                         <option key={key.id} value={key.real_key || key.api_key}>
                           {key.key_name} ({key.api_key})
@@ -1608,7 +1676,7 @@ export default function APIPage() {
                     <select
                       value={outputFormat}
                       onChange={(e) => setOutputFormat(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                     >
                       <option value="">Choose format...</option>
                       <option value="json">JSON</option>
@@ -1623,7 +1691,7 @@ export default function APIPage() {
                     <select
                       value={tableMode}
                       onChange={(e) => setTableMode(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                     >
                       <option value="">Choose mode...</option>
                       <option value="individual">Individual</option>
@@ -1754,6 +1822,7 @@ export default function APIPage() {
                   )}
                 </div>
               </div>
+              </div>
 
               {/* Enhanced Processing Status Section */}
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-6 shadow-lg">
@@ -1765,7 +1834,7 @@ export default function APIPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Processing Status</h2>
+                    <h2 className="text-xl font-bold text-gray-900">Processing status</h2>
                     <p className="text-sm text-gray-600 mt-1">Monitor your file processing progress and download results</p>
                   </div>
                 </div>
@@ -1781,7 +1850,8 @@ export default function APIPage() {
                     <p className="text-xs text-gray-500 mt-1">Upload files and click &quot;Process&quot; to see the file processing status</p>
                   </div>
                   ) : (
-                    <div>
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Current Session</h3>
                       {/* Status Bar with Counts */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-4">
@@ -2212,27 +2282,28 @@ export default function APIPage() {
           {/* API Keys Tab */}
           {activeTab === 'keys' && (
             <div className="space-y-6">
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Create New API Key</h2>
-                
-                <div className="flex space-x-4">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">Your API Keys</h2>
+                  <div className="flex space-x-4">
                   <input
                     type="text"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    placeholder="Enter key name..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900"
+                    placeholder="Key name"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                   />
                   <button
                     onClick={createApiKey}
-                    className="bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-6 py-2 rounded-lg hover:scale-105 transition-transform duration-200"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
                     Create Key
                   </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Your API Keys</h2>
                 
                 {apiKeys.length === 0 ? (
@@ -2284,7 +2355,7 @@ export default function APIPage() {
 
           {/* Documentation Tab */}
           {activeTab === 'docs' && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div className="bg-white rounded-lg border border-gray-200 p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-8">Intelligent Data Parser API Documentation</h2>
               
               <div className="space-y-8">
@@ -2629,88 +2700,156 @@ export default function APIPage() {
           {/* Usage History Tab */}
           {activeTab === 'usage' && (
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">API Usage History</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">History & Download</h2>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800">
+                  📝 The maximum number of historical jobs that can be viewed is limited to 100.
+                </p>
+              </div>
               
-              {apiUsage.length === 0 ? (
-                <p className="text-gray-700 text-center py-8">No API usage recorded yet.</p>
+              {getHistoryJobs().length === 0 ? (
+                <p className="text-gray-700 text-center py-8">No processing jobs recorded yet.</p>
               ) : (
                 <>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Endpoint
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Job ID
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Processing Time
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                          Created At
-                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Time</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">File</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Endpoint</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Job ID</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Pages</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Duration</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {getVisibleUsageHistory().map((usage) => (
-                        <tr key={usage.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {usage.endpoint}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {usage.job_id}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              usage.status === 'SUCCEEDED' ? 'bg-green-100 text-green-800' :
-                              usage.status === 'FAILED' ? 'bg-red-100 text-red-800' :
-                              'bg-teal-100 text-teal-800'
-                            }`}>
-                              {usage.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              {getProcessingTime(usage)}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h8l4 4v11a3 3 0 01-3 3h-4M8 7H6a2 2 0 00-2 2v11a3 3 0 003 3h2M8 7v8a2 2 0 002 2h2" />
-                              </svg>
-                              <div>
-                                <div>{new Date(usage.created_at).toLocaleDateString()}</div>
-                                <div className="text-xs text-gray-500">{new Date(usage.created_at).toLocaleTimeString()}</div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {getPaginatedHistory().map((job, index) => {
+                        const date = new Date(job.created_at);
+                        return (
+                          <tr key={`${job.job_id}-${job.endpoint}-${index}`}>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {date.toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {date.toLocaleTimeString()}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {job.file.name}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {job.endpoint}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {job.job_id}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                job.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                job.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                job.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {job.status.toUpperCase()}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {job.pages}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {job.duration.toFixed(6)}s
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {job.status === 'completed' && job.endpoint.includes('/download/') ? (
+                                <button
+                                  onClick={() => {
+                                    const fileStatus = fileProcessingStatus.find(f => f.job_id === job.job_id);
+                                    if (fileStatus?.downloadUrls) {
+                                      const downloadType = job.endpoint.includes('tables') ? 'tables' : 'key-values';
+                                      const format = job.endpoint.split('/').pop() || 'csv';
+                                      const downloadUrl = fileStatus.downloadUrls[downloadType]?.[format];
+                                      if (downloadUrl) {
+                                        handleDownload(downloadUrl, job.job_id, downloadType, format);
+                                      }
+                                    }
+                                  }}
+                                  className="text-teal-600 hover:text-teal-900 font-medium"
+                                >
+                                  Download
+                                </button>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
                 
-                {/* Pagination Controls */}
+                {/* Show Entries and Pagination */}
                 <div className="mt-4 flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    Showing {Math.min(getVisibleUsageHistory().length, apiUsage.length)} of {apiUsage.length} entries
-                  </div>
-                  {getUsageHistoryStats().hasMore && (
-                    <button
-                      onClick={loadMoreUsageHistory}
-                      className="px-4 py-2 text-sm font-medium text-[#00C7BE] bg-white border border-teal-300 rounded-md hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:ring-offset-2 transition-colors"
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-900">Show</span>
+                    <select 
+                      value={historyPageSize} 
+                      onChange={(e) => {
+                        setHistoryPageSize(Number(e.target.value));
+                        setHistoryPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-900"
                     >
-                      Load More...
-                    </button>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                    <span className="text-sm text-gray-900">entries</span>
+                  </div>
+                  
+                  <div className="text-sm text-gray-900">
+                    Showing {Math.min(getHistoryJobs().length, 100)} total entries (max 100 limit)
+                  </div>
+                  
+                  {getTotalHistoryPages() > 1 && (
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setHistoryPage(Math.max(1, historyPage - 1))}
+                        disabled={historyPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                      >
+                        Previous
+                      </button>
+                      
+                      {Array.from({length: Math.min(5, getTotalHistoryPages())}, (_, i) => {
+                        const pageNum = i + Math.max(1, Math.min(historyPage - 2, getTotalHistoryPages() - 4));
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setHistoryPage(pageNum)}
+                            className={`px-3 py-1 text-sm border rounded ${
+                              pageNum === historyPage 
+                                ? 'bg-teal-600 text-white border-teal-600' 
+                                : 'border-gray-300 hover:bg-gray-50 text-gray-900'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      
+                      <button
+                        onClick={() => setHistoryPage(Math.min(getTotalHistoryPages(), historyPage + 1))}
+                        disabled={historyPage === getTotalHistoryPages()}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                      >
+                        Next
+                      </button>
+                    </div>
                   )}
                 </div>
                 </>
