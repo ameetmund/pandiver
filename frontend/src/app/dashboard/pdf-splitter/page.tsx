@@ -120,10 +120,10 @@ export default function PDFSplitterPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter-api/analyze', {
+      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter/analyze', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: formData,
       });
@@ -174,12 +174,12 @@ export default function PDFSplitterPage() {
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('selected_pages', JSON.stringify(selectedPages));
+      formData.append('page_numbers', JSON.stringify(selectedPages));
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter-api/split', {
+      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter/extract', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: formData,
       });
@@ -212,9 +212,9 @@ export default function PDFSplitterPage() {
     if (!activeApiKey) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter-api/jobs/${jobId}/status`, {
+      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter/jobs/${jobId}/status`, {
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
 
@@ -241,9 +241,9 @@ export default function PDFSplitterPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter-api/download/${job.job_id}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter/download/${job.job_id}`, {
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
 
