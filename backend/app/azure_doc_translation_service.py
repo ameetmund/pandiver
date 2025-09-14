@@ -30,6 +30,9 @@ class AzureDocumentTranslationService:
         self.out_sas_token = os.getenv('AZURE_BLOB_OUT_SAS_TOKEN')
         self.config_sas_token = os.getenv('AZURE_BLOB_CONFIG_SAS_TOKEN')
         
+        print(f"DEBUG: Config URL loaded from env: {self.blob_config_url}")
+        print(f"DEBUG: Config SAS token loaded: {self.config_sas_token[:50]}..." if self.config_sas_token else "None")
+        
         if not all([self.doc_translator_key, self.doc_translator_region, self.doc_translator_endpoint]):
             logger.warning("Azure Document Translator credentials not fully configured")
     
@@ -83,6 +86,7 @@ class AzureDocumentTranslationService:
                 folder_name = str(uuid.uuid4())[:8]
                 print(f"DEBUG: Generated random folder_name: {folder_name}")
             target_url_with_sas = f"{self.blob_out_url}/{folder_name}?{self.out_sas_token}"
+            # The config URL already includes the specific file path, so just append SAS token
             glossary_url_with_sas = f"{self.blob_config_url}?{self.config_sas_token}"
             
             print(f"DEBUG: Source Container URL: {source_container_url_with_sas}")
@@ -103,31 +107,67 @@ class AzureDocumentTranslationService:
                 except Exception as e:
                     print(f"DEBUG: Failed to test source container access: {str(e)}")
             
+            # Test glossary accessibility first
+            glossary_accessible = False
+            try:
+                async with aiohttp.ClientSession() as test_session:
+                    async with test_session.head(glossary_url_with_sas, timeout=5) as glossary_test:
+                        print(f"DEBUG: Glossary access test - Status: {glossary_test.status}")
+                        if glossary_test.status == 200:
+                            glossary_accessible = True
+                            print("DEBUG: Glossary is accessible, including in translation request")
+                        else:
+                            print(f"DEBUG: Glossary not accessible (status {glossary_test.status}), proceeding without glossary")
+            except Exception as e:
+                print(f"DEBUG: Failed to test glossary access: {str(e)}, proceeding without glossary")
+
             # Prepare the translation request with file filtering
-            translation_request = {
-                "inputs": [
-                    {
-                        "source": {
-                            "sourceUrl": source_container_url_with_sas,
-                            "filter": {
-                                "prefix": specific_filename
-                            }
-                        },
-                        "targets": [
-                            {
-                                "targetUrl": target_url_with_sas,
-                                "language": target_language,
-                                "glossaries": [
-                                    {
-                                        "glossaryUrl": glossary_url_with_sas,
-                                        "format": "tsv"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            }
+            if glossary_accessible:
+                # Include glossary if accessible
+                translation_request = {
+                    "inputs": [
+                        {
+                            "source": {
+                                "sourceUrl": source_container_url_with_sas,
+                                "filter": {
+                                    "prefix": specific_filename
+                                }
+                            },
+                            "targets": [
+                                {
+                                    "targetUrl": target_url_with_sas,
+                                    "language": target_language,
+                                    "glossaries": [
+                                        {
+                                            "glossaryUrl": glossary_url_with_sas,
+                                            "format": "tsv"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            else:
+                # Proceed without glossary
+                translation_request = {
+                    "inputs": [
+                        {
+                            "source": {
+                                "sourceUrl": source_container_url_with_sas,
+                                "filter": {
+                                    "prefix": specific_filename
+                                }
+                            },
+                            "targets": [
+                                {
+                                    "targetUrl": target_url_with_sas,
+                                    "language": target_language
+                                }
+                            ]
+                        }
+                    ]
+                }
             
             # Add source language if not auto-detect
             if source_language != "auto":

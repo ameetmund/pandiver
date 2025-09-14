@@ -62,7 +62,6 @@ export default function PDFTranslatorPage() {
   const [job, setJob] = useState<TranslationJob | null>(null);
   const [error, setError] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -91,45 +90,108 @@ export default function PDFTranslatorPage() {
   useEffect(() => {
     if (isAuthenticated) {
       loadSupportedLanguages();
-      loadApiKeys();
     }
   }, [isAuthenticated]);
 
   const loadSupportedLanguages = async () => {
     try {
-      const activeApiKey = apiKeys.find(key => key.is_active);
-      if (!activeApiKey) return;
-      
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator/languages', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      // Use the predefined language list for the dashboard UI
+      const supportedLanguagesList = {
+        languages: {
+          "af": { name: "Afrikaans", native_name: "Afrikaans", dir: "ltr" },
+          "sq": { name: "Albanian", native_name: "Shqip", dir: "ltr" },
+          "ar": { name: "Arabic", native_name: "العربية", dir: "rtl" },
+          "az": { name: "Azerbaijani (Latin)", native_name: "Azərbaycan", dir: "ltr" },
+          "ba": { name: "Bashkir", native_name: "башҡорт теле", dir: "ltr" },
+          "eu": { name: "Basque", native_name: "Euskera", dir: "ltr" },
+          "bs": { name: "Bosnian (Latin)", native_name: "Bosanski", dir: "ltr" },
+          "bg": { name: "Bulgarian", native_name: "Български", dir: "ltr" },
+          "yue": { name: "Cantonese (Traditional)", native_name: "粵語 (繁體)", dir: "ltr" },
+          "ca": { name: "Catalan", native_name: "Català", dir: "ltr" },
+          "lzh": { name: "Chinese (Literary)", native_name: "中文 (文言文)", dir: "ltr" },
+          "zh-Hans": { name: "Chinese Simplified", native_name: "中文 (简体)", dir: "ltr" },
+          "zh-Hant": { name: "Chinese Traditional", native_name: "中文 (繁體)", dir: "ltr" },
+          "hr": { name: "Croatian", native_name: "Hrvatski", dir: "ltr" },
+          "cs": { name: "Czech", native_name: "Čeština", dir: "ltr" },
+          "da": { name: "Danish", native_name: "Dansk", dir: "ltr" },
+          "nl": { name: "Dutch", native_name: "Nederlands", dir: "ltr" },
+          "en": { name: "English", native_name: "English", dir: "ltr" },
+          "et": { name: "Estonian", native_name: "Eesti", dir: "ltr" },
+          "fo": { name: "Faroese", native_name: "Føroyskt", dir: "ltr" },
+          "fj": { name: "Fijian", native_name: "Vosa Vakaviti", dir: "ltr" },
+          "fil": { name: "Filipino", native_name: "Filipino", dir: "ltr" },
+          "fi": { name: "Finnish", native_name: "Suomi", dir: "ltr" },
+          "fr": { name: "French", native_name: "Français", dir: "ltr" },
+          "fr-ca": { name: "French (Canada)", native_name: "Français (Canada)", dir: "ltr" },
+          "gl": { name: "Galician", native_name: "Galego", dir: "ltr" },
+          "de": { name: "German", native_name: "Deutsch", dir: "ltr" },
+          "ht": { name: "Haitian Creole", native_name: "Kreyòl ayisyen", dir: "ltr" },
+          "hi": { name: "Hindi", native_name: "हिन्दी", dir: "ltr" },
+          "mww": { name: "Hmong Daw (Latin)", native_name: "Hmong Daw", dir: "ltr" },
+          "hu": { name: "Hungarian", native_name: "Magyar", dir: "ltr" },
+          "is": { name: "Icelandic", native_name: "Íslenska", dir: "ltr" },
+          "id": { name: "Indonesian", native_name: "Bahasa Indonesia", dir: "ltr" },
+          "ia": { name: "Interlingua", native_name: "Interlingua", dir: "ltr" },
+          "ikt": { name: "Inuinnaqtun", native_name: "Inuinnaqtun", dir: "ltr" },
+          "iu": { name: "Inuktitut (Latin)", native_name: "Inuktitut", dir: "ltr" },
+          "ga": { name: "Irish", native_name: "Gaeilge", dir: "ltr" },
+          "it": { name: "Italian", native_name: "Italiano", dir: "ltr" },
+          "ja": { name: "Japanese", native_name: "日本語", dir: "ltr" },
+          "kn": { name: "Kannada", native_name: "ಕನ್ನಡ", dir: "ltr" },
+          "kk": { name: "Kazakh (Cyrillic)", native_name: "Қазақ Тілі", dir: "ltr" },
+          "kk-latn": { name: "Kazakh (Latin)", native_name: "Qazaq Tili", dir: "ltr" },
+          "ko": { name: "Korean", native_name: "한국어", dir: "ltr" },
+          "kmr": { name: "Kurdish (Latin) (Northern)", native_name: "Kurdî", dir: "ltr" },
+          "ky": { name: "Kyrgyz (Cyrillic)", native_name: "Кыргызча", dir: "ltr" },
+          "lv": { name: "Latvian", native_name: "Latviešu", dir: "ltr" },
+          "lt": { name: "Lithuanian", native_name: "Lietuvių", dir: "ltr" },
+          "mk": { name: "Macedonian", native_name: "Македонски", dir: "ltr" },
+          "mg": { name: "Malagasy", native_name: "Malagasy", dir: "ltr" },
+          "ms": { name: "Malay (Latin)", native_name: "Bahasa Melayu", dir: "ltr" },
+          "ml": { name: "Malayalam", native_name: "മലയാളം", dir: "ltr" },
+          "mt": { name: "Maltese", native_name: "Malti", dir: "ltr" },
+          "mi": { name: "Maori", native_name: "Te Reo Māori", dir: "ltr" },
+          "mr": { name: "Marathi", native_name: "मराठी", dir: "ltr" },
+          "mn-cyrl": { name: "Mongolian (Cyrillic)", native_name: "Монгол", dir: "ltr" },
+          "ne": { name: "Nepali", native_name: "नेपाली", dir: "ltr" },
+          "nb": { name: "Norwegian Bokmål", native_name: "Norsk Bokmål", dir: "ltr" },
+          "pl": { name: "Polish", native_name: "Polski", dir: "ltr" },
+          "pt": { name: "Portuguese (Brazil)", native_name: "Português (Brasil)", dir: "ltr" },
+          "pt-pt": { name: "Portuguese (Portugal)", native_name: "Português (Portugal)", dir: "ltr" },
+          "pa": { name: "Punjabi", native_name: "ਪੰਜਾਬੀ", dir: "ltr" },
+          "otq": { name: "Queretaro Otomi", native_name: "Hñähñu", dir: "ltr" },
+          "ro": { name: "Romanian", native_name: "Română", dir: "ltr" },
+          "ru": { name: "Russian", native_name: "Русский", dir: "ltr" },
+          "sm": { name: "Samoan (Latin)", native_name: "Gagana Sāmoa", dir: "ltr" },
+          "sr-cyrl": { name: "Serbian (Cyrillic)", native_name: "Српски", dir: "ltr" },
+          "sr-latn": { name: "Serbian (Latin)", native_name: "Srpski", dir: "ltr" },
+          "sk": { name: "Slovak", native_name: "Slovenčina", dir: "ltr" },
+          "sl": { name: "Slovenian", native_name: "Slovenščina", dir: "ltr" },
+          "so": { name: "Somali", native_name: "Soomaali", dir: "ltr" },
+          "es": { name: "Spanish", native_name: "Español", dir: "ltr" },
+          "sw": { name: "Swahili (Latin)", native_name: "Kiswahili", dir: "ltr" },
+          "sv": { name: "Swedish", native_name: "Svenska", dir: "ltr" },
+          "ty": { name: "Tahitian", native_name: "Reo Tahiti", dir: "ltr" },
+          "ta": { name: "Tamil", native_name: "தமிழ்", dir: "ltr" },
+          "tt": { name: "Tatar (Latin)", native_name: "Tatarça", dir: "ltr" },
+          "te": { name: "Telugu", native_name: "తెలుగు", dir: "ltr" },
+          "to": { name: "Tongan", native_name: "Faka Tonga", dir: "ltr" },
+          "tr": { name: "Turkish", native_name: "Türkçe", dir: "ltr" },
+          "tk": { name: "Turkmen (Latin)", native_name: "Türkmen Dili", dir: "ltr" },
+          "uk": { name: "Ukrainian", native_name: "Українська", dir: "ltr" },
+          "hsb": { name: "Upper Sorbian", native_name: "Hornjoserbšćina", dir: "ltr" },
+          "uz": { name: "Uzbek (Latin)", native_name: "Uzbek", dir: "ltr" },
+          "vi": { name: "Vietnamese", native_name: "Tiếng Việt", dir: "ltr" },
+          "cy": { name: "Welsh", native_name: "Cymraeg", dir: "ltr" },
+          "yua": { name: "Yucatec Maya", native_name: "Yucatec Maya", dir: "ltr" },
+          "zu": { name: "Zulu", native_name: "Isi-Zulu", dir: "ltr" }
         },
-      });
-
-      if (response.ok) {
-        const languages = await response.json();
-        setSupportedLanguages(languages);
-      }
+        auto_detect_supported: true
+      };
+      
+      setSupportedLanguages(supportedLanguagesList);
     } catch (err) {
       console.error('Failed to load supported languages:', err);
-    }
-  };
-
-  const loadApiKeys = async () => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const keys = await response.json();
-        setApiKeys(keys);
-      }
-    } catch (err) {
-      console.error('Failed to load API keys:', err);
     }
   };
 
@@ -152,10 +214,9 @@ export default function PDFTranslatorPage() {
     setError('');
 
     try {
-      // Get the first active API key
-      const activeApiKey = apiKeys.find(key => key.is_active);
-      if (!activeApiKey) {
-        setError('No active API key found. Please create an API key in the API section.');
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
         return;
       }
 
@@ -196,9 +257,9 @@ export default function PDFTranslatorPage() {
     setError('');
 
     try {
-      const activeApiKey = apiKeys.find(key => key.is_active);
-      if (!activeApiKey) {
-        setError('No active API key found. Please create an API key in the API section.');
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
         return;
       }
 
@@ -244,8 +305,8 @@ export default function PDFTranslatorPage() {
   };
 
   const pollJobStatus = async (jobId: string) => {
-    const activeApiKey = apiKeys.find(key => key.is_active);
-    if (!activeApiKey) return;
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
 
     try {
       const response = await fetch(`http://localhost:8000/api/v1/pdf-translator/jobs/${jobId}/status`, {
@@ -271,9 +332,9 @@ export default function PDFTranslatorPage() {
     if (!job?.job_id) return;
 
     try {
-      const activeApiKey = apiKeys.find(key => key.is_active);
-      if (!activeApiKey) {
-        setError('No active API key found. Please create an API key in the API section.');
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
         return;
       }
 
