@@ -124,7 +124,7 @@ export default function PDFTranslatorAPIPage() {
   }, [selectedApiKey]);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       window.location.href = '/auth/login';
       return;
@@ -141,18 +141,18 @@ export default function PDFTranslatorAPIPage() {
         const userData = await response.json();
         setUser(userData);
       } else {
-        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         window.location.href = '/auth/login';
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
       window.location.href = '/auth/login';
     }
   };
 
   const fetchApiKeys = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     try {
       const response = await fetch('http://localhost:8000/auth/api-keys', {
         headers: {
@@ -238,7 +238,7 @@ export default function PDFTranslatorAPIPage() {
       return;
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     try {
       const response = await fetch('http://localhost:8000/auth/api-keys', {
         method: 'POST',
@@ -270,7 +270,7 @@ export default function PDFTranslatorAPIPage() {
   const deleteApiKey = async (keyId: number) => {
     if (!confirm('Are you sure you want to delete this API key?')) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     try {
       const response = await fetch(`http://localhost:8000/auth/api-keys/${keyId}`, {
         method: 'DELETE',

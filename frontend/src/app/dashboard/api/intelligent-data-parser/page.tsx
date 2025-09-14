@@ -135,7 +135,7 @@ export default function APIPage() {
   useEffect(() => {
     const initializeData = async () => {
       // Wait a bit to ensure localStorage is ready
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const userData = localStorage.getItem('user');
       
       if (!token || !userData) {
@@ -177,7 +177,7 @@ export default function APIPage() {
 
   const loadUser = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       if (!token) return;
 
       const response = await fetch('http://localhost:8000/auth/me', {
@@ -195,7 +195,7 @@ export default function APIPage() {
 
   const loadApiKeys = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       console.log('Loading API keys with token:', token ? 'Token present' : 'No token');
       
       if (!token) {
@@ -236,7 +236,7 @@ export default function APIPage() {
 
   const loadApiUsage = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       
       if (!token) {
         console.log('No access token available, skipping usage history load');
@@ -273,7 +273,7 @@ export default function APIPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       console.log('Creating API key with token:', token ? `Token present (${token.substring(0, 20)}...)` : 'No token');
       console.log('Full token:', token);
       const response = await fetch('http://localhost:8000/auth/api-keys', {
@@ -313,7 +313,7 @@ export default function APIPage() {
 
   const deleteApiKey = async (keyId: number) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`http://localhost:8000/auth/api-keys/${keyId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
