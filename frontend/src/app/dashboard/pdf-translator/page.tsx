@@ -100,9 +100,9 @@ export default function PDFTranslatorPage() {
       const activeApiKey = apiKeys.find(key => key.is_active);
       if (!activeApiKey) return;
       
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator-api/languages', {
+      const response = await fetch('http://localhost:8000/api/v1/pdf-translator/languages', {
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
 
@@ -162,10 +162,10 @@ export default function PDFTranslatorPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator-api/analyze', {
+      const response = await fetch('http://localhost:8000/api/v1/pdf-translator/analyze', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: formData,
       });
@@ -208,10 +208,10 @@ export default function PDFTranslatorPage() {
       formData.append('target_language', targetLanguage);
       formData.append('translation_method', 'document');
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator-api/translate', {
+      const response = await fetch('http://localhost:8000/api/v1/pdf-translator/translate', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: formData,
       });
@@ -248,9 +248,9 @@ export default function PDFTranslatorPage() {
     if (!activeApiKey) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-translator-api/jobs/${jobId}/status`, {
+      const response = await fetch(`http://localhost:8000/api/v1/pdf-translator/jobs/${jobId}/status`, {
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
 
@@ -277,9 +277,9 @@ export default function PDFTranslatorPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-translator-api/download/${job.job_id}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/pdf-translator/download/${job.job_id}`, {
         headers: {
-          'Authorization': `Bearer ${activeApiKey.api_key}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
 
