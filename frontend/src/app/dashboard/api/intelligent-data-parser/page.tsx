@@ -1652,68 +1652,27 @@ export default function APIPage() {
                 </div>
                 </div>
                 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-                    <select
-                      value={selectedApiKey}
-                      onChange={(e) => setSelectedApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                    >
-                      <option value="">Select an API key</option>
-                      {apiKeys.map((key) => (
-                        <option key={key.id} value={key.real_key || key.api_key}>
-                          {key.key_name} ({key.api_key})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Output Format</label>
-                    <select
-                      value={outputFormat}
-                      onChange={(e) => setOutputFormat(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                    >
-                      <option value="">Choose format...</option>
-                      <option value="json">JSON</option>
-                      <option value="csv">CSV</option>
-                      <option value="xlsx">Excel</option>
-                      <option value="txt">TXT</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Table Mode</label>
-                    <select
-                      value={tableMode}
-                      onChange={(e) => setTableMode(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                    >
-                      <option value="">Choose mode...</option>
-                      <option value="individual">Individual</option>
-                      <option value="merged">Merged</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
-                    <button
-                      onClick={handleProcessFiles}
-                      disabled={!selectedApiKey || selectedFiles.length === 0 || !outputFormat || !tableMode}
-                      className="w-full bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-4 py-2 rounded-full hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
-                    >
-                      Process File{selectedFiles.length > 1 ? 's' : ''}
-                    </button>
-                  </div>
+              <div className="space-y-4">
+                {/* Step 1: API Key Selection - Full Width */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                  <select
+                    value={selectedApiKey}
+                    onChange={(e) => setSelectedApiKey(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 bg-white"
+                  >
+                    <option value="">Select an API key</option>
+                    {apiKeys.map((key) => (
+                      <option key={key.id} value={key.real_key || key.api_key}>
+                        {key.key_name} ({key.api_key})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Modern Drag & Drop File Upload Section */}
+                {/* Step 2: File Upload - Full Width, Compact */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">File Upload</h3>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload PDF Files</label>
                   <input
                     type="file"
                     multiple
@@ -1723,7 +1682,7 @@ export default function APIPage() {
                     ref={fileInputRef}
                   />
                   <div
-                    className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
+                    className={`relative border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${
                       isDragOver
                         ? 'border-[#00C7BE] bg-teal-50'
                         : 'border-gray-300 bg-gray-50 hover:border-[#00C7BE] hover:bg-teal-50'
@@ -1732,12 +1691,12 @@ export default function APIPage() {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                   >
-                    <div className="flex flex-col items-center justify-center space-y-4">
-                      <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${
+                    <div className="flex items-center justify-center space-x-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                         isDragOver ? 'bg-teal-100' : 'bg-gray-100'
                       }`}>
                         <svg 
-                          className={`w-8 h-8 transition-colors ${isDragOver ? 'text-[#00C7BE]' : 'text-gray-500'}`} 
+                          className={`w-5 h-5 transition-colors ${isDragOver ? 'text-[#00C7BE]' : 'text-gray-500'}`} 
                           fill="none" 
                           stroke="currentColor" 
                           viewBox="0 0 24 24"
@@ -1750,69 +1709,55 @@ export default function APIPage() {
                           />
                         </svg>
                       </div>
-                      <div>
-                        <h4 className={`text-lg font-semibold transition-colors ${isDragOver ? 'text-teal-700' : 'text-gray-700'}`}>
-                          {isDragOver ? 'Drop files here' : 'Drag & drop your files here'}
-                        </h4>
-                        <p className="text-sm text-gray-500 mt-1">
-                          or <button 
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-[#00C7BE] hover:text-teal-800 font-medium underline"
-                          >
-                            browse to choose files
-                          </button>
+                      <div className="text-left">
+                        <p className={`text-sm font-medium transition-colors ${isDragOver ? 'text-teal-700' : 'text-gray-700'}`}>
+                          {isDragOver ? 'Drop files here' : 'Drag & drop files or'} 
+                          {!isDragOver && (
+                            <button 
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="text-[#00C7BE] hover:text-teal-800 font-medium ml-1"
+                            >
+                              browse
+                            </button>
+                          )}
                         </p>
+                        <p className="text-xs text-gray-500">PDF files only, max 10MB each</p>
                       </div>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <span>Supported format: PDF</span>
+                      {selectedFiles.length > 0 && (
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-700">{selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''}</p>
+                          <button
+                            onClick={() => {
+                              setSelectedFiles([]);
+                              if (fileInputRef.current) fileInputRef.current.value = '';
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            Clear All
+                          </button>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v1H8V5z" />
-                          </svg>
-                          <span>Max 10MB per file</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                     {isDragOver && (
-                      <div className="absolute inset-0 bg-teal-100 bg-opacity-50 rounded-xl flex items-center justify-center">
-                        <div className="text-teal-700 text-lg font-semibold">Release to upload</div>
+                      <div className="absolute inset-0 bg-teal-100 bg-opacity-50 rounded-lg flex items-center justify-center">
+                        <div className="text-teal-700 text-sm font-semibold">Release to upload</div>
                       </div>
                     )}
                   </div>
                   
                   {selectedFiles.length > 0 && (
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-medium text-gray-900">
-                          Selected Files ({selectedFiles.length})
-                        </h4>
-                        <button
-                          onClick={() => {
-                            setSelectedFiles([]);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                          }}
-                          className="text-xs text-red-600 hover:text-red-800"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                    <div className="mt-2 max-h-20 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {selectedFiles.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg border text-sm">
+                          <div key={index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
                             <div className="flex items-center space-x-2 flex-1 min-w-0">
-                              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                               <span className="text-gray-800 truncate font-medium">{file.name}</span>
                             </div>
-                            <span className="text-gray-500 text-xs ml-2 flex-shrink-0">
+                            <span className="text-gray-500 flex-shrink-0 ml-2">
                               {(file.size / 1024 / 1024).toFixed(1)}MB
                             </span>
                           </div>
@@ -1820,6 +1765,54 @@ export default function APIPage() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Step 3: Configuration & Process - Three Column Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Output Format */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Output Format</label>
+                    <select
+                      value={outputFormat}
+                      onChange={(e) => setOutputFormat(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 bg-white"
+                    >
+                      <option value="">Choose format...</option>
+                      <option value="json">JSON</option>
+                      <option value="csv">CSV</option>
+                      <option value="xlsx">Excel</option>
+                      <option value="txt">TXT</option>
+                    </select>
+                  </div>
+                  
+                  {/* Table Mode */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Table Mode</label>
+                    <select
+                      value={tableMode}
+                      onChange={(e) => setTableMode(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 bg-white"
+                    >
+                      <option value="">Choose mode...</option>
+                      <option value="individual">Individual</option>
+                      <option value="merged">Merged</option>
+                    </select>
+                  </div>
+
+                  {/* Process Files */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                    <button
+                      onClick={handleProcessFiles}
+                      disabled={!selectedApiKey || selectedFiles.length === 0 || !outputFormat || !tableMode}
+                      className="w-full bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-4 py-2 rounded-lg hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Process {selectedFiles.length || 0}
+                    </button>
+                  </div>
                 </div>
               </div>
               </div>
@@ -1852,18 +1845,70 @@ export default function APIPage() {
                   ) : (
                     <div className="mb-6">
                       <h3 className="text-lg font-medium text-gray-900 mb-4">Current Session</h3>
-                      {/* Status Bar with Counts */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-4">
-                          <span className="text-sm font-medium text-gray-700">
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      
+                      {/* Quick Stats - Tile Structure */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                          <div className="flex items-center">
+                            <div className="bg-blue-500 p-2 rounded-lg">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
-                              {getProcessingStats().completed} Completed • {getProcessingStats().processing} Processing • {getProcessingStats().pending} Pending
                             </div>
-                            {getProcessingStats().failed > 0 && ` • ${getProcessingStats().failed} Failed`}
-                          </span>
+                            <div className="ml-3">
+                              <p className="text-2xl font-bold text-blue-700">{getProcessingStats().total}</p>
+                              <p className="text-xs text-blue-600">Total Files</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                          <div className="flex items-center">
+                            <div className="bg-green-500 p-2 rounded-lg">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-2xl font-bold text-green-700">{getProcessingStats().completed}</p>
+                              <p className="text-xs text-green-600">Completed</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
+                          <div className="flex items-center">
+                            <div className="bg-yellow-500 p-2 rounded-lg">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-2xl font-bold text-yellow-700">{getProcessingStats().processing}</p>
+                              <p className="text-xs text-yellow-600">Processing</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                          <div className="flex items-center">
+                            <div className="bg-gray-500 p-2 rounded-lg">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-2xl font-bold text-gray-700">{getProcessingStats().pending}</p>
+                              <p className="text-xs text-gray-600">Pending</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Search and Download Controls */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-700">Search & Actions:</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
