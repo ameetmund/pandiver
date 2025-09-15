@@ -1767,8 +1767,8 @@ export default function APIPage() {
                   )}
                 </div>
 
-                {/* Step 3: Configuration & Process - Three Column Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Step 3: Configuration - Two Column Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Output Format */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Output Format</label>
@@ -1798,21 +1798,21 @@ export default function APIPage() {
                       <option value="merged">Merged</option>
                     </select>
                   </div>
+                </div>
 
-                  {/* Process Files */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
-                    <button
-                      onClick={handleProcessFiles}
-                      disabled={!selectedApiKey || selectedFiles.length === 0 || !outputFormat || !tableMode}
-                      className="w-full bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-4 py-2 rounded-lg hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Process {selectedFiles.length || 0}
-                    </button>
-                  </div>
+                {/* Step 4: Process Files - Full Width Action Button */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                  <button
+                    onClick={handleProcessFiles}
+                    disabled={!selectedApiKey || selectedFiles.length === 0 || !outputFormat || !tableMode}
+                    className="w-full bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-4 py-3 rounded-lg hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    {isProcessingMultiple ? 'Processing...' : `Process ${selectedFiles.length || 0} File${selectedFiles.length !== 1 ? 's' : ''}`}
+                  </button>
                 </div>
               </div>
               </div>

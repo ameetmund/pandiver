@@ -700,146 +700,204 @@ export default function PDFSplitterAPIPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Configuration */}
-                <div className="space-y-6">
-                  {/* API Key Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-                    <select
-                      value={selectedApiKey}
-                      onChange={(e) => setSelectedApiKey(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                    >
-                      <option value="">Select an API key</option>
-                      {apiKeys.map((key) => (
-                        <option key={key.id} value={key.api_key}>
-                          {key.key_name} - {key.api_key.substring(0, 10)}...
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="space-y-4">
+                {/* Step 1: API Key Selection - Full Width */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                  <select
+                    value={selectedApiKey}
+                    onChange={(e) => setSelectedApiKey(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 bg-white"
+                  >
+                    <option value="">Select an API key</option>
+                    {apiKeys.map((key) => (
+                      <option key={key.id} value={key.api_key}>
+                        {key.key_name} - {key.api_key.substring(0, 10)}...
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {/* File Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload PDF Files
-                    </label>
+                {/* Step 2: File Upload - Full Width, Compact */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload PDF Files</label>
+                  <div className="relative border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 border-gray-300 bg-gray-50 hover:border-[#00C7BE] hover:bg-teal-50">
                     <input
                       ref={fileInputRef}
                       type="file"
                       multiple
                       accept=".pdf"
                       onChange={handleFileSelect}
-                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                      className="hidden"
                     />
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        Selected: {selectedFiles.map(f => f.name).join(', ')}
+                    <div className="flex items-center justify-center space-x-4">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100">
+                        <svg 
+                          className="w-5 h-5 text-gray-500" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" 
+                          />
+                        </svg>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Page Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Page Selection</label>
-                    <div className="space-y-2">
-                      <label className="flex items-center text-gray-900">
-                        <input
-                          type="radio"
-                          name="pageSelection"
-                          value="all"
-                          checked={pageSelection === 'all'}
-                          onChange={(e) => setPageSelection(e.target.value)}
-                          className="mr-2"
-                        />
-                        Extract all pages
-                      </label>
-                      <label className="flex items-center text-gray-900">
-                        <input
-                          type="radio"
-                          name="pageSelection"
-                          value="specific"
-                          checked={pageSelection === 'specific'}
-                          onChange={(e) => setPageSelection(e.target.value)}
-                          className="mr-2"
-                        />
-                        Specific pages (e.g., 1,3,5)
-                      </label>
-                      {pageSelection === 'specific' && (
-                        <input
-                          type="text"
-                          placeholder="1,3,5"
-                          value={specificPages}
-                          onChange={(e) => setSpecificPages(e.target.value)}
-                          className="ml-6 px-3 py-1 border border-gray-300 rounded text-sm w-32 text-gray-900 bg-white"
-                        />
-                      )}
-                      <label className="flex items-center text-gray-900">
-                        <input
-                          type="radio"
-                          name="pageSelection"
-                          value="range"
-                          checked={pageSelection === 'range'}
-                          onChange={(e) => setPageSelection(e.target.value)}
-                          className="mr-2"
-                        />
-                        Page range
-                      </label>
-                      {pageSelection === 'range' && (
-                        <div className="ml-6 flex items-center space-x-2">
-                          <input
-                            type="number"
-                            placeholder="Start"
-                            value={rangeStart}
-                            onChange={(e) => setRangeStart(e.target.value)}
-                            className="px-3 py-1 border border-gray-300 rounded text-sm w-20 text-gray-900 bg-white"
-                            min="1"
-                          />
-                          <span className="text-gray-900">to</span>
-                          <input
-                            type="number"
-                            placeholder="End"
-                            value={rangeEnd}
-                            onChange={(e) => setRangeEnd(e.target.value)}
-                            className="px-3 py-1 border border-gray-300 rounded text-sm w-20 text-gray-900 bg-white"
-                            min="1"
-                          />
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-gray-700">
+                          Drag & drop files or 
+                          <button 
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-[#00C7BE] hover:text-teal-800 font-medium ml-1"
+                          >
+                            browse
+                          </button>
+                        </p>
+                        <p className="text-xs text-gray-500">PDF files only, max 10MB each</p>
+                      </div>
+                      {selectedFiles.length > 0 && (
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-700">{selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''}</p>
+                          <button
+                            onClick={() => {
+                              setSelectedFiles([]);
+                              if (fileInputRef.current) fileInputRef.current.value = '';
+                            }}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            Clear All
+                          </button>
                         </div>
                       )}
                     </div>
                   </div>
+                  
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-2 max-h-20 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between bg-white p-2 rounded border text-xs">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-gray-800 truncate font-medium">{file.name}</span>
+                            </div>
+                            <span className="text-gray-500 flex-shrink-0 ml-2">
+                              {(file.size / 1024 / 1024).toFixed(1)}MB
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Right Column - Actions */}
-                <div className="space-y-6">
-                  <div className="bg-white p-4 rounded-lg border">
-                    <h3 className="font-medium text-gray-900 mb-3">Processing Actions</h3>
-                    <div className="space-y-3">
-                      <button
-                        onClick={handleProcessFiles}
-                        disabled={isProcessingMultiple || selectedFiles.length === 0 || !selectedApiKey}
-                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        {isProcessingMultiple ? 'Processing...' : 'Process Files'}
-                      </button>
+                {/* Step 3: Page Selection - Full Width */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Page Selection</label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center p-3 border border-gray-300 rounded-lg hover:border-[#00C7BE] transition-colors">
+                      <input
+                        type="radio"
+                        name="pageSelection"
+                        value="all"
+                        checked={pageSelection === 'all'}
+                        onChange={(e) => setPageSelection(e.target.value)}
+                        className="h-4 w-4 text-[#00C7BE] focus:ring-[#00C7BE] border-gray-300"
+                      />
+                      <label className="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                        Extract all pages
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center p-3 border border-gray-300 rounded-lg hover:border-[#00C7BE] transition-colors">
+                      <input
+                        type="radio"
+                        name="pageSelection"
+                        value="specific"
+                        checked={pageSelection === 'specific'}
+                        onChange={(e) => setPageSelection(e.target.value)}
+                        className="h-4 w-4 text-[#00C7BE] focus:ring-[#00C7BE] border-gray-300"
+                      />
+                      <label className="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                        Specific pages
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center p-3 border border-gray-300 rounded-lg hover:border-[#00C7BE] transition-colors">
+                      <input
+                        type="radio"
+                        name="pageSelection"
+                        value="range"
+                        checked={pageSelection === 'range'}
+                        onChange={(e) => setPageSelection(e.target.value)}
+                        className="h-4 w-4 text-[#00C7BE] focus:ring-[#00C7BE] border-gray-300"
+                      />
+                      <label className="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                        Page range
+                      </label>
                     </div>
                   </div>
+                  
+                  {/* Conditional inputs for specific and range */}
+                  {pageSelection === 'specific' && (
+                    <div className="mt-3">
+                      <input
+                        type="text"
+                        placeholder="Enter pages like: 1,3,5 or 1-3,7,10-12"
+                        value={specificPages}
+                        onChange={(e) => setSpecificPages(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 bg-white"
+                      />
+                    </div>
+                  )}
+                  
+                  {pageSelection === 'range' && (
+                    <div className="mt-3 grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Start Page</label>
+                        <input
+                          type="number"
+                          placeholder="1"
+                          value={rangeStart}
+                          onChange={(e) => setRangeStart(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 bg-white"
+                          min="1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">End Page</label>
+                        <input
+                          type="number"
+                          placeholder="10"
+                          value={rangeEnd}
+                          onChange={(e) => setRangeEnd(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C7BE] focus:border-transparent text-gray-900 bg-white"
+                          min="1"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Quick Stats */}
-                  <div className="bg-white p-4 rounded-lg border">
-                    <h3 className="font-medium text-gray-900 mb-3">Quick Stats</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-900">Files selected:</span>
-                        <span className="font-medium text-gray-900">{selectedFiles.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-900">Processing jobs:</span>
-                        <span className="font-medium text-gray-900">{processingJobs.length}</span>
-                      </div>
-                    </div>
-                  </div>
+                {/* Step 4: Process Files - Full Width */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                  <button
+                    onClick={handleProcessFiles}
+                    disabled={isProcessingMultiple || selectedFiles.length === 0 || !selectedApiKey}
+                    className="w-full bg-gradient-to-r from-[#00C7BE] to-[#086C67] text-white px-4 py-3 rounded-lg hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    {isProcessingMultiple ? 'Processing...' : `Process ${selectedFiles.length || 0} File${selectedFiles.length !== 1 ? 's' : ''}`}
+                  </button>
                 </div>
               </div>
             </div>
@@ -856,6 +914,65 @@ export default function PDFSplitterAPIPage() {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Processing Status</h2>
                   <p className="text-sm text-gray-600 mt-1">Monitor your file processing progress and download results</p>
+                </div>
+              </div>
+
+              {/* Quick Stats - Tile Structure */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center">
+                    <div className="bg-blue-500 p-2 rounded-lg">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-2xl font-bold text-blue-700">{selectedFiles.length}</p>
+                      <p className="text-xs text-blue-600">Total Files</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                  <div className="flex items-center">
+                    <div className="bg-green-500 p-2 rounded-lg">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-2xl font-bold text-green-700">{fileProcessingStatus.filter(f => f.status === 'completed').length}</p>
+                      <p className="text-xs text-green-600">Completed</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center">
+                    <div className="bg-yellow-500 p-2 rounded-lg">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-2xl font-bold text-yellow-700">{fileProcessingStatus.filter(f => f.status === 'processing').length}</p>
+                      <p className="text-xs text-yellow-600">Processing</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center">
+                    <div className="bg-gray-500 p-2 rounded-lg">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-2xl font-bold text-gray-700">{fileProcessingStatus.filter(f => f.status === 'pending').length}</p>
+                      <p className="text-xs text-gray-600">Pending</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
