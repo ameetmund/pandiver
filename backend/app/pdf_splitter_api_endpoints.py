@@ -1,20 +1,64 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, Form, status
 from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any, Optional
+from typing import List, Any, Optional
 import json
 import uuid
 import os
 import tempfile
 from datetime import datetime
 from io import BytesIO
+import hashlib
 
-from .models import PDFSplitterJob, User as UserModel, ApiKey, PDFSplitterApiUsage
+from .models import PDFSplitterJob, User as UserModel, ApiKey, ApiUsage
 from .pdf_splitter_service import PDFSplitterService
-from .auth import verify_api_key, get_db
+from .auth import get_db
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/pdf-splitter-api", tags=["PDF Splitter API"])
+
+# Security scheme
+security = HTTPBearer()
+
+# API Key Authentication
+async def get_api_key_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Authenticate user via API key"""
+    api_key = credentials.credentials
+    
+    # Try to find API key in plain text format first (for compatibility with main.py endpoints)
+    db_api_key = db.query(ApiKey).filter(
+        ApiKey.api_key == api_key,
+        ApiKey.is_active == True
+    ).first()
+    
+    # If not found in plain text, try hashed format
+    if not db_api_key:
+        api_key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        db_api_key = db.query(ApiKey).filter(
+            ApiKey.api_key == api_key_hash,
+            ApiKey.is_active == True
+        ).first()
+    
+    if not db_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key"
+        )
+    
+    # Get user
+    user = db.query(UserModel).filter(UserModel.id == db_api_key.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    # Update last_used_at timestamp
+    db_api_key.last_used_at = datetime.utcnow()
+    db.commit()
+    
+    return user, db_api_key
 
 # Pydantic models for requests/responses
 class PDFSplitterAnalysisResponse(BaseModel):
@@ -64,7 +108,7 @@ splitter_service = PDFSplitterService()
 @router.post("/analyze", response_model=PDFSplitterAnalysisResponse)
 async def analyze_pdf_for_splitting(
     file: UploadFile = File(...),
-    auth_info: Dict = Depends(verify_api_key),
+    user_and_key = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -74,10 +118,12 @@ async def analyze_pdf_for_splitting(
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
     
     try:
+        user, api_key = user_and_key
+        
         # Create usage tracking record
-        usage_record = PDFSplitterApiUsage(
-            api_key_id=auth_info["api_key"].id,
-            user_id=auth_info["user"].id,
+        usage_record = ApiUsage(
+            api_key_id=api_key.id,
+            user_id=user.id,
             endpoint="/analyze",
             job_id=str(uuid.uuid4()),
             status="IN_PROGRESS",
@@ -89,7 +135,7 @@ async def analyze_pdf_for_splitting(
         start_time = datetime.utcnow()
         pdf_bytes = await file.read()
         print(f"DEBUG: PDF Splitter API - analyzing PDF {file.filename}, size: {len(pdf_bytes)} bytes")
-        analysis_result = await splitter_service.analyze_pdf_for_splitting(pdf_bytes, file.filename)
+        analysis_result = await splitter_service.analyze_pdf(pdf_bytes, file.filename)
         processing_time = (datetime.utcnow() - start_time).total_seconds()
         
         # Update usage record
@@ -98,7 +144,13 @@ async def analyze_pdf_for_splitting(
         usage_record.completed_at = datetime.utcnow()
         db.commit()
         
-        return PDFSplitterAnalysisResponse(**analysis_result)
+        # Transform result to match expected format
+        return PDFSplitterAnalysisResponse(
+            total_pages=analysis_result["total_pages"],
+            filename=analysis_result["filename"],
+            file_size_bytes=len(pdf_bytes),
+            splittable=analysis_result["total_pages"] > 0
+        )
         
     except Exception as e:
         print(f"ERROR: PDF Splitter API analyze failed: {str(e)}")
@@ -123,7 +175,7 @@ async def start_pdf_splitting(
     file: UploadFile = File(...),
     selected_pages: str = Form(...),  # JSON string of page numbers
     output_filename: Optional[str] = Form(None),
-    auth_info: Dict = Depends(verify_api_key),
+    user_and_key = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -143,9 +195,10 @@ async def start_pdf_splitting(
         
         # Read and validate PDF
         pdf_bytes = await file.read()
-        analysis = await splitter_service.analyze_pdf_for_splitting(pdf_bytes, file.filename)
+        metadata = await splitter_service.get_pdf_metadata(pdf_bytes)
         
-        if not analysis["splittable"]:
+        # Check if pages exist (simplified validation)
+        if metadata["page_count"] < 1:
             raise HTTPException(
                 status_code=400, 
                 detail="PDF cannot be split"
@@ -156,17 +209,19 @@ async def start_pdf_splitting(
             base_name = os.path.splitext(file.filename)[0]
             output_filename = f"{base_name}_split.pdf"
         
+        user, api_key = user_and_key
+        
         # Create job
         job_id = str(uuid.uuid4())
         
         job = PDFSplitterJob(
             job_id=job_id,
-            user_id=auth_info["user"].id,
-            api_key_id=auth_info["api_key"].id,
+            user_id=user.id,
+            api_key_id=api_key.id,
             original_filename=file.filename,
             selected_pages=json.dumps(pages_list),
             output_filename=output_filename,
-            total_pages=analysis["total_pages"],
+            total_pages=metadata["page_count"],
             status="PENDING",
             file_size_bytes=len(pdf_bytes)
         )
@@ -175,14 +230,13 @@ async def start_pdf_splitting(
         db.commit()
         
         # Create usage tracking record
-        usage_record = PDFSplitterApiUsage(
-            api_key_id=auth_info["api_key"].id,
-            user_id=auth_info["user"].id,
+        usage_record = ApiUsage(
+            api_key_id=api_key.id,
+            user_id=user.id,
             endpoint="/split",
             job_id=job_id,
             status="IN_PROGRESS",
-            file_count=1,
-            pages_extracted=len(pages_list)
+            file_count=1
         )
         db.add(usage_record)
         db.commit()
@@ -211,15 +265,17 @@ async def start_pdf_splitting(
 @router.get("/jobs/{job_id}/status", response_model=SplitterJobStatusResponse)
 async def get_splitting_job_status(
     job_id: str,
-    auth_info: Dict = Depends(verify_api_key),
+    user_and_key = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
     Get splitting job status (API endpoint)
     """
+    user, api_key = user_and_key
+    
     job = db.query(PDFSplitterJob).filter(
         PDFSplitterJob.job_id == job_id,
-        PDFSplitterJob.user_id == auth_info["user"].id
+        PDFSplitterJob.user_id == user.id
     ).first()
     
     if not job:
@@ -240,15 +296,17 @@ async def get_splitting_job_status(
 @router.get("/download/{job_id}")
 async def download_split_pdf(
     job_id: str,
-    auth_info: Dict = Depends(verify_api_key),
+    user_and_key = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
     Download the split PDF (API endpoint)
     """
+    user, api_key = user_and_key
+    
     job = db.query(PDFSplitterJob).filter(
         PDFSplitterJob.job_id == job_id,
-        PDFSplitterJob.user_id == auth_info["user"].id
+        PDFSplitterJob.user_id == user.id
     ).first()
     
     if not job:
@@ -278,7 +336,7 @@ async def download_split_pdf(
 
 @router.get("/jobs", response_model=List[SplitterJobStatusResponse])
 async def list_splitting_jobs(
-    auth_info: Dict = Depends(verify_api_key),
+    user_and_key = Depends(get_api_key_user),
     db: Session = Depends(get_db),
     limit: int = 10,
     offset: int = 0
@@ -286,8 +344,10 @@ async def list_splitting_jobs(
     """
     List user's splitting jobs (API endpoint)
     """
+    user, api_key = user_and_key
+    
     jobs = db.query(PDFSplitterJob).filter(
-        PDFSplitterJob.user_id == auth_info["user"].id
+        PDFSplitterJob.user_id == user.id
     ).order_by(PDFSplitterJob.created_at.desc()).offset(offset).limit(limit).all()
     
     return [
@@ -307,7 +367,7 @@ async def list_splitting_jobs(
 
 @router.get("/usage", response_model=List[ApiUsageResponse])
 async def get_api_usage(
-    auth_info: Dict = Depends(verify_api_key),
+    user_and_key = Depends(get_api_key_user),
     db: Session = Depends(get_db),
     limit: int = 50,
     offset: int = 0
@@ -315,10 +375,11 @@ async def get_api_usage(
     """
     Get API usage statistics (API endpoint)
     """
-    usage_records = db.query(PDFSplitterApiUsage).filter(
-        PDFSplitterApiUsage.user_id == auth_info["user"].id,
-        PDFSplitterApiUsage.api_key_id == auth_info["api_key"].id
-    ).order_by(PDFSplitterApiUsage.created_at.desc()).offset(offset).limit(limit).all()
+    user, api_key = user_and_key
+    
+    usage_records = db.query(ApiUsage).filter(
+        ApiUsage.user_id == user.id
+    ).order_by(ApiUsage.created_at.desc()).offset(offset).limit(limit).all()
     
     return [
         ApiUsageResponse(
@@ -326,7 +387,7 @@ async def get_api_usage(
             status=record.status,
             endpoint=record.endpoint,
             file_count=record.file_count,
-            pages_extracted=record.pages_extracted,
+            pages_extracted=0,  # ApiUsage model doesn't have this field, use default
             processing_time=record.processing_time,
             created_at=record.created_at.isoformat(),
             completed_at=record.completed_at.isoformat() if record.completed_at else None
@@ -351,7 +412,7 @@ async def process_pdf_splitting_api(
     
     try:
         job = db.query(PDFSplitterJob).filter(PDFSplitterJob.job_id == job_id).first()
-        usage_record = db.query(PDFSplitterApiUsage).filter(PDFSplitterApiUsage.id == usage_record_id).first()
+        usage_record = db.query(ApiUsage).filter(ApiUsage.id == usage_record_id).first()
         
         if not job or not usage_record:
             return
@@ -364,7 +425,7 @@ async def process_pdf_splitting_api(
         db.commit()
         
         # Perform splitting
-        split_pdf_bytes = await splitter_service.split_pdf_pages(
+        split_pdf_bytes = await splitter_service.extract_pages(
             pdf_bytes, selected_pages, output_filename
         )
         

@@ -56,6 +56,7 @@ from .api_endpoints import router as intelligent_data_router
 
 # Import new PDF features
 from .pdf_splitter_endpoints import router as pdf_splitter_router
+from .pdf_splitter_api_endpoints import router as pdf_splitter_api_router
 from .pdf_translation_endpoints import router as pdf_translation_router
 
 app = FastAPI(
@@ -82,6 +83,7 @@ app.include_router(intelligent_data_router, tags=["Intelligent Data Parser API"]
 
 # Include new PDF feature routes
 app.include_router(pdf_splitter_router, tags=["PDF Splitter"])
+app.include_router(pdf_splitter_api_router, tags=["PDF Splitter API"])
 app.include_router(pdf_translation_router, tags=["PDF Translator"])
 
 # Database setup
