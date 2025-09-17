@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, Form
 from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 import json
@@ -9,13 +10,53 @@ import tempfile
 from datetime import datetime
 from io import BytesIO
 
-from .models import PDFTranslationJob, User as UserModel, ApiKey, PDFTranslatorApiUsage
+from .models import PDFTranslationJob, User as UserModel, ApiKey, ApiUsage
 from .pdf_translation_service import PDFTranslationService
 from .azure_doc_translation_service import AzureDocumentTranslationService
-from .auth import verify_api_key, get_db
+from .auth import get_db
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/pdf-translator-api", tags=["PDF Translator API"])
+
+# Security scheme
+security = HTTPBearer()
+
+# API Key Authentication
+async def get_api_key_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Authenticate user via API key"""
+    api_key = credentials.credentials
+
+    # Try to find API key in plain text format first (for compatibility with main.py endpoints)
+    db_api_key = db.query(ApiKey).filter(
+        ApiKey.api_key == api_key,
+        ApiKey.is_active == True
+    ).first()
+
+    if not db_api_key:
+        # If not found in plain text, try hashed format (for consistency with PDF splitter API)
+        import hashlib
+        hashed_api_key = hashlib.sha256(api_key.encode()).hexdigest()
+
+        db_api_key = db.query(ApiKey).filter(
+            ApiKey.api_key == hashed_api_key,
+            ApiKey.is_active == True
+        ).first()
+
+    if not db_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key"
+        )
+
+    # Get the user associated with this API key
+    user = db.query(UserModel).filter(UserModel.id == db_api_key.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="User not found for API key"
+        )
+
+    return {"user": user, "api_key": db_api_key}
 
 # Pydantic models for requests/responses
 class PDFTranslationAnalysisResponse(BaseModel):
@@ -76,7 +117,7 @@ translation_service = PDFTranslationService()
 doc_translation_service = AzureDocumentTranslationService()
 
 @router.get("/languages", response_model=SupportedLanguagesResponse)
-async def get_supported_languages(auth_info: Dict = Depends(verify_api_key)):
+async def get_supported_languages(auth_info: Dict = Depends(get_api_key_user)):
     """
     Get supported languages for translation (API endpoint)
     """
@@ -89,7 +130,7 @@ async def get_supported_languages(auth_info: Dict = Depends(verify_api_key)):
 @router.post("/analyze", response_model=PDFTranslationAnalysisResponse)
 async def analyze_pdf_for_translation(
     file: UploadFile = File(...),
-    auth_info: Dict = Depends(verify_api_key),
+    auth_info: Dict = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -100,7 +141,7 @@ async def analyze_pdf_for_translation(
     
     try:
         # Create usage tracking record
-        usage_record = PDFTranslatorApiUsage(
+        usage_record = ApiUsage(
             api_key_id=auth_info["api_key"].id,
             user_id=auth_info["user"].id,
             endpoint="/analyze",
@@ -118,7 +159,6 @@ async def analyze_pdf_for_translation(
         
         # Update usage record
         usage_record.status = "SUCCEEDED"
-        usage_record.characters_translated = analysis_result["character_count"]
         usage_record.processing_time = processing_time
         usage_record.completed_at = datetime.utcnow()
         db.commit()
@@ -141,7 +181,7 @@ async def start_pdf_translation(
     source_language: str = Form("auto"),
     target_language: str = Form(...),
     translation_method: str = Form("text"),
-    auth_info: Dict = Depends(verify_api_key),
+    auth_info: Dict = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -199,14 +239,13 @@ async def start_pdf_translation(
         db.commit()
         
         # Create usage tracking record
-        usage_record = PDFTranslatorApiUsage(
+        usage_record = ApiUsage(
             api_key_id=auth_info["api_key"].id,
             user_id=auth_info["user"].id,
             endpoint="/translate",
             job_id=job_id,
             status="IN_PROGRESS",
-            file_count=1,
-            characters_translated=analysis["character_count"]
+            file_count=1
         )
         db.add(usage_record)
         db.commit()
@@ -237,7 +276,7 @@ async def start_pdf_translation(
 @router.get("/jobs/{job_id}/status", response_model=TranslationJobStatusResponse)
 async def get_translation_job_status(
     job_id: str,
-    auth_info: Dict = Depends(verify_api_key),
+    auth_info: Dict = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -270,7 +309,7 @@ async def get_translation_job_status(
 @router.get("/download/{job_id}")
 async def download_translated_pdf(
     job_id: str,
-    auth_info: Dict = Depends(verify_api_key),
+    auth_info: Dict = Depends(get_api_key_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -326,7 +365,7 @@ async def download_translated_pdf(
 
 @router.get("/jobs", response_model=List[TranslationJobStatusResponse])
 async def list_translation_jobs(
-    auth_info: Dict = Depends(verify_api_key),
+    auth_info: Dict = Depends(get_api_key_user),
     db: Session = Depends(get_db),
     limit: int = 10,
     offset: int = 0
@@ -359,7 +398,7 @@ async def list_translation_jobs(
 
 @router.get("/usage", response_model=List[ApiUsageResponse])
 async def get_api_usage(
-    auth_info: Dict = Depends(verify_api_key),
+    auth_info: Dict = Depends(get_api_key_user),
     db: Session = Depends(get_db),
     limit: int = 50,
     offset: int = 0
@@ -367,10 +406,10 @@ async def get_api_usage(
     """
     Get API usage statistics (API endpoint)
     """
-    usage_records = db.query(PDFTranslatorApiUsage).filter(
-        PDFTranslatorApiUsage.user_id == auth_info["user"].id,
-        PDFTranslatorApiUsage.api_key_id == auth_info["api_key"].id
-    ).order_by(PDFTranslatorApiUsage.created_at.desc()).offset(offset).limit(limit).all()
+    usage_records = db.query(ApiUsage).filter(
+        ApiUsage.user_id == auth_info["user"].id,
+        ApiUsage.api_key_id == auth_info["api_key"].id
+    ).order_by(ApiUsage.created_at.desc()).offset(offset).limit(limit).all()
     
     return [
         ApiUsageResponse(
@@ -378,7 +417,7 @@ async def get_api_usage(
             status=record.status,
             endpoint=record.endpoint,
             file_count=record.file_count,
-            characters_translated=record.characters_translated,
+            characters_translated=0,  # ApiUsage model doesn't have this field, use default
             processing_time=record.processing_time,
             created_at=record.created_at.isoformat(),
             completed_at=record.completed_at.isoformat() if record.completed_at else None
@@ -389,7 +428,7 @@ async def get_api_usage(
 @router.get("/estimate")
 async def get_translation_estimate(
     file: UploadFile = File(...),
-    auth_info: Dict = Depends(verify_api_key)
+    auth_info: Dict = Depends(get_api_key_user)
 ):
     """
     Get translation time and cost estimate (API endpoint)
@@ -424,7 +463,7 @@ async def process_pdf_document_translation_api(
     
     try:
         job = db.query(PDFTranslationJob).filter(PDFTranslationJob.job_id == job_id).first()
-        usage_record = db.query(PDFTranslatorApiUsage).filter(PDFTranslatorApiUsage.id == usage_record_id).first()
+        usage_record = db.query(ApiUsage).filter(ApiUsage.id == usage_record_id).first()
         
         if not job or not usage_record:
             return
