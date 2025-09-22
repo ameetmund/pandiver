@@ -1,0 +1,71 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount .env file for secure credential management
+      - ./.env:/app/.env:ro
+      # Mount backend code for hot reload
+      - ./backend:/app:delegated
+      # Exclude Python cache and virtual environment
+      - /app/__pycache__
+      - /app/venv
+      # Persistent database storage
+      - ./docker_data/database:/app/data
+      # Mount database file to persistent location if it exists
+      - ./pandiver.db:/app/pandiver.db
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      # CRITICAL: SECRET_KEY required for Docker JWT compatibility fix (see DOCKER_JWT_COMPATIBILITY.md)
+      - SECRET_KEY=09af8c2e8b3a47f19c6d5e7a8b2c4d6f9e1a3b5c7d9f0e2a4b6c8d0f1e3a5b7c9d1f3e5a7b9c1d3f5e7a9b1d3f5e7a9b
+    networks:
+      - pandiver_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount frontend code for hot reload
+      - ./frontend:/app:delegated
+      # Exclude node_modules and .next for performance
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - DOCKER_ENV=true  # Flag to enable Docker-specific URL replacement
+      - WATCHPACK_POLLING=true  # Enable polling for file changes in Docker
+    networks:
+      - pandiver_network
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# volumes:
+#   pandiver_db:
+#     driver: local
+
+networks:
+  pandiver_network:
+    driver: bridge

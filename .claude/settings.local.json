@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(///**)",
+      "Bash(xargs kill:*)",
+      "Bash(npm install)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
