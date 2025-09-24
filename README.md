@@ -1,5 +1,7 @@
 # Pandiver - PDF Text Extraction & Table Builder
 
+🚀 **Azure Container Apps Deployment Ready** - All GitHub secrets configured for automated CI/CD.
+
 A full-stack application that allows users to upload PDF files, extract text blocks with coordinates, interactively select and drag text to build tables, and export the data to XLSX/CSV formats.
 
 ## Features
