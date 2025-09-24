@@ -5,9 +5,9 @@ on:
     branches: [main]
 
 env:
-  AZURE_RESOURCE_GROUP: rg-pandiver-containerapp
+  AZURE_RESOURCE_GROUP: pandiver-containerapp-rg
   AZURE_CONTAINER_ENV: pandiver-env
-  ACR_NAME: pandiveracr
+  ACR_NAME: pandiveracr30421
 
 jobs:
   build-and-deploy-staging:
