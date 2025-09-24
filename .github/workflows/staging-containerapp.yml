@@ -1,0 +1,193 @@
+name: Deploy to Azure Container Apps (Staging)
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AZURE_RESOURCE_GROUP: rg-pandiver-containerapp
+  AZURE_CONTAINER_ENV: pandiver-env
+  ACR_NAME: pandiveracr
+
+jobs:
+  build-and-deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    name: Build and Deploy to Container Apps Staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Log in to Azure Container Registry
+      run: |
+        az acr login --name ${{ env.ACR_NAME }}
+
+    - name: Get ACR credentials
+      id: acr-creds
+      run: |
+        ACR_USERNAME=$(az acr credential show --name ${{ env.ACR_NAME }} --query username -o tsv)
+        ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query passwords[0].value -o tsv)
+        echo "::add-mask::$ACR_PASSWORD"
+        echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
+        echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+
+    - name: Build and push backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./docker/backend/Dockerfile.prod
+        push: true
+        tags: |
+          ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:staging-${{ github.sha }}
+          ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:staging-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        file: ./docker/frontend/Dockerfile.prod
+        push: true
+        tags: |
+          ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:staging-${{ github.sha }}
+          ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:staging-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Get secrets from Key Vault
+      id: secrets
+      run: |
+        SECRET_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name secret-key --query value -o tsv)
+        DATABASE_URL=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name staging-database-url --query value -o tsv)
+        AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
+        AZURE_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-translator-region --query value -o tsv)
+        AZURE_DOC_INTELLIGENCE_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-intelligence-key --query value -o tsv)
+        AZURE_DOC_INTELLIGENCE_ENDPOINT=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-intelligence-endpoint --query value -o tsv)
+
+        echo "::add-mask::$SECRET_KEY"
+        echo "::add-mask::$DATABASE_URL"
+        echo "::add-mask::$AZURE_TRANSLATOR_KEY"
+        echo "::add-mask::$AZURE_DOC_INTELLIGENCE_KEY"
+
+        echo "secret-key=$SECRET_KEY" >> $GITHUB_OUTPUT
+        echo "database-url=$DATABASE_URL" >> $GITHUB_OUTPUT
+        echo "azure-translator-key=$AZURE_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
+        echo "azure-translator-region=$AZURE_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
+        echo "azure-doc-intelligence-key=$AZURE_DOC_INTELLIGENCE_KEY" >> $GITHUB_OUTPUT
+        echo "azure-doc-intelligence-endpoint=$AZURE_DOC_INTELLIGENCE_ENDPOINT" >> $GITHUB_OUTPUT
+
+    - name: Deploy Backend to Container Apps
+      run: |
+        # Check if backend app exists
+        if az containerapp show --name pandiver-backend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} > /dev/null 2>&1; then
+          echo "Updating existing backend container app"
+          az containerapp update \
+            --name pandiver-backend-staging \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:staging-${{ github.sha }}
+        else
+          echo "Creating new backend container app"
+          az containerapp create \
+            --name pandiver-backend-staging \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --environment ${{ env.AZURE_CONTAINER_ENV }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:staging-${{ github.sha }} \
+            --registry-server ${{ env.ACR_NAME }}.azurecr.io \
+            --registry-username ${{ steps.acr-creds.outputs.username }} \
+            --registry-password ${{ steps.acr-creds.outputs.password }} \
+            --target-port 8000 \
+            --ingress internal \
+            --secrets \
+              secret-key="${{ steps.secrets.outputs.secret-key }}" \
+              database-url="${{ steps.secrets.outputs.database-url }}" \
+              azure-translator-key="${{ steps.secrets.outputs.azure-translator-key }}" \
+              azure-doc-intelligence-key="${{ steps.secrets.outputs.azure-doc-intelligence-key }}" \
+            --env-vars \
+              SECRET_KEY=secretref:secret-key \
+              DATABASE_URL=secretref:database-url \
+              AZURE_TRANSLATOR_KEY=secretref:azure-translator-key \
+              AZURE_TRANSLATOR_REGION="${{ steps.secrets.outputs.azure-translator-region }}" \
+              AZURE_DOC_INTELLIGENCE_KEY=secretref:azure-doc-intelligence-key \
+              AZURE_DOC_INTELLIGENCE_ENDPOINT="${{ steps.secrets.outputs.azure-doc-intelligence-endpoint }}" \
+              ENVIRONMENT=staging \
+            --min-replicas 0 \
+            --max-replicas 3 \
+            --cpu 1.0 \
+            --memory 2Gi
+        fi
+
+    - name: Get backend FQDN
+      id: backend-fqdn
+      run: |
+        BACKEND_FQDN=$(az containerapp show --name pandiver-backend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "fqdn=$BACKEND_FQDN" >> $GITHUB_OUTPUT
+
+    - name: Deploy Frontend to Container Apps
+      run: |
+        # Check if frontend app exists
+        if az containerapp show --name pandiver-frontend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} > /dev/null 2>&1; then
+          echo "Updating existing frontend container app"
+          az containerapp update \
+            --name pandiver-frontend-staging \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:staging-${{ github.sha }}
+        else
+          echo "Creating new frontend container app"
+          az containerapp create \
+            --name pandiver-frontend-staging \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --environment ${{ env.AZURE_CONTAINER_ENV }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:staging-${{ github.sha }} \
+            --registry-server ${{ env.ACR_NAME }}.azurecr.io \
+            --registry-username ${{ steps.acr-creds.outputs.username }} \
+            --registry-password ${{ steps.acr-creds.outputs.password }} \
+            --target-port 80 \
+            --ingress external \
+            --env-vars \
+              BACKEND_URL=https://${{ steps.backend-fqdn.outputs.fqdn }} \
+              ENVIRONMENT=staging \
+            --min-replicas 0 \
+            --max-replicas 2 \
+            --cpu 0.5 \
+            --memory 1Gi
+        fi
+
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for containers to be ready..."
+        sleep 60
+
+    - name: Get frontend URL
+      id: frontend-url
+      run: |
+        FRONTEND_FQDN=$(az containerapp show --name pandiver-frontend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "fqdn=$FRONTEND_FQDN" >> $GITHUB_OUTPUT
+
+    - name: Test staging deployment
+      run: |
+        echo "Testing staging deployment..."
+
+        # Test backend health
+        timeout 300 bash -c "until curl -f https://${{ steps.backend-fqdn.outputs.fqdn }}/health; do echo 'Waiting for backend...'; sleep 10; done"
+
+        # Test frontend
+        timeout 300 bash -c "until curl -f https://${{ steps.frontend-url.outputs.fqdn }}/health; do echo 'Waiting for frontend...'; sleep 10; done"
+
+        echo "✅ Staging deployment tests passed"
+
+    - name: Output deployment URLs
+      run: |
+        echo "🚀 Staging deployment successful!"
+        echo "Frontend URL: https://${{ steps.frontend-url.outputs.fqdn }}"
+        echo "Backend URL: https://${{ steps.backend-fqdn.outputs.fqdn }}"
+        echo "Ready for QA testing and production approval"

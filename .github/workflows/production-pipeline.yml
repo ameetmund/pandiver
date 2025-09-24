@@ -1,0 +1,418 @@
+name: Production Deployment Pipeline
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy'
+        required: true
+        default: 'latest'
+
+env:
+  REGISTRY: pandiveracr.azurecr.io
+  AZURE_RESOURCE_GROUP: rg-pandiver-production
+  AKS_CLUSTER_NAME: pandiver-aks-cluster
+  NAMESPACE: pandiver-production
+
+jobs:
+  pre-deployment-checks:
+    runs-on: ubuntu-latest
+    name: Pre-deployment Validation
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+    - name: Validate Azure resources
+      run: |
+        # Check if AKS cluster exists
+        az aks show --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER_NAME }}
+
+        # Check if namespace exists
+        az aks get-credentials --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER_NAME }}
+        kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
+
+    - name: Validate container images
+      run: |
+        # Check if images exist in registry
+        TAG=${{ github.event.release.tag_name || github.event.inputs.tag }}
+        az acr repository show --name ${{ secrets.ACR_NAME }} --repository pandiver-backend --query name
+        az acr repository show --name ${{ secrets.ACR_NAME }} --repository pandiver-frontend --query name
+
+  backup-production:
+    runs-on: ubuntu-latest
+    name: Backup Production Data
+    needs: pre-deployment-checks
+    environment: production
+
+    steps:
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+    - name: Create database backup
+      run: |
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        BACKUP_NAME="pre-deployment-backup-$TIMESTAMP"
+
+        # Create database backup
+        az sql db export \
+          --server ${{ secrets.PRODUCTION_SQL_SERVER }} \
+          --database ${{ secrets.PRODUCTION_DATABASE }} \
+          --storage-key-type StorageAccessKey \
+          --storage-key ${{ secrets.STORAGE_ACCOUNT_KEY }} \
+          --storage-uri "https://${{ secrets.STORAGE_ACCOUNT }}.blob.core.windows.net/backups/${BACKUP_NAME}.bacpac" \
+          --admin-user ${{ secrets.SQL_ADMIN_USER }} \
+          --admin-password ${{ secrets.SQL_ADMIN_PASSWORD }}
+
+        echo "✅ Database backup created: ${BACKUP_NAME}.bacpac"
+
+  build-production-images:
+    runs-on: ubuntu-latest
+    name: Build Production Images
+    needs: backup-production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+    - name: Log in to Azure Container Registry
+      run: |
+        az acr login --name ${{ secrets.ACR_NAME }}
+
+    - name: Get version tag
+      id: version
+      run: |
+        TAG=${{ github.event.release.tag_name || github.event.inputs.tag }}
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "Deploying version: $TAG"
+
+    - name: Build and push production backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./docker/backend/Dockerfile.prod
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/pandiver-backend:${{ steps.version.outputs.tag }}
+          ${{ env.REGISTRY }}/pandiver-backend:production-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push production frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        file: ./docker/frontend/Dockerfile.prod
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/pandiver-frontend:${{ steps.version.outputs.tag }}
+          ${{ env.REGISTRY }}/pandiver-frontend:production-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    name: Deploy to Production AKS
+    needs: build-production-images
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER_NAME }}
+
+    - name: Get version tag
+      id: version
+      run: |
+        TAG=${{ github.event.release.tag_name || github.event.inputs.tag }}
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Create Kubernetes secrets
+      run: |
+        # Get secrets from Azure Key Vault
+        SECRET_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name secret-key --query value -o tsv)
+        DATABASE_URL=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name production-database-url --query value -o tsv)
+        AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
+
+        # Create or update Kubernetes secret
+        kubectl create secret generic pandiver-secrets \
+          --from-literal=secret-key="$SECRET_KEY" \
+          --from-literal=database-url="$DATABASE_URL" \
+          --from-literal=azure-translator-key="$AZURE_TRANSLATOR_KEY" \
+          --namespace=${{ env.NAMESPACE }} \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Deploy backend to AKS
+      run: |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: pandiver-backend
+          namespace: ${{ env.NAMESPACE }}
+        spec:
+          replicas: 3
+          selector:
+            matchLabels:
+              app: pandiver-backend
+          template:
+            metadata:
+              labels:
+                app: pandiver-backend
+            spec:
+              containers:
+              - name: backend
+                image: ${{ env.REGISTRY }}/pandiver-backend:${{ steps.version.outputs.tag }}
+                ports:
+                - containerPort: 8000
+                env:
+                - name: SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: pandiver-secrets
+                      key: secret-key
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: pandiver-secrets
+                      key: database-url
+                - name: ENVIRONMENT
+                  value: "production"
+                resources:
+                  requests:
+                    memory: "1Gi"
+                    cpu: "500m"
+                  limits:
+                    memory: "2Gi"
+                    cpu: "1000m"
+                livenessProbe:
+                  httpGet:
+                    path: /health
+                    port: 8000
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                readinessProbe:
+                  httpGet:
+                    path: /health
+                    port: 8000
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: pandiver-backend-service
+          namespace: ${{ env.NAMESPACE }}
+        spec:
+          selector:
+            app: pandiver-backend
+          ports:
+          - port: 8000
+            targetPort: 8000
+          type: ClusterIP
+        EOF
+
+    - name: Deploy frontend to AKS
+      run: |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: pandiver-frontend
+          namespace: ${{ env.NAMESPACE }}
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: pandiver-frontend
+          template:
+            metadata:
+              labels:
+                app: pandiver-frontend
+            spec:
+              containers:
+              - name: frontend
+                image: ${{ env.REGISTRY }}/pandiver-frontend:${{ steps.version.outputs.tag }}
+                ports:
+                - containerPort: 80
+                env:
+                - name: BACKEND_URL
+                  value: "http://pandiver-backend-service:8000"
+                - name: ENVIRONMENT
+                  value: "production"
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "250m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+                livenessProbe:
+                  httpGet:
+                    path: /health
+                    port: 80
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                readinessProbe:
+                  httpGet:
+                    path: /health
+                    port: 80
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: pandiver-frontend-service
+          namespace: ${{ env.NAMESPACE }}
+        spec:
+          selector:
+            app: pandiver-frontend
+          ports:
+          - port: 80
+            targetPort: 80
+          type: LoadBalancer
+        EOF
+
+    - name: Wait for deployment rollout
+      run: |
+        kubectl rollout status deployment/pandiver-backend -n ${{ env.NAMESPACE }} --timeout=600s
+        kubectl rollout status deployment/pandiver-frontend -n ${{ env.NAMESPACE }} --timeout=600s
+
+  post-deployment-tests:
+    runs-on: ubuntu-latest
+    name: Production Health Checks
+    needs: deploy-production
+
+    steps:
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER_NAME }}
+
+    - name: Get service endpoints
+      id: endpoints
+      run: |
+        # Wait for external IP
+        echo "Waiting for LoadBalancer external IP..."
+        kubectl wait --for=condition=ready pod -l app=pandiver-frontend -n ${{ env.NAMESPACE }} --timeout=300s
+
+        EXTERNAL_IP=$(kubectl get service pandiver-frontend-service -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+        # If no external IP yet, wait and retry
+        if [ -z "$EXTERNAL_IP" ] || [ "$EXTERNAL_IP" = "null" ]; then
+          echo "Waiting for external IP to be assigned..."
+          sleep 60
+          EXTERNAL_IP=$(kubectl get service pandiver-frontend-service -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        fi
+
+        echo "external-ip=$EXTERNAL_IP" >> $GITHUB_OUTPUT
+
+    - name: Run production health checks
+      run: |
+        EXTERNAL_IP=${{ steps.endpoints.outputs.external-ip }}
+
+        if [ -z "$EXTERNAL_IP" ] || [ "$EXTERNAL_IP" = "null" ]; then
+          echo "❌ External IP not available, using port-forward for testing"
+          kubectl port-forward service/pandiver-frontend-service 8080:80 -n ${{ env.NAMESPACE }} &
+          kubectl port-forward service/pandiver-backend-service 8081:8000 -n ${{ env.NAMESPACE }} &
+          sleep 10
+
+          FRONTEND_URL="http://localhost:8080"
+          BACKEND_URL="http://localhost:8081"
+        else
+          FRONTEND_URL="http://$EXTERNAL_IP"
+          BACKEND_URL="http://$EXTERNAL_IP:8000"
+        fi
+
+        echo "Testing production deployment..."
+        echo "Frontend URL: $FRONTEND_URL"
+        echo "Backend URL: $BACKEND_URL"
+
+        # Test backend health
+        timeout 60 bash -c "until curl -f $BACKEND_URL/health; do echo 'Waiting for backend...'; sleep 5; done"
+
+        # Test frontend
+        timeout 60 bash -c "until curl -f $FRONTEND_URL/health; do echo 'Waiting for frontend...'; sleep 5; done"
+
+        echo "✅ Production health checks passed"
+
+  notify-success:
+    runs-on: ubuntu-latest
+    name: Notify Deployment Success
+    needs: [post-deployment-tests]
+    if: success()
+
+    steps:
+    - name: Get service URL
+      id: service-url
+      run: |
+        echo "Deployment completed successfully"
+        # Add logic to get the actual production URL
+
+    - name: Send success notification
+      run: |
+        echo "🎉 Production deployment successful!"
+        echo "Version: ${{ github.event.release.tag_name || github.event.inputs.tag }}"
+        echo "All health checks passed"
+        echo "Production environment is ready for use"
+
+  rollback:
+    runs-on: ubuntu-latest
+    name: Rollback on Failure
+    needs: [post-deployment-tests]
+    if: failure()
+    environment: production
+
+    steps:
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_PROD }}
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER_NAME }}
+
+    - name: Rollback deployment
+      run: |
+        kubectl rollout undo deployment/pandiver-backend -n ${{ env.NAMESPACE }}
+        kubectl rollout undo deployment/pandiver-frontend -n ${{ env.NAMESPACE }}
+
+        echo "❌ Deployment failed, rolling back to previous version"
+
+    - name: Notify rollback
+      run: |
+        echo "🚨 Production deployment failed and was rolled back"
+        echo "Previous version has been restored"
+        echo "Please investigate the deployment issues"

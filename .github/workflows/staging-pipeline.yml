@@ -1,0 +1,197 @@
+name: Staging Deployment Pipeline
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: pandiveracr.azurecr.io
+  AZURE_RESOURCE_GROUP: rg-pandiver-staging
+  CONTAINER_INSTANCE_NAME: pandiver-staging
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    name: Build and Push to ACR
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Log in to Azure Container Registry
+      run: |
+        az acr login --name ${{ secrets.ACR_NAME }}
+
+    - name: Build and push backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./docker/backend/Dockerfile.prod
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/pandiver-backend:staging-${{ github.sha }}
+          ${{ env.REGISTRY }}/pandiver-backend:staging-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        file: ./docker/frontend/Dockerfile.prod
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/pandiver-frontend:staging-${{ github.sha }}
+          ${{ env.REGISTRY }}/pandiver-frontend:staging-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    name: Deploy to Azure Container Instances
+    needs: build-and-push
+    environment: staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get ACR credentials
+      id: acr-creds
+      run: |
+        ACR_USERNAME=$(az acr credential show --name ${{ secrets.ACR_NAME }} --query username -o tsv)
+        ACR_PASSWORD=$(az acr credential show --name ${{ secrets.ACR_NAME }} --query passwords[0].value -o tsv)
+        echo "::add-mask::$ACR_PASSWORD"
+        echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
+        echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+
+    - name: Get secrets from Key Vault
+      id: secrets
+      run: |
+        SECRET_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name secret-key --query value -o tsv)
+        DATABASE_URL=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name staging-database-url --query value -o tsv)
+        AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
+        AZURE_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-translator-region --query value -o tsv)
+        AZURE_DOC_INTELLIGENCE_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-intelligence-key --query value -o tsv)
+        AZURE_DOC_INTELLIGENCE_ENDPOINT=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-intelligence-endpoint --query value -o tsv)
+
+        echo "::add-mask::$SECRET_KEY"
+        echo "::add-mask::$DATABASE_URL"
+        echo "::add-mask::$AZURE_TRANSLATOR_KEY"
+        echo "::add-mask::$AZURE_DOC_INTELLIGENCE_KEY"
+
+        echo "secret-key=$SECRET_KEY" >> $GITHUB_OUTPUT
+        echo "database-url=$DATABASE_URL" >> $GITHUB_OUTPUT
+        echo "azure-translator-key=$AZURE_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
+        echo "azure-translator-region=$AZURE_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
+        echo "azure-doc-intelligence-key=$AZURE_DOC_INTELLIGENCE_KEY" >> $GITHUB_OUTPUT
+        echo "azure-doc-intelligence-endpoint=$AZURE_DOC_INTELLIGENCE_ENDPOINT" >> $GITHUB_OUTPUT
+
+    - name: Stop existing container group
+      run: |
+        az container delete \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.CONTAINER_INSTANCE_NAME }} \
+          --yes || echo "No existing container group found"
+
+    - name: Deploy container group to ACI
+      run: |
+        az container create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.CONTAINER_INSTANCE_NAME }} \
+          --location eastus \
+          --registry-login-server ${{ env.REGISTRY }} \
+          --registry-username ${{ steps.acr-creds.outputs.username }} \
+          --registry-password ${{ steps.acr-creds.outputs.password }} \
+          --dns-name-label pandiver-staging-${{ github.run_number }} \
+          --file docker/compose/docker-compose.staging.yml \
+          --environment-variables \
+            SECRET_KEY="${{ steps.secrets.outputs.secret-key }}" \
+            DATABASE_URL="${{ steps.secrets.outputs.database-url }}" \
+            AZURE_TRANSLATOR_KEY="${{ steps.secrets.outputs.azure-translator-key }}" \
+            AZURE_TRANSLATOR_REGION="${{ steps.secrets.outputs.azure-translator-region }}" \
+            AZURE_DOC_INTELLIGENCE_KEY="${{ steps.secrets.outputs.azure-doc-intelligence-key }}" \
+            AZURE_DOC_INTELLIGENCE_ENDPOINT="${{ steps.secrets.outputs.azure-doc-intelligence-endpoint }}" \
+            ENVIRONMENT=staging
+
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for containers to be ready..."
+        sleep 60
+
+    - name: Get container group details
+      id: container-details
+      run: |
+        FQDN=$(az container show --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.CONTAINER_INSTANCE_NAME }} --query ipAddress.fqdn -o tsv)
+        echo "fqdn=$FQDN" >> $GITHUB_OUTPUT
+
+  test-staging:
+    runs-on: ubuntu-latest
+    name: Test Staging Deployment
+    needs: deploy-staging
+
+    steps:
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get container FQDN
+      id: container-fqdn
+      run: |
+        FQDN=$(az container show --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.CONTAINER_INSTANCE_NAME }} --query ipAddress.fqdn -o tsv)
+        echo "fqdn=$FQDN" >> $GITHUB_OUTPUT
+
+    - name: Wait for services to be ready
+      run: |
+        echo "Testing staging deployment at: http://${{ steps.container-fqdn.outputs.fqdn }}"
+
+        # Wait for backend
+        timeout 300 bash -c "until curl -f http://${{ steps.container-fqdn.outputs.fqdn }}:8000/health; do echo 'Waiting for backend...'; sleep 10; done"
+
+        # Wait for frontend
+        timeout 300 bash -c "until curl -f http://${{ steps.container-fqdn.outputs.fqdn }}:3000; do echo 'Waiting for frontend...'; sleep 10; done"
+
+    - name: Run staging tests
+      run: |
+        # Test backend API endpoints
+        curl -f "http://${{ steps.container-fqdn.outputs.fqdn }}:8000/health"
+        curl -f "http://${{ steps.container-fqdn.outputs.fqdn }}:8000/docs"
+
+        # Test frontend
+        curl -f "http://${{ steps.container-fqdn.outputs.fqdn }}:3000"
+
+        echo "✅ Staging deployment tests passed"
+
+    - name: Notify staging success
+      run: |
+        echo "🚀 Staging deployment successful!"
+        echo "Frontend: http://${{ steps.container-fqdn.outputs.fqdn }}:3000"
+        echo "Backend: http://${{ steps.container-fqdn.outputs.fqdn }}:8000"
+        echo "API Docs: http://${{ steps.container-fqdn.outputs.fqdn }}:8000/docs"
+
+  notify-stakeholders:
+    runs-on: ubuntu-latest
+    name: Notify Stakeholders
+    needs: [test-staging]
+    if: success()
+
+    steps:
+    - name: Send notification
+      run: |
+        echo "📧 Sending notification to stakeholders"
+        echo "Staging environment updated with latest changes from main branch"
+        echo "Ready for QA testing and approval for production deployment"

@@ -31,6 +31,7 @@ python-dotenv==1.0.*
 
 # New API features dependencies
 httpx==0.27.*  # For async HTTP requests in webhooks
+aiohttp==3.9.*  # For async HTTP client requests
 croniter==2.0.*  # For cron-style scheduling
 pydantic[email]==2.7.*  # For enhanced validation
 
