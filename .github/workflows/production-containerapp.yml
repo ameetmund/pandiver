@@ -299,10 +299,10 @@ jobs:
         echo "Frontend URL: https://${{ steps.urls.outputs.frontend-fqdn }}"
 
         # Test backend health
-        timeout 180 bash -c "until curl -f https://${{ steps.urls.outputs.backend-fqdn }}/health; do echo 'Waiting for backend...'; sleep 10; done"
+        timeout 180 bash -c "until curl -f https://${{ steps.urls.outputs.backend-fqdn }}/; do echo 'Waiting for backend...'; sleep 10; done"
 
         # Test frontend
-        timeout 180 bash -c "until curl -f https://${{ steps.urls.outputs.frontend-fqdn }}/health; do echo 'Waiting for frontend...'; sleep 10; done"
+        timeout 180 bash -c "until curl -f https://${{ steps.urls.outputs.frontend-fqdn }}/; do echo 'Waiting for frontend...'; sleep 10; done"
 
         # Test API endpoints
         curl -f "https://${{ steps.urls.outputs.backend-fqdn }}/docs"

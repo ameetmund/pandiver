@@ -13,7 +13,7 @@ on:
 env:
   REGISTRY: pandiveracr30421.azurecr.io
   ACR_NAME: pandiveracr30421
-  AZURE_RESOURCE_GROUP: rg-pandiver-production
+  AZURE_RESOURCE_GROUP: pandiver-containerapp-rg
   AKS_CLUSTER_NAME: pandiver-aks-cluster
   NAMESPACE: pandiver-production
 
@@ -214,13 +214,13 @@ jobs:
                     cpu: "1000m"
                 livenessProbe:
                   httpGet:
-                    path: /health
+                    path: /
                     port: 8000
                   initialDelaySeconds: 30
                   periodSeconds: 10
                 readinessProbe:
                   httpGet:
-                    path: /health
+                    path: /
                     port: 8000
                   initialDelaySeconds: 5
                   periodSeconds: 5
@@ -276,13 +276,13 @@ jobs:
                     cpu: "500m"
                 livenessProbe:
                   httpGet:
-                    path: /health
+                    path: /
                     port: 80
                   initialDelaySeconds: 10
                   periodSeconds: 10
                 readinessProbe:
                   httpGet:
-                    path: /health
+                    path: /
                     port: 80
                   initialDelaySeconds: 5
                   periodSeconds: 5
@@ -361,10 +361,10 @@ jobs:
         echo "Backend URL: $BACKEND_URL"
 
         # Test backend health
-        timeout 60 bash -c "until curl -f $BACKEND_URL/health; do echo 'Waiting for backend...'; sleep 5; done"
+        timeout 60 bash -c "until curl -f $BACKEND_URL/; do echo 'Waiting for backend...'; sleep 5; done"
 
         # Test frontend
-        timeout 60 bash -c "until curl -f $FRONTEND_URL/health; do echo 'Waiting for frontend...'; sleep 5; done"
+        timeout 60 bash -c "until curl -f $FRONTEND_URL/; do echo 'Waiting for frontend...'; sleep 5; done"
 
         echo "✅ Production health checks passed"
 

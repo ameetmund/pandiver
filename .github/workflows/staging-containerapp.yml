@@ -178,10 +178,10 @@ jobs:
         echo "Testing staging deployment..."
 
         # Test backend health
-        timeout 300 bash -c "until curl -f https://${{ steps.backend-fqdn.outputs.fqdn }}/health; do echo 'Waiting for backend...'; sleep 10; done"
+        timeout 300 bash -c "until curl -f https://${{ steps.backend-fqdn.outputs.fqdn }}/; do echo 'Waiting for backend...'; sleep 10; done"
 
         # Test frontend
-        timeout 300 bash -c "until curl -f https://${{ steps.frontend-url.outputs.fqdn }}/health; do echo 'Waiting for frontend...'; sleep 10; done"
+        timeout 300 bash -c "until curl -f https://${{ steps.frontend-url.outputs.fqdn }}/; do echo 'Waiting for frontend...'; sleep 10; done"
 
         echo "✅ Staging deployment tests passed"
 

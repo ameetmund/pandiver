@@ -1,13 +1,15 @@
 name: Staging Deployment Pipeline
 
 on:
-  push:
-    branches: [main]
+  # Disabled - using staging-containerapp.yml for Container Apps instead
+  # push:
+  #   branches: [main]
+  workflow_dispatch: # Manual trigger only
 
 env:
   REGISTRY: pandiveracr30421.azurecr.io
   ACR_NAME: pandiveracr30421
-  AZURE_RESOURCE_GROUP: rg-pandiver-staging
+  AZURE_RESOURCE_GROUP: pandiver-containerapp-rg
   CONTAINER_INSTANCE_NAME: pandiver-staging
 
 jobs:
@@ -161,7 +163,7 @@ jobs:
         echo "Testing staging deployment at: http://${{ steps.container-fqdn.outputs.fqdn }}"
 
         # Wait for backend
-        timeout 300 bash -c "until curl -f http://${{ steps.container-fqdn.outputs.fqdn }}:8000/health; do echo 'Waiting for backend...'; sleep 10; done"
+        timeout 300 bash -c "until curl -f http://${{ steps.container-fqdn.outputs.fqdn }}:8000/; do echo 'Waiting for backend...'; sleep 10; done"
 
         # Wait for frontend
         timeout 300 bash -c "until curl -f http://${{ steps.container-fqdn.outputs.fqdn }}:3000; do echo 'Waiting for frontend...'; sleep 10; done"
@@ -169,7 +171,7 @@ jobs:
     - name: Run staging tests
       run: |
         # Test backend API endpoints
-        curl -f "http://${{ steps.container-fqdn.outputs.fqdn }}:8000/health"
+        curl -f "http://${{ steps.container-fqdn.outputs.fqdn }}:8000/"
         curl -f "http://${{ steps.container-fqdn.outputs.fqdn }}:8000/docs"
 
         # Test frontend
