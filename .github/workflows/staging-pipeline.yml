@@ -5,7 +5,8 @@ on:
     branches: [main]
 
 env:
-  REGISTRY: pandiveracr.azurecr.io
+  REGISTRY: pandiveracr30421.azurecr.io
+  ACR_NAME: pandiveracr30421
   AZURE_RESOURCE_GROUP: rg-pandiver-staging
   CONTAINER_INSTANCE_NAME: pandiver-staging
 
@@ -28,7 +29,7 @@ jobs:
 
     - name: Log in to Azure Container Registry
       run: |
-        az acr login --name ${{ secrets.ACR_NAME }}
+        az acr login --name ${{ env.ACR_NAME }}
 
     - name: Build and push backend image
       uses: docker/build-push-action@v5
@@ -72,8 +73,8 @@ jobs:
     - name: Get ACR credentials
       id: acr-creds
       run: |
-        ACR_USERNAME=$(az acr credential show --name ${{ secrets.ACR_NAME }} --query username -o tsv)
-        ACR_PASSWORD=$(az acr credential show --name ${{ secrets.ACR_NAME }} --query passwords[0].value -o tsv)
+        ACR_USERNAME=$(az acr credential show --name ${{ env.ACR_NAME }} --query username -o tsv)
+        ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query passwords[0].value -o tsv)
         echo "::add-mask::$ACR_PASSWORD"
         echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
         echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT

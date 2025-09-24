@@ -11,7 +11,8 @@ on:
         default: 'latest'
 
 env:
-  REGISTRY: pandiveracr.azurecr.io
+  REGISTRY: pandiveracr30421.azurecr.io
+  ACR_NAME: pandiveracr30421
   AZURE_RESOURCE_GROUP: rg-pandiver-production
   AKS_CLUSTER_NAME: pandiver-aks-cluster
   NAMESPACE: pandiver-production
@@ -44,8 +45,8 @@ jobs:
       run: |
         # Check if images exist in registry
         TAG=${{ github.event.release.tag_name || github.event.inputs.tag }}
-        az acr repository show --name ${{ secrets.ACR_NAME }} --repository pandiver-backend --query name
-        az acr repository show --name ${{ secrets.ACR_NAME }} --repository pandiver-frontend --query name
+        az acr repository show --name ${{ env.ACR_NAME }} --repository pandiver-backend --query name
+        az acr repository show --name ${{ env.ACR_NAME }} --repository pandiver-frontend --query name
 
   backup-production:
     runs-on: ubuntu-latest
@@ -95,7 +96,7 @@ jobs:
 
     - name: Log in to Azure Container Registry
       run: |
-        az acr login --name ${{ secrets.ACR_NAME }}
+        az acr login --name ${{ env.ACR_NAME }}
 
     - name: Get version tag
       id: version

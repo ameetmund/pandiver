@@ -7,7 +7,7 @@ on:
     branches: [develop]
 
 env:
-  REGISTRY: pandiveracr.azurecr.io
+  REGISTRY: pandiveracr30421.azurecr.io
   IMAGE_NAME: pandiver
 
 jobs:
