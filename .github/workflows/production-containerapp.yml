@@ -100,7 +100,7 @@ jobs:
     - name: Build and push production backend image
       uses: docker/build-push-action@v5
       with:
-        context: ./backend
+        context: .
         file: ./docker/backend/Dockerfile.prod
         push: true
         tags: |
@@ -112,7 +112,7 @@ jobs:
     - name: Build and push production frontend image
       uses: docker/build-push-action@v5
       with:
-        context: ./frontend
+        context: .
         file: ./docker/frontend/Dockerfile.prod
         push: true
         tags: |
