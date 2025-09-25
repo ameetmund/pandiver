@@ -100,7 +100,7 @@ jobs:
             --registry-username ${{ steps.acr-creds.outputs.username }} \
             --registry-password ${{ steps.acr-creds.outputs.password }} \
             --target-port 8000 \
-            --ingress internal \
+            --ingress external \
             --probe-type Liveness \
             --probe-http-get-path / \
             --probe-initial-delay 60 \
