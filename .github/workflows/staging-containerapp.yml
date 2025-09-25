@@ -101,6 +101,12 @@ jobs:
             --registry-password ${{ steps.acr-creds.outputs.password }} \
             --target-port 8000 \
             --ingress internal \
+            --probe-type Liveness \
+            --probe-http-get-path / \
+            --probe-initial-delay 60 \
+            --probe-period 30 \
+            --probe-timeout 10 \
+            --probe-failure-threshold 3 \
             --secrets \
               secret-key="${{ steps.secrets.outputs.secret-key }}" \
               database-url="${{ steps.secrets.outputs.database-url }}" \
@@ -147,6 +153,12 @@ jobs:
             --registry-password ${{ steps.acr-creds.outputs.password }} \
             --target-port 3000 \
             --ingress external \
+            --probe-type Liveness \
+            --probe-http-get-path / \
+            --probe-initial-delay 60 \
+            --probe-period 30 \
+            --probe-timeout 10 \
+            --probe-failure-threshold 3 \
             --env-vars \
               BACKEND_URL=https://${{ steps.backend-fqdn.outputs.fqdn }} \
               ENVIRONMENT=staging \
