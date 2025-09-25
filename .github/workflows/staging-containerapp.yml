@@ -3,6 +3,7 @@ name: Deploy to Azure Container Apps (Staging)
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   AZURE_RESOURCE_GROUP: pandiver-containerapp-rg
@@ -44,7 +45,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./docker/backend/Dockerfile.prod
+        file: ./Dockerfile.backend
         push: true
         tags: |
           ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:staging-${{ github.sha }}
@@ -56,7 +57,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./docker/frontend/Dockerfile.prod
+        file: ./Dockerfile.frontend
         push: true
         tags: |
           ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:staging-${{ github.sha }}
@@ -151,7 +152,7 @@ jobs:
             --registry-server ${{ env.ACR_NAME }}.azurecr.io \
             --registry-username ${{ steps.acr-creds.outputs.username }} \
             --registry-password ${{ steps.acr-creds.outputs.password }} \
-            --target-port 80 \
+            --target-port 3000 \
             --ingress external \
             --env-vars \
               BACKEND_URL=https://${{ steps.backend-fqdn.outputs.fqdn }} \
