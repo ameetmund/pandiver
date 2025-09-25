@@ -159,6 +159,19 @@ jobs:
     - name: Wait for deployment
       run: |
         echo "Waiting for containers to be ready..."
+        echo "Backend starting..."
+        sleep 30
+
+        # Wait for backend to be ready
+        timeout 180 bash -c "until az containerapp show --name pandiver-backend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query 'properties.runningStatus' -o tsv | grep -q 'Running'; do echo 'Waiting for backend to start...'; sleep 10; done"
+
+        echo "Frontend starting..."
+        sleep 30
+
+        # Wait for frontend to be ready
+        timeout 180 bash -c "until az containerapp show --name pandiver-frontend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query 'properties.runningStatus' -o tsv | grep -q 'Running'; do echo 'Waiting for frontend to start...'; sleep 10; done"
+
+        echo "Both containers are running, waiting for services to be ready..."
         sleep 60
 
     - name: Get frontend URL
@@ -171,11 +184,11 @@ jobs:
       run: |
         echo "Testing staging deployment..."
 
-        # Test backend health
-        timeout 300 bash -c "until curl -f https://${{ steps.backend-fqdn.outputs.fqdn }}/; do echo 'Waiting for backend...'; sleep 10; done"
+        # Test backend health (longer timeout for Container Apps startup)
+        timeout 600 bash -c "until curl -f https://${{ steps.backend-fqdn.outputs.fqdn }}/; do echo 'Waiting for backend...'; sleep 10; done"
 
         # Test frontend
-        timeout 300 bash -c "until curl -f https://${{ steps.frontend-url.outputs.fqdn }}/; do echo 'Waiting for frontend...'; sleep 10; done"
+        timeout 600 bash -c "until curl -f https://${{ steps.frontend-url.outputs.fqdn }}/; do echo 'Waiting for frontend...'; sleep 10; done"
 
         echo "✅ Staging deployment tests passed"
 
