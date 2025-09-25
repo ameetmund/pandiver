@@ -114,7 +114,7 @@ jobs:
               AZURE_DOC_INTELLIGENCE_KEY=secretref:azure-doc-intelligence-key \
               AZURE_DOC_INTELLIGENCE_ENDPOINT="${{ steps.secrets.outputs.azure-doc-intelligence-endpoint }}" \
               ENVIRONMENT=staging \
-            --min-replicas 0 \
+            --min-replicas 1 \
             --max-replicas 3 \
             --cpu 1.0 \
             --memory 2Gi
@@ -150,7 +150,7 @@ jobs:
             --env-vars \
               BACKEND_URL=https://${{ steps.backend-fqdn.outputs.fqdn }} \
               ENVIRONMENT=staging \
-            --min-replicas 0 \
+            --min-replicas 1 \
             --max-replicas 2 \
             --cpu 0.5 \
             --memory 1Gi
