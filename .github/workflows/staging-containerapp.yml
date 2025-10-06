@@ -82,16 +82,15 @@ jobs:
 
     - name: Deploy Backend to Container Apps
       run: |
-        # Check if backend app exists
-        if az containerapp show --name pandiver-backend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} > /dev/null 2>&1; then
-          echo "Updating existing backend container app"
-          az containerapp update \
-            --name pandiver-backend-staging \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:staging-${{ github.sha }}
-        else
-          echo "Creating new backend container app"
-          az containerapp create \
+        # Delete and recreate backend to fix ingress configuration
+        echo "Deleting existing backend to fix configuration"
+        az containerapp delete \
+          --name pandiver-backend-staging \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --yes || echo "No existing backend found"
+
+        echo "Creating new backend container app with correct configuration"
+        az containerapp create \
             --name pandiver-backend-staging \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --environment ${{ env.AZURE_CONTAINER_ENV }} \
@@ -124,7 +123,6 @@ jobs:
             --max-replicas 3 \
             --cpu 1.0 \
             --memory 2Gi
-        fi
 
     - name: Get backend FQDN
       id: backend-fqdn
@@ -134,16 +132,15 @@ jobs:
 
     - name: Deploy Frontend to Container Apps
       run: |
-        # Check if frontend app exists
-        if az containerapp show --name pandiver-frontend-staging --resource-group ${{ env.AZURE_RESOURCE_GROUP }} > /dev/null 2>&1; then
-          echo "Updating existing frontend container app"
-          az containerapp update \
-            --name pandiver-frontend-staging \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:staging-${{ github.sha }}
-        else
-          echo "Creating new frontend container app"
-          az containerapp create \
+        # Delete and recreate frontend to ensure clean configuration
+        echo "Deleting existing frontend to fix configuration"
+        az containerapp delete \
+          --name pandiver-frontend-staging \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --yes || echo "No existing frontend found"
+
+        echo "Creating new frontend container app with correct configuration"
+        az containerapp create \
             --name pandiver-frontend-staging \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --environment ${{ env.AZURE_CONTAINER_ENV }} \
@@ -166,7 +163,6 @@ jobs:
             --max-replicas 2 \
             --cpu 0.5 \
             --memory 1Gi
-        fi
 
     - name: Wait for deployment
       run: |
