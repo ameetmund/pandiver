@@ -127,6 +127,24 @@ origins = [
     "http://localhost:3000",  # Next.js default
     "http://127.0.0.1:3000"
 ]
+
+# Add environment-specific origins
+environment = os.getenv("ENVIRONMENT", "development")
+if environment == "staging":
+    origins.extend([
+        "https://pandiver-frontend-staging.nicebush-1ad1302f.centralindia.azurecontainerapps.io",
+    ])
+elif environment == "production":
+    origins.extend([
+        "https://pandiver.com",
+        "https://www.pandiver.com",
+    ])
+
+# Allow additional origins from env var (comma-separated)
+additional_origins = os.getenv("CORS_ADDITIONAL_ORIGINS", "")
+if additional_origins:
+    origins.extend([origin.strip() for origin in additional_origins.split(",") if origin.strip()])
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
