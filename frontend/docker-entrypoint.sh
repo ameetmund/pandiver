@@ -6,7 +6,7 @@
 echo "🐳 Docker environment detected - configuring API URLs..."
 
 # Set default API URL if not provided
-API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+API_URL=${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}}
 
 echo "📡 Using API URL: $API_URL"
 
@@ -14,7 +14,8 @@ echo "📡 Using API URL: $API_URL"
 replace_urls() {
     local file="$1"
     if [ -f "$file" ]; then
-        sed -i "s|http://localhost:8000|$API_URL|g" "$file"
+        # Use different sed syntax for Alpine Linux
+        sed -i'' -e "s|http://localhost:8000|$API_URL|g" "$file"
     fi
 }
 
@@ -22,26 +23,48 @@ replace_urls() {
 if [ "$DOCKER_ENV" = "true" ]; then
     echo "🔧 Replacing hardcoded API URLs in frontend files..."
 
-    # Find and replace in all relevant files
-    find /app/src -name "*.tsx" -o -name "*.ts" -o -name "*.js" -o -name "*.jsx" | while read -r file; do
-        if grep -q "http://localhost:8000" "$file"; then
-            echo "  📝 Updating: $file"
-            replace_urls "$file"
-        fi
-    done
+    # Find and replace in source files
+    if [ -d /app/src ]; then
+        find /app/src -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.js" -o -name "*.jsx" \) | while read -r file; do
+            if grep -q "http://localhost:8000" "$file" 2>/dev/null; then
+                echo "  📝 Updating: $file"
+                replace_urls "$file"
+            fi
+        done
+    fi
+
+    # Also check .next build directory in case it exists
+    if [ -d /app/.next ]; then
+        find /app/.next -type f -name "*.js" | while read -r file; do
+            if grep -q "http://localhost:8000" "$file" 2>/dev/null; then
+                echo "  📝 Updating build file: $file"
+                replace_urls "$file"
+            fi
+        done
+    fi
 
     echo "✅ API URL replacement complete"
 
-    # Start background script to keep replacing URLs when files change
+    # Start background script to keep replacing URLs when files change (for hot reload)
     echo "🔧 Starting background URL replacement monitor..."
     {
         while true; do
             sleep 30
-            find /app/src -name "*.tsx" -o -name "*.ts" -o -name "*.js" -o -name "*.jsx" | while read -r file; do
-                if grep -q "http://localhost:8000" "$file" 2>/dev/null; then
-                    replace_urls "$file"
-                fi
-            done
+            if [ -d /app/src ]; then
+                find /app/src -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.js" -o -name "*.jsx" \) | while read -r file; do
+                    if grep -q "http://localhost:8000" "$file" 2>/dev/null; then
+                        replace_urls "$file"
+                    fi
+                done
+            fi
+            # Also monitor build directory
+            if [ -d /app/.next ]; then
+                find /app/.next -type f -name "*.js" | while read -r file; do
+                    if grep -q "http://localhost:8000" "$file" 2>/dev/null; then
+                        replace_urls "$file"
+                    fi
+                done
+            fi
         done
     } &
 else
