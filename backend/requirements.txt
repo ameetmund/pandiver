@@ -7,6 +7,7 @@ uvicorn
 python-multipart
 PyJWT==2.8.0  # CRITICAL: Pinned to 2.8.0 for Docker compatibility (see DOCKER_JWT_COMPATIBILITY.md and docker-entrypoint.sh)
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1  # Pin bcrypt version for passlib 1.7.4 compatibility
 python-jose[cryptography]==3.3.0
 email-validator==2.1.0
 sqlalchemy==2.0.*
