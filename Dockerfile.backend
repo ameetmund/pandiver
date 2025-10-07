@@ -35,9 +35,11 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
 
-# Install system dependencies for runtime
+# Install system dependencies for runtime (including bcrypt dependencies)
 RUN apt-get update && apt-get install -y \
     curl \
+    libffi-dev \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy virtual environment from builder stage
