@@ -145,7 +145,7 @@ jobs:
             --target-port 3000 \
             --ingress external \
             --env-vars \
-              BACKEND_URL=https://${{ steps.backend-fqdn.outputs.fqdn }} \
+              NEXT_PUBLIC_API_BASE_URL=https://${{ steps.backend-fqdn.outputs.fqdn }} \
               ENVIRONMENT=staging \
             --min-replicas 1 \
             --max-replicas 2 \
