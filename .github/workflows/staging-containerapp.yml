@@ -63,22 +63,39 @@ jobs:
       run: |
         SECRET_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name secret-key --query value -o tsv)
         DATABASE_URL=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name staging-database-url --query value -o tsv)
-        AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
-        AZURE_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-translator-region --query value -o tsv)
         AZURE_DOC_INTELLIGENCE_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-intelligence-key --query value -o tsv)
         AZURE_DOC_INTELLIGENCE_ENDPOINT=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-intelligence-endpoint --query value -o tsv)
+        AZURE_DOC_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-translator-key --query value -o tsv)
+        AZURE_DOC_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-translator-region --query value -o tsv)
+        AZURE_DOC_TRANSLATOR_ENDPOINT=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-doc-translator-endpoint --query value -o tsv)
+        AZURE_BLOB_SRC_URL=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-blob-src-url --query value -o tsv)
+        AZURE_BLOB_OUT_URL=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-blob-out-url --query value -o tsv)
+        AZURE_BLOB_CONFIG_URL=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-blob-config-url --query value -o tsv)
+        AZURE_BLOB_SRC_SAS_TOKEN=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-blob-src-sas-token --query value -o tsv)
+        AZURE_BLOB_OUT_SAS_TOKEN=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-blob-out-sas-token --query value -o tsv)
+        AZURE_BLOB_CONFIG_SAS_TOKEN=$(az keyvault secret show --vault-name ${{ secrets.KEY_VAULT_NAME }} --name azure-blob-config-sas-token --query value -o tsv)
 
         echo "::add-mask::$SECRET_KEY"
         echo "::add-mask::$DATABASE_URL"
-        echo "::add-mask::$AZURE_TRANSLATOR_KEY"
         echo "::add-mask::$AZURE_DOC_INTELLIGENCE_KEY"
+        echo "::add-mask::$AZURE_DOC_TRANSLATOR_KEY"
+        echo "::add-mask::$AZURE_BLOB_SRC_SAS_TOKEN"
+        echo "::add-mask::$AZURE_BLOB_OUT_SAS_TOKEN"
+        echo "::add-mask::$AZURE_BLOB_CONFIG_SAS_TOKEN"
 
         echo "secret-key=$SECRET_KEY" >> $GITHUB_OUTPUT
         echo "database-url=$DATABASE_URL" >> $GITHUB_OUTPUT
-        echo "azure-translator-key=$AZURE_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
-        echo "azure-translator-region=$AZURE_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
         echo "azure-doc-intelligence-key=$AZURE_DOC_INTELLIGENCE_KEY" >> $GITHUB_OUTPUT
         echo "azure-doc-intelligence-endpoint=$AZURE_DOC_INTELLIGENCE_ENDPOINT" >> $GITHUB_OUTPUT
+        echo "azure-doc-translator-key=$AZURE_DOC_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
+        echo "azure-doc-translator-region=$AZURE_DOC_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
+        echo "azure-doc-translator-endpoint=$AZURE_DOC_TRANSLATOR_ENDPOINT" >> $GITHUB_OUTPUT
+        echo "azure-blob-src-url=$AZURE_BLOB_SRC_URL" >> $GITHUB_OUTPUT
+        echo "azure-blob-out-url=$AZURE_BLOB_OUT_URL" >> $GITHUB_OUTPUT
+        echo "azure-blob-config-url=$AZURE_BLOB_CONFIG_URL" >> $GITHUB_OUTPUT
+        echo "azure-blob-src-sas-token=$AZURE_BLOB_SRC_SAS_TOKEN" >> $GITHUB_OUTPUT
+        echo "azure-blob-out-sas-token=$AZURE_BLOB_OUT_SAS_TOKEN" >> $GITHUB_OUTPUT
+        echo "azure-blob-config-sas-token=$AZURE_BLOB_CONFIG_SAS_TOKEN" >> $GITHUB_OUTPUT
 
     - name: Deploy Backend to Container Apps
       run: |
@@ -103,15 +120,25 @@ jobs:
             --secrets \
               secret-key="${{ steps.secrets.outputs.secret-key }}" \
               database-url="${{ steps.secrets.outputs.database-url }}" \
-              azure-translator-key="${{ steps.secrets.outputs.azure-translator-key }}" \
               azure-doc-intelligence-key="${{ steps.secrets.outputs.azure-doc-intelligence-key }}" \
+              azure-doc-translator-key="${{ steps.secrets.outputs.azure-doc-translator-key }}" \
+              azure-blob-src-sas-token="${{ steps.secrets.outputs.azure-blob-src-sas-token }}" \
+              azure-blob-out-sas-token="${{ steps.secrets.outputs.azure-blob-out-sas-token }}" \
+              azure-blob-config-sas-token="${{ steps.secrets.outputs.azure-blob-config-sas-token }}" \
             --env-vars \
               SECRET_KEY=secretref:secret-key \
               DATABASE_URL=secretref:database-url \
-              AZURE_TRANSLATOR_KEY=secretref:azure-translator-key \
-              AZURE_TRANSLATOR_REGION="${{ steps.secrets.outputs.azure-translator-region }}" \
-              AZURE_DOC_INTELLIGENCE_KEY=secretref:azure-doc-intelligence-key \
-              AZURE_DOC_INTELLIGENCE_ENDPOINT="${{ steps.secrets.outputs.azure-doc-intelligence-endpoint }}" \
+              AZURE_DOCUMENT_INTELLIGENCE_KEY=secretref:azure-doc-intelligence-key \
+              AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT="${{ steps.secrets.outputs.azure-doc-intelligence-endpoint }}" \
+              AZURE_DOC_TRANSLATOR_KEY=secretref:azure-doc-translator-key \
+              AZURE_DOC_TRANSLATOR_REGION="${{ steps.secrets.outputs.azure-doc-translator-region }}" \
+              AZURE_DOC_TRANSLATOR_ENDPOINT="${{ steps.secrets.outputs.azure-doc-translator-endpoint }}" \
+              AZURE_BLOB_SRC_URL="${{ steps.secrets.outputs.azure-blob-src-url }}" \
+              AZURE_BLOB_OUT_URL="${{ steps.secrets.outputs.azure-blob-out-url }}" \
+              AZURE_BLOB_CONFIG_URL="${{ steps.secrets.outputs.azure-blob-config-url }}" \
+              AZURE_BLOB_SRC_SAS_TOKEN=secretref:azure-blob-src-sas-token \
+              AZURE_BLOB_OUT_SAS_TOKEN=secretref:azure-blob-out-sas-token \
+              AZURE_BLOB_CONFIG_SAS_TOKEN=secretref:azure-blob-config-sas-token \
               ENVIRONMENT=staging \
             --min-replicas 1 \
             --max-replicas 3 \
