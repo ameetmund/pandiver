@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 interface ExportDataProps {
   tableData: string[][];
   columnHeaders: string[];
@@ -32,7 +33,7 @@ export default function ExportData({ tableData, columnHeaders }: ExportDataProps
         ? [columnHeaders, ...tableData]
         : tableData;
 
-      const response = await fetch('http://localhost:8000/export-data/', {
+      const response = await fetch(getApiUrl('/export-data/'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

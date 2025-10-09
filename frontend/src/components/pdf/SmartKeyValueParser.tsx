@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { 
+
+import { apiClient, getApiUrl } from '@/lib/api';import { 
   Upload, 
   FileText, 
   Eye, 
@@ -116,7 +117,7 @@ const SmartKeyValueParser: React.FC = () => {
       const formData = new FormData();
       formData.append('file', pdfFile);
       
-      const response = await fetch('http://localhost:8000/azure-di/smart-key-value/start-analysis', {
+      const response = await fetch(getApiUrl('/azure-di/smart-key-value/start-analysis'), {
         method: 'POST',
         body: formData,
       });
@@ -145,7 +146,7 @@ const SmartKeyValueParser: React.FC = () => {
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/azure-di/smart-key-value/job-status/${jobId}`);
+        const response = await fetch(getApiUrl(`/azure-di/smart-key-value/job-status/${jobId}`));
         if (response.ok) {
           const result = await response.json();
           setAzureDIJob(result);
@@ -170,7 +171,7 @@ const SmartKeyValueParser: React.FC = () => {
   const processAzureDIResults = async (jobId: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/azure-di/smart-key-value/process-results/${jobId}`);
+      const response = await fetch(getApiUrl(`/azure-di/smart-key-value/process-results/${jobId}`));
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to process results');
@@ -225,7 +226,7 @@ const SmartKeyValueParser: React.FC = () => {
         throw new Error('No data selected for export');
       }
       
-      const response = await fetch(`http://localhost:8000/azure-di/smart-key-value/export/${format}`, {
+      const response = await fetch(getApiUrl(`/azure-di/smart-key-value/export/${format}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

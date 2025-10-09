@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 export interface TextBlock {
   text: string;
   x0: number;
@@ -57,7 +58,7 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
       if (token) {
         // Try authenticated endpoint first
         console.log('📤 Attempting authenticated upload...');
-        response = await fetch('http://localhost:8000/upload-pdf/', {
+        response = await fetch(getApiUrl('/upload-pdf/'), {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -69,7 +70,7 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
           console.log('🔓 Authentication failed, trying test endpoint...');
           setUploadStatus('Authentication failed, using test mode...');
           // Fallback to test endpoint
-          response = await fetch('http://localhost:8000/upload-pdf-test/', {
+          response = await fetch(getApiUrl('/upload-pdf-test/'), {
             method: 'POST',
             body: formData,
           });
@@ -78,7 +79,7 @@ export default function PDFUploader({ onTextBlocksExtracted }: PDFUploaderProps)
         // Use test endpoint if no token
         console.log('📤 No auth token, using test endpoint...');
         setUploadStatus('No authentication, using test mode...');
-        response = await fetch('http://localhost:8000/upload-pdf-test/', {
+        response = await fetch(getApiUrl('/upload-pdf-test/'), {
           method: 'POST',
           body: formData,
         });

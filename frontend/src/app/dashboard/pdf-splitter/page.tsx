@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 interface PageInfo {
   page_number: number;
   thumbnail: string;
@@ -55,7 +56,7 @@ export default function PDFSplitterPage() {
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
+      const response = await fetch(getApiUrl('/auth/api-keys'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -75,7 +76,7 @@ export default function PDFSplitterPage() {
         return;
       }
       try {
-        const response = await fetch('http://localhost:8000/auth/me', {
+        const response = await fetch(getApiUrl('/auth/me'), {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Auth failed');
@@ -120,7 +121,7 @@ export default function PDFSplitterPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter/analyze', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-splitter/analyze'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -176,7 +177,7 @@ export default function PDFSplitterPage() {
       formData.append('file', file);
       formData.append('page_numbers', JSON.stringify(selectedPages));
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter/extract', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-splitter/extract'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -212,7 +213,7 @@ export default function PDFSplitterPage() {
     if (!activeApiKey) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter/jobs/${jobId}/status`, {
+      const response = await fetch(getApiUrl(`/api/v1/pdf-splitter/jobs/${jobId}/status`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
@@ -241,7 +242,7 @@ export default function PDFSplitterPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter/download/${job.job_id}`, {
+      const response = await fetch(getApiUrl(`/api/v1/pdf-splitter/download/${job.job_id}`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },

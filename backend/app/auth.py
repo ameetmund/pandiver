@@ -4,6 +4,7 @@ Authentication utilities for the Pandiver API
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
+import os
 from sqlalchemy.orm import Session
 from .models import User as UserModel
 
@@ -11,8 +12,10 @@ from .models import User as UserModel
 security = HTTPBearer()
 
 # Authentication configuration (should match main.py)
-SECRET_KEY = "09af8c2e8b3a47f19c6d5e7a8b2c4d6f9e1a3b5c7d9f0e2a4b6c8d0f1e3a5b7c9d1f3e5a7b9c1d3f5e7a9b1d3f5e7a9b"  # In production, use environment variable
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required and not set")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):

@@ -1,8 +1,10 @@
-# Environment variables
+# Environment variables (keep .env symlink, ignore local overrides)
 .env
 .env.local
-.env.production
-.env.development
+.env.*.local
+
+# DO NOT ignore environments/ directory - it's version controlled
+# Individual environment files in environments/ are tracked intentionally
 
 # Dependencies
 node_modules/
@@ -51,6 +53,12 @@ test*.pdf
 test*.html
 *test*.py
 debug_*.py
+
+# Backup and old files
+*.backup
+*_old.*
+*.bak
+*~
 
 # Uploads and temporary files
 uploads/

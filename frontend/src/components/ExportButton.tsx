@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 interface ExportButtonProps {
   data: string[][];
   filename?: string;
@@ -59,7 +60,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({ data, filename = 'table-dat
     try {
       setIsExporting(true);
       
-      const response = await fetch('http://localhost:8000/export-data/', {
+      const response = await fetch(getApiUrl('/export-data/'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

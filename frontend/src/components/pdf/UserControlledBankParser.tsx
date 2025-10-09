@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { CheckCircle, AlertCircle, Save, Download, Upload, Eye, Target, Settings, Trash2 } from 'lucide-react';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
 const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
@@ -216,7 +217,7 @@ const UserControlledBankParser: React.FC = () => {
       
       formData.append('rectangle', JSON.stringify(rectangleData));
       
-      const response = await fetch('http://localhost:8000/user-controlled/extract-headers-from-selection', {
+      const response = await fetch(getApiUrl('/user-controlled/extract-headers-from-selection'), {
         method: 'POST',
         body: formData,
       });
@@ -323,7 +324,7 @@ const UserControlledBankParser: React.FC = () => {
         page_number: currentPage - 1
       }));
       
-      const response = await fetch('http://localhost:8000/user-controlled/extract-headers-from-selection', {
+      const response = await fetch(getApiUrl('/user-controlled/extract-headers-from-selection'), {
         method: 'POST',
         body: formData,
       });
@@ -388,7 +389,7 @@ const UserControlledBankParser: React.FC = () => {
       formData.append('max_rows', '10');
       formData.append('header_y', headerRect.y.toString());
       
-      const response = await fetch('http://localhost:8000/user-controlled/preview-column-alignment', {
+      const response = await fetch(getApiUrl('/user-controlled/preview-column-alignment'), {
         method: 'POST',
         body: formData,
       });
@@ -423,7 +424,7 @@ const UserControlledBankParser: React.FC = () => {
       formData.append('header_y', headerRect.y.toString());
       formData.append('start_page', (currentPage - 1).toString());
       
-      const response = await fetch('http://localhost:8000/user-controlled/extract-data-with-columns', {
+      const response = await fetch(getApiUrl('/user-controlled/extract-data-with-columns'), {
         method: 'POST',
         body: formData,
       });

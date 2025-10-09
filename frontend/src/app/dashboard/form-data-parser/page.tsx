@@ -17,6 +17,7 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { 
   ssr: false,
@@ -115,7 +116,7 @@ const FormDataParser: React.FC = () => {
       const formData = new FormData();
       formData.append('file', pdfFile);
       
-      const response = await fetch('http://localhost:8000/textract/start-forms-analysis', {
+      const response = await fetch(getApiUrl('/textract/start-forms-analysis'), {
         method: 'POST',
         body: formData,
       });
@@ -144,7 +145,7 @@ const FormDataParser: React.FC = () => {
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/textract/job-status/${jobId}`);
+        const response = await fetch(getApiUrl(`/textract/job-status/${jobId}`));
         if (response.ok) {
           const result = await response.json();
           setTextractJob(result);
@@ -169,7 +170,7 @@ const FormDataParser: React.FC = () => {
   const processFormsResults = async (jobId: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/textract/process-forms-results/${jobId}`);
+      const response = await fetch(getApiUrl(`/textract/process-forms-results/${jobId}`));
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to process forms results');
@@ -232,7 +233,7 @@ const FormDataParser: React.FC = () => {
       
       const requestData = { forms_data: filteredFormsData };
       
-      const response = await fetch(`http://localhost:8000/textract/export-forms/${format}`, {
+      const response = await fetch(getApiUrl(`/textract/export-forms/${format}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

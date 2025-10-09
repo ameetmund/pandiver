@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { 
+
+import { apiClient, getApiUrl } from '@/lib/api';import { 
   Upload, 
   FileText, 
   Eye, 
@@ -117,7 +118,7 @@ const AWSTextractBankParser: React.FC = () => {
       const formData = new FormData();
       formData.append('file', pdfFile);
       
-      const response = await fetch('http://localhost:8000/textract/start-analysis', {
+      const response = await fetch(getApiUrl('/textract/start-analysis'), {
         method: 'POST',
         body: formData,
       });
@@ -146,7 +147,7 @@ const AWSTextractBankParser: React.FC = () => {
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/textract/job-status/${jobId}`);
+        const response = await fetch(getApiUrl(`/textract/job-status/${jobId}`));
         if (response.ok) {
           const result = await response.json();
           setTextractJob(result);
@@ -171,7 +172,7 @@ const AWSTextractBankParser: React.FC = () => {
   const processTextractResults = async (jobId: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/textract/process-results/${jobId}`);
+      const response = await fetch(getApiUrl(`/textract/process-results/${jobId}`));
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to process results');
@@ -197,7 +198,7 @@ const AWSTextractBankParser: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/textract/merge-tables', {
+      const response = await fetch(getApiUrl('/textract/merge-tables'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -236,7 +237,7 @@ const AWSTextractBankParser: React.FC = () => {
         throw new Error('No data available for export');
       }
       
-      const response = await fetch(`http://localhost:8000/textract/export/${format}`, {
+      const response = await fetch(getApiUrl(`/textract/export/${format}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../../components/DashboardLayout';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 interface User {
   id: string;
   name: string;
@@ -178,7 +179,7 @@ export default function APIPage() {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      const response = await fetch('http://localhost:8000/auth/me', {
+      const response = await fetch(getApiUrl('/auth/me'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -201,7 +202,7 @@ export default function APIPage() {
         return;
       }
       
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
+      const response = await fetch(getApiUrl('/auth/api-keys'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('API keys response status:', response.status);
@@ -235,7 +236,7 @@ export default function APIPage() {
         return;
       }
       
-      const response = await fetch('http://localhost:8000/auth/usage', {
+      const response = await fetch(getApiUrl('/auth/usage'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -268,7 +269,7 @@ export default function APIPage() {
       const token = localStorage.getItem('accessToken');
       console.log('Creating API key with token:', token ? `Token present (${token.substring(0, 20)}...)` : 'No token');
       console.log('Full token:', token);
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
+      const response = await fetch(getApiUrl('/auth/api-keys'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -306,7 +307,7 @@ export default function APIPage() {
   const deleteApiKey = async (keyId: number) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:8000/auth/api-keys/${keyId}`, {
+      const response = await fetch(getApiUrl(`/auth/api-keys/${keyId}`), {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -393,7 +394,7 @@ export default function APIPage() {
         formData.append('files', file);
       });
 
-      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/analyze`, {
+      const response = await fetch(getApiUrl(`/api/v1/intelligent-data/analyze`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`,
@@ -424,7 +425,7 @@ export default function APIPage() {
         // Poll status
         const pollStatus = async () => {
           try {
-            const statusResponse = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
+            const statusResponse = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/status`), {
               headers: { 'Authorization': `Bearer ${selectedApiKey}` }
             });
             const statusResult = await statusResponse.json();
@@ -451,7 +452,7 @@ export default function APIPage() {
               };
               setExecutionFlow(prev => [...prev, resultsStep]);
 
-              const resultsResponse = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`, {
+              const resultsResponse = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`), {
                 headers: { 'Authorization': `Bearer ${selectedApiKey}` }
               });
               const resultsResult = await resultsResponse.json();
@@ -593,7 +594,7 @@ export default function APIPage() {
 
     try {
       // Step 1: Start Analysis
-      const analyzeUrl = 'http://localhost:8000/api/v1/intelligent-data/analyze';
+      const analyzeUrl = getApiUrl('/api/v1/intelligent-data/analyze');
       const analyzeHeaders = { 'Authorization': `Bearer ${selectedApiKey}` };
       const startTime = Date.now();
       
@@ -659,7 +660,7 @@ export default function APIPage() {
   const monitorProgress = async (jobId: string, fileIndex: number) => {
     const maxAttempts = 60; // 5 minutes max wait time
     const pollInterval = 5000; // 5 seconds
-    const statusUrl = `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`;
+    const statusUrl = getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/status`);
     const statusHeaders = { 'Authorization': `Bearer ${selectedApiKey}` };
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -720,7 +721,7 @@ export default function APIPage() {
 
   const getResults = async (jobId: string, fileIndex: number) => {
     try {
-      const resultsUrl = `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`;
+      const resultsUrl = getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`);
       const resultsHeaders = { 'Authorization': `Bearer ${selectedApiKey}` };
       const startTime = Date.now();
 
@@ -796,7 +797,7 @@ export default function APIPage() {
         formData.append('files', file);
       });
 
-      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/analyze`, {
+      const response = await fetch(getApiUrl(`/api/v1/intelligent-data/analyze`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`,
@@ -849,7 +850,7 @@ export default function APIPage() {
 
     const pollStatus = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
+        const response = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/status`), {
           headers: {
             'Authorization': `Bearer ${selectedApiKey}`,
           },
@@ -899,7 +900,7 @@ export default function APIPage() {
     });
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`, {
+      const response = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`,
         },
@@ -945,7 +946,7 @@ export default function APIPage() {
       const formData = new FormData();
       formData.append('files', file);
 
-      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/analyze`, {
+      const response = await fetch(getApiUrl(`/api/v1/intelligent-data/analyze`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`,
@@ -1013,7 +1014,7 @@ export default function APIPage() {
         const formData = new FormData();
         formData.append('files', file);
 
-        const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/analyze`, {
+        const response = await fetch(getApiUrl(`/api/v1/intelligent-data/analyze`), {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${selectedApiKey}`,
@@ -1056,7 +1057,7 @@ export default function APIPage() {
     return new Promise((resolve) => {
       const pollStatus = async () => {
         try {
-          const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
+          const response = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/status`), {
             headers: {
               'Authorization': `Bearer ${selectedApiKey}`,
             },
@@ -1067,7 +1068,7 @@ export default function APIPage() {
             
             if (result.status === 'SUCCEEDED') {
               // Get download URLs
-              const resultsResponse = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`, {
+              const resultsResponse = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`), {
                 headers: {
                   'Authorization': `Bearer ${selectedApiKey}`,
                 },
@@ -1075,8 +1076,8 @@ export default function APIPage() {
 
               if (resultsResponse.ok) {
                 const downloadUrls = {
-                  tables: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/download/${jobId}/tables/${outputFormat}?mode=${tableMode}` },
-                  key_values: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/download/${jobId}/key-values/${outputFormat}` }
+                  tables: { [outputFormat]: getApiUrl(`/api/v1/intelligent-data/download/${jobId}/tables/${outputFormat}?mode=${tableMode}`) },
+                  key_values: { [outputFormat]: getApiUrl(`/api/v1/intelligent-data/download/${jobId}/key-values/${outputFormat}`) }
                 };
 
                 setFileProcessingStatus(prev => prev.map((status, index) => 
@@ -1107,7 +1108,7 @@ export default function APIPage() {
 
   const checkJobStatus = async (jobId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/status`, {
+      const response = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/status`), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`,
         },
@@ -1118,7 +1119,7 @@ export default function APIPage() {
         
         if (result.status === 'SUCCEEDED') {
           // Get download URLs
-          const resultsResponse = await fetch(`http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`, {
+          const resultsResponse = await fetch(getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/results?format=${outputFormat}&mode=${tableMode}`), {
             headers: {
               'Authorization': `Bearer ${selectedApiKey}`,
             },
@@ -1126,8 +1127,8 @@ export default function APIPage() {
 
           if (resultsResponse.ok) {
             const downloadUrls = {
-              tables: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/download/tables/${outputFormat}` },
-              key_values: { [outputFormat]: `http://localhost:8000/api/v1/intelligent-data/jobs/${jobId}/download/key-values/${outputFormat}` }
+              tables: { [outputFormat]: getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/download/tables/${outputFormat}`) },
+              key_values: { [outputFormat]: getApiUrl(`/api/v1/intelligent-data/jobs/${jobId}/download/key-values/${outputFormat}`) }
             };
 
             setProcessingJobs(prev => 
@@ -2351,7 +2352,7 @@ export default function APIPage() {
                         <h5 className="font-semibold text-gray-900 mb-2">Example Request</h5>
                         <div className="bg-gray-900 rounded-lg p-4">
                           <pre className="text-green-400 text-sm font-mono">
-{`curl -X POST "http://localhost:8000/api/v1/intelligent-data/analyze" \\
+{`curl -X POST getApiUrl("/api/v1/intelligent-data/analyze") \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -F "files=@document1.pdf" \\
   -F "files=@document2.pdf"`}
@@ -2465,7 +2466,7 @@ export default function APIPage() {
                         <div className="bg-gray-900 rounded-lg p-4">
                           <pre className="text-green-400 text-sm font-mono">
 {`curl -H "Authorization: Bearer YOUR_API_KEY" \\
-  "http://localhost:8000/api/v1/intelligent-data/jobs/uuid-string/results?format=csv&mode=individual"`}
+  getApiUrl("/api/v1/intelligent-data/jobs/uuid-string/results?format=csv&mode=individual")`}
                           </pre>
                         </div>
                       </div>

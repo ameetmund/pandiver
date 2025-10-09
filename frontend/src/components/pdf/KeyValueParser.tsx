@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { 
+
+import { apiClient, getApiUrl } from '@/lib/api';import { 
   Upload, 
   FileText, 
   Eye, 
@@ -130,7 +131,7 @@ const KeyValueParser: React.FC = () => {
       formData.append('custom_keywords', extractionSettings.custom_keywords);
       formData.append('merge_multiline', extractionSettings.merge_multiline.toString());
       
-      const response = await fetch('http://localhost:8000/api/v1/key-value-extract', {
+      const response = await fetch(getApiUrl('/api/v1/key-value-extract'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -162,7 +163,7 @@ const KeyValueParser: React.FC = () => {
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/key-value-extract/${jobId}/status`, {
+        const response = await fetch(getApiUrl(`/api/v1/key-value-extract/${jobId}/status`), {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
           },
@@ -194,7 +195,7 @@ const KeyValueParser: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/key-value-extract/${extractionJob.job_id}/download?format=${format}`, {
+      const response = await fetch(getApiUrl(`/api/v1/key-value-extract/${extractionJob.job_id}/download?format=${format}`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },

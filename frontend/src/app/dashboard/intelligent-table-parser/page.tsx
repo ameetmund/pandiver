@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import IntelligentTableParser from '@/components/pdf/IntelligentTableParser';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 export default function IntelligentTableParserPage() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -18,7 +19,7 @@ export default function IntelligentTableParserPage() {
         return;
       }
       try {
-        const response = await fetch('http://localhost:8000/auth/me', {
+        const response = await fetch(getApiUrl('/auth/me'), {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Auth failed');

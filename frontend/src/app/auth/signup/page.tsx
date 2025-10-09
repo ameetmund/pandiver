@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { apiClient, API_ENDPOINTS } from '@/lib/api';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -19,27 +20,15 @@ export default function SignupPage() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+      const data = await apiClient.post(API_ENDPOINTS.auth.signup, { name, email, password });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Signup failed');
-      }
-
-      const data = await response.json();
       console.log('✅ Signup successful:', data);
-      
+
       // Store token and user info in localStorage
       localStorage.setItem('accessToken', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
       console.log('💾 Stored auth data in localStorage');
-      
+
       // Redirect to dashboard with a small delay to ensure state is updated
       console.log('🔄 Redirecting to dashboard...');
       setTimeout(() => {

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import AWSTextractBankParser from '../../../components/pdf/AWSTextractBankParser';
 import dynamic from 'next/dynamic';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 function AWSTextractBankStatementParser() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,7 +20,7 @@ function AWSTextractBankStatementParser() {
         return;
       }
       try {
-        const response = await fetch('http://localhost:8000/auth/me', {
+        const response = await fetch(getApiUrl('/auth/me'), {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Auth failed');

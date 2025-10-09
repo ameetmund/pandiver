@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../../../components/DashboardLayout';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 interface User {
   id: string;
   name: string;
@@ -127,7 +128,7 @@ export default function PDFSplitterAPIPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/auth/me', {
+      const response = await fetch(getApiUrl('/auth/me'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -150,7 +151,7 @@ export default function PDFSplitterAPIPage() {
   const fetchApiKeys = async () => {
     const token = localStorage.getItem('accessToken');
     try {
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
+      const response = await fetch(getApiUrl('/auth/api-keys'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -171,7 +172,7 @@ export default function PDFSplitterAPIPage() {
     if (!selectedApiKey) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter-api/usage', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-splitter-api/usage'), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`
         }
@@ -189,7 +190,7 @@ export default function PDFSplitterAPIPage() {
     if (!selectedApiKey) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/v1/pdf-splitter-api/jobs', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-splitter-api/jobs'), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`
         }
@@ -212,7 +213,7 @@ export default function PDFSplitterAPIPage() {
 
     const token = localStorage.getItem('accessToken');
     try {
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
+      const response = await fetch(getApiUrl('/auth/api-keys'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,7 +245,7 @@ export default function PDFSplitterAPIPage() {
 
     const token = localStorage.getItem('accessToken');
     try {
-      const response = await fetch(`http://localhost:8000/auth/api-keys/${keyId}`, {
+      const response = await fetch(getApiUrl(`/auth/api-keys/${keyId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -385,7 +386,7 @@ export default function PDFSplitterAPIPage() {
 
     // Step 1: Analyze PDF
     const analyzeStartTime = Date.now();
-    const analyzeUrl = 'http://localhost:8000/api/v1/pdf-splitter-api/analyze';
+    const analyzeUrl = getApiUrl('/api/v1/pdf-splitter-api/analyze');
     
     setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
       index === fileIndex ? { 
@@ -449,7 +450,7 @@ export default function PDFSplitterAPIPage() {
     splitFormData.append('selected_pages', JSON.stringify(pagesToExtract));
     
     const splitStartTime = Date.now();
-    const splitUrl = 'http://localhost:8000/api/v1/pdf-splitter-api/split';
+    const splitUrl = getApiUrl('/api/v1/pdf-splitter-api/split');
     
     setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
       index === fileIndex ? { 
@@ -506,7 +507,7 @@ export default function PDFSplitterAPIPage() {
       await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
       attempts++;
 
-      const statusUrl = `http://localhost:8000/api/v1/pdf-splitter-api/jobs/${splitData.job_id}/status`;
+      const statusUrl = getApiUrl(`/api/v1/pdf-splitter-api/jobs/${splitData.job_id}/status`);
       const statusStartTime = Date.now();
       
       const statusResponse = await fetch(statusUrl, {
@@ -595,7 +596,7 @@ export default function PDFSplitterAPIPage() {
 
   const downloadResult = async (jobId: string, filename: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-splitter-api/download/${jobId}`, {
+      const response = await fetch(getApiUrl(`/api/v1/pdf-splitter-api/download/${jobId}`), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`
         }
@@ -1230,7 +1231,7 @@ export default function PDFSplitterAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">1. Analyze PDF</h3>
                   <p className="mb-4 text-gray-900">Analyze a PDF to get page information before splitting.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-splitter-api/analyze" \\
+                    <pre>{`curl -X POST getApiUrl("/api/v1/pdf-splitter-api/analyze") \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -F "file=@document.pdf"`}</pre>
                   </div>
@@ -1241,7 +1242,7 @@ export default function PDFSplitterAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">2. Split PDF</h3>
                   <p className="mb-4 text-gray-900">Split a PDF by extracting specific pages.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-splitter-api/split" \\
+                    <pre>{`curl -X POST getApiUrl("/api/v1/pdf-splitter-api/split") \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -F "file=@document.pdf" \\
   -F "selected_pages=[1,3,5]"`}</pre>
@@ -1252,7 +1253,7 @@ export default function PDFSplitterAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">3. Check Job Status</h3>
                   <p className="mb-4 text-gray-900">Check the status of a splitting job.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-splitter-api/jobs/{job_id}/status" \\
+                    <pre>{`curl -X GET getApiUrl("/api/v1/pdf-splitter-api/jobs/{job_id}/status") \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
                   </div>
                 </div>
@@ -1261,7 +1262,7 @@ export default function PDFSplitterAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">4. Download Result</h3>
                   <p className="mb-4 text-gray-900">Download the split PDF file.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-splitter-api/download/{job_id}" \\
+                    <pre>{`curl -X GET getApiUrl("/api/v1/pdf-splitter-api/download/{job_id}") \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -o "result.pdf"`}</pre>
                   </div>
@@ -1271,7 +1272,7 @@ export default function PDFSplitterAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">5. List Jobs</h3>
                   <p className="mb-4 text-gray-900">List all your splitting jobs.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-splitter-api/jobs" \\
+                    <pre>{`curl -X GET getApiUrl("/api/v1/pdf-splitter-api/jobs") \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
                   </div>
                 </div>

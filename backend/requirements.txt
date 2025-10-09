@@ -11,6 +11,7 @@ bcrypt==4.0.1  # Pin bcrypt version for passlib 1.7.4 compatibility
 python-jose[cryptography]==3.3.0
 email-validator==2.1.0
 sqlalchemy==2.0.*
+psycopg2-binary==2.9.*  # PostgreSQL driver for SQLAlchemy
 
 # Celery and Redis for background processing
 celery==5.3.*

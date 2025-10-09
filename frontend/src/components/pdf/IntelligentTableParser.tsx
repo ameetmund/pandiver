@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { 
+
+import { apiClient, getApiUrl } from '@/lib/api';import { 
   Upload, 
   FileText, 
   Eye, 
@@ -117,7 +118,7 @@ const IntelligentTableParser: React.FC = () => {
       const formData = new FormData();
       formData.append('file', pdfFile);
       
-      const response = await fetch('http://localhost:8000/azure-di/intelligent-tables/start-analysis', {
+      const response = await fetch(getApiUrl('/azure-di/intelligent-tables/start-analysis'), {
         method: 'POST',
         body: formData,
       });
@@ -146,7 +147,7 @@ const IntelligentTableParser: React.FC = () => {
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/azure-di/intelligent-tables/job-status/${jobId}`);
+        const response = await fetch(getApiUrl(`/azure-di/intelligent-tables/job-status/${jobId}`));
         if (response.ok) {
           const result = await response.json();
           setAzureDIJob(result);
@@ -171,7 +172,7 @@ const IntelligentTableParser: React.FC = () => {
   const processAzureDIResults = async (jobId: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/azure-di/intelligent-tables/process-results/${jobId}`);
+      const response = await fetch(getApiUrl(`/azure-di/intelligent-tables/process-results/${jobId}`));
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to process results');
@@ -194,7 +195,7 @@ const IntelligentTableParser: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/azure-di/intelligent-tables/merge-tables', {
+      const response = await fetch(getApiUrl('/azure-di/intelligent-tables/merge-tables'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -233,7 +234,7 @@ const IntelligentTableParser: React.FC = () => {
         throw new Error('No data available for export');
       }
       
-      const response = await fetch(`http://localhost:8000/azure-di/intelligent-tables/export/${format}`, {
+      const response = await fetch(getApiUrl(`/azure-di/intelligent-tables/export/${format}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

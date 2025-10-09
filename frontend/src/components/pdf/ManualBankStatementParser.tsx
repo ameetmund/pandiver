@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { CheckCircle, AlertCircle, Save, Download, Upload, Eye, Target, Settings, Trash2 } from 'lucide-react';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 // Dynamically import react-pdf to avoid SSR issues
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { 
   ssr: false,
@@ -187,7 +188,7 @@ const ManualBankStatementParser: React.FC = () => {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch('http://localhost:8000/manual/detect-transaction-pages', {
+      const response = await fetch(getApiUrl('/manual/detect-transaction-pages'), {
         method: 'POST',
         body: formData,
       });
@@ -338,7 +339,7 @@ const ManualBankStatementParser: React.FC = () => {
       
       formData.append('rectangle', JSON.stringify(rectangleData));
       
-      const response = await fetch('http://localhost:8000/user-controlled/extract-headers-from-selection', {
+      const response = await fetch(getApiUrl('/user-controlled/extract-headers-from-selection'), {
         method: 'POST',
         body: formData,
       });
@@ -483,7 +484,7 @@ const ManualBankStatementParser: React.FC = () => {
         page_number: currentPage - 1
       }));
       
-      const response = await fetch('http://localhost:8000/user-controlled/extract-headers-from-selection', {
+      const response = await fetch(getApiUrl('/user-controlled/extract-headers-from-selection'), {
         method: 'POST',
         body: formData,
       });
@@ -609,7 +610,7 @@ const ManualBankStatementParser: React.FC = () => {
         }
       });
 
-      const response = await fetch('http://localhost:8000/manual/detect-columns-in-rectangle', {
+      const response = await fetch(getApiUrl('/manual/detect-columns-in-rectangle'), {
         method: 'POST',
         body: formData,
       });
@@ -720,7 +721,7 @@ const ManualBankStatementParser: React.FC = () => {
       formData.append('width', rect.width.toString());
       formData.append('height', rect.height.toString());
       
-      const response = await fetch('http://localhost:8000/extract-text-region', {
+      const response = await fetch(getApiUrl('/extract-text-region'), {
         method: 'POST',
         body: formData,
       });
@@ -788,7 +789,7 @@ const ManualBankStatementParser: React.FC = () => {
         start_page: currentPage - 1
       });
       
-      const response = await fetch('http://localhost:8000/user-controlled/extract-data-with-columns', {
+      const response = await fetch(getApiUrl('/user-controlled/extract-data-with-columns'), {
         method: 'POST',
         body: formData,
       });
@@ -860,7 +861,7 @@ const ManualBankStatementParser: React.FC = () => {
       formData.append('pattern_data', JSON.stringify(pattern));
       formData.append('start_page', '0');
       
-      const response = await fetch('http://localhost:8000/manual/extract-with-pattern', {
+      const response = await fetch(getApiUrl('/manual/extract-with-pattern'), {
         method: 'POST',
         body: formData,
       });
@@ -907,7 +908,7 @@ const ManualBankStatementParser: React.FC = () => {
       formData.append('pattern_data', JSON.stringify(createdPattern));
       formData.append('start_page', '0');
       
-      const response = await fetch('http://localhost:8000/manual/extract-with-pattern', {
+      const response = await fetch(getApiUrl('/manual/extract-with-pattern'), {
         method: 'POST',
         body: formData,
       });

@@ -24,35 +24,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install additional packages that often break after restart
-RUN pip install --no-cache-dir --upgrade \
-    fastapi \
-    uvicorn \
-    sqlalchemy \
-    bcrypt \
-    passlib \
-    python-jose[cryptography] \
-    python-multipart \
-    azure-ai-translation-text \
-    azure-ai-documentintelligence \
-    azure-storage-blob \
-    httpx \
-    python-dotenv \
-    pdfplumber \
-    PyMuPDF \
-    pandas \
-    openpyxl \
-    xlsxwriter \
-    scikit-learn \
-    numpy \
-    pillow \
-    boto3 \
-    celery \
-    redis \
-    requests \
-    PyJWT \
-    email-validator \
-    aiohttp
+# Note: Removed additional package installations to avoid version conflicts
+# All packages are properly versioned in requirements.txt
 
 # Copy application code
 COPY . .

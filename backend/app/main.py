@@ -89,15 +89,20 @@ app.include_router(pdf_translation_router, tags=["PDF Translator"])
 app.include_router(pdf_translator_api_router, tags=["PDF Translator API"])
 
 # Database setup
-SQLALCHEMY_DATABASE_URL = 'sqlite:///./pandiver.db'
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./pandiver.db")
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
 
 # Security configuration
-SECRET_KEY = "09af8c2e8b3a47f19c6d5e7a8b2c4d6f9e1a3b5c7d9f0e2a4b6c8d0f1e3a5b7c9d1f3e5a7b9c1d3f5e7a9b1d3f5e7a9b"  # In production, use environment variable
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 480
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required and not set")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -320,7 +325,17 @@ async def get_api_keys(
 ):
     """Get all API keys for the current user"""
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     api_keys = db.query(ApiKey).filter(ApiKey.user_id == current_user.id).all()
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     
     return [

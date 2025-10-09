@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { 
+
+import { apiClient, getApiUrl } from '@/lib/api';import { 
   Upload, 
   FileText, 
   Eye, 
@@ -153,7 +154,7 @@ const IntelligentDataParser: React.FC = () => {
       const formData = new FormData();
       formData.append('file', pdfFile);
       
-      const response = await fetch('http://localhost:8000/azure-di/intelligent-data/start-analysis', {
+      const response = await fetch(getApiUrl('/azure-di/intelligent-data/start-analysis'), {
         method: 'POST',
         body: formData,
       });
@@ -182,7 +183,7 @@ const IntelligentDataParser: React.FC = () => {
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/azure-di/intelligent-data/job-status/${jobId}`);
+        const response = await fetch(getApiUrl(`/azure-di/intelligent-data/job-status/${jobId}`));
         if (response.ok) {
           const result = await response.json();
           setIntelligentDataJob(result);
@@ -207,7 +208,7 @@ const IntelligentDataParser: React.FC = () => {
   const processIntelligentDataResults = async (jobId: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/azure-di/intelligent-data/process-results/${jobId}`);
+      const response = await fetch(getApiUrl(`/azure-di/intelligent-data/process-results/${jobId}`));
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to process results');
@@ -301,7 +302,7 @@ const IntelligentDataParser: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/azure-di/intelligent-tables/merge-tables', {
+      const response = await fetch(getApiUrl('/azure-di/intelligent-tables/merge-tables'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -338,14 +339,14 @@ const IntelligentDataParser: React.FC = () => {
       if (dataType === 'tables') {
         if (useMerged && mergedData) {
           requestData = mergedData;
-          endpoint = `http://localhost:8000/azure-di/intelligent-data/export-tables/${format}`;
+          endpoint = getApiUrl(`/azure-di/intelligent-data/export-tables/${format}`);
         } else {
           // Filter selected tables
           const filteredTables = extractedData.tables.filter(table => 
             selectedTables.includes(table.table_id)
           );
           requestData = { tables: filteredTables };
-          endpoint = `http://localhost:8000/azure-di/intelligent-data/export-tables/${format}`;
+          endpoint = getApiUrl(`/azure-di/intelligent-data/export-tables/${format}`);
         }
       } else {
         // Filter selected pages
@@ -353,7 +354,7 @@ const IntelligentDataParser: React.FC = () => {
           selectedPages.includes(form.page_number)
         );
         requestData = { forms_data: filteredFormData };
-        endpoint = `http://localhost:8000/azure-di/intelligent-data/export-key-values/${format}`;
+        endpoint = getApiUrl(`/azure-di/intelligent-data/export-key-values/${format}`);
       }
       
       const response = await fetch(endpoint, {

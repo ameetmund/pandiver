@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 interface PDFAnalysis {
   total_pages: number;
   filename: string;
@@ -73,7 +74,7 @@ export default function PDFTranslatorPage() {
         return;
       }
       try {
-        const response = await fetch('http://localhost:8000/auth/me', {
+        const response = await fetch(getApiUrl('/auth/me'), {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Auth failed');
@@ -223,7 +224,7 @@ export default function PDFTranslatorPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator/analyze', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-translator/analyze'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -269,7 +270,7 @@ export default function PDFTranslatorPage() {
       formData.append('target_language', targetLanguage);
       formData.append('translation_method', 'document');
 
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator/translate', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-translator/translate'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -309,7 +310,7 @@ export default function PDFTranslatorPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-translator/jobs/${jobId}/status`, {
+      const response = await fetch(getApiUrl(`/api/v1/pdf-translator/jobs/${jobId}/status`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
@@ -338,7 +339,7 @@ export default function PDFTranslatorPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-translator/download/${job.job_id}`, {
+      const response = await fetch(getApiUrl(`/api/v1/pdf-translator/download/${job.job_id}`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },

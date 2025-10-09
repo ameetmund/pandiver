@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../../../components/DashboardLayout';
 
+import { apiClient, getApiUrl } from '@/lib/api';
 interface User {
   id: string;
   name: string;
@@ -131,7 +132,7 @@ export default function PDFTranslatorAPIPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/auth/me', {
+      const response = await fetch(getApiUrl('/auth/me'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -154,7 +155,7 @@ export default function PDFTranslatorAPIPage() {
   const fetchApiKeys = async () => {
     const token = localStorage.getItem('accessToken');
     try {
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
+      const response = await fetch(getApiUrl('/auth/api-keys'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -175,7 +176,7 @@ export default function PDFTranslatorAPIPage() {
     if (!selectedApiKey) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator-api/usage', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-translator-api/usage'), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`
         }
@@ -193,7 +194,7 @@ export default function PDFTranslatorAPIPage() {
     if (!selectedApiKey) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator-api/jobs', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-translator-api/jobs'), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`
         }
@@ -211,7 +212,7 @@ export default function PDFTranslatorAPIPage() {
     if (!selectedApiKey) return;
     
     try {
-      const response = await fetch('http://localhost:8000/api/v1/pdf-translator-api/languages', {
+      const response = await fetch(getApiUrl('/api/v1/pdf-translator-api/languages'), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`
         }
@@ -240,7 +241,7 @@ export default function PDFTranslatorAPIPage() {
 
     const token = localStorage.getItem('accessToken');
     try {
-      const response = await fetch('http://localhost:8000/auth/api-keys', {
+      const response = await fetch(getApiUrl('/auth/api-keys'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +273,7 @@ export default function PDFTranslatorAPIPage() {
 
     const token = localStorage.getItem('accessToken');
     try {
-      const response = await fetch(`http://localhost:8000/auth/api-keys/${keyId}`, {
+      const response = await fetch(getApiUrl(`/auth/api-keys/${keyId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -408,7 +409,7 @@ export default function PDFTranslatorAPIPage() {
     analyzeFormData.append('file', file);
 
     const analyzeStartTime = Date.now();
-    const analyzeUrl = 'http://localhost:8000/api/v1/pdf-translator-api/analyze';
+    const analyzeUrl = getApiUrl('/api/v1/pdf-translator-api/analyze');
     
     setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
       index === fileIndex ? { 
@@ -467,7 +468,7 @@ export default function PDFTranslatorAPIPage() {
     translateFormData.append('translation_method', 'document');
     
     const translateStartTime = Date.now();
-    const translateUrl = 'http://localhost:8000/api/v1/pdf-translator-api/translate';
+    const translateUrl = getApiUrl('/api/v1/pdf-translator-api/translate');
     
     setFileProcessingStatus(prev => prev.map((fileStatus, index) => 
       index === fileIndex ? { 
@@ -524,7 +525,7 @@ export default function PDFTranslatorAPIPage() {
       await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
       attempts++;
 
-      const statusUrl = `http://localhost:8000/api/v1/pdf-translator-api/jobs/${translateData.job_id}/status`;
+      const statusUrl = getApiUrl(`/api/v1/pdf-translator-api/jobs/${translateData.job_id}/status`);
       const statusStartTime = Date.now();
       
       const statusResponse = await fetch(statusUrl, {
@@ -613,7 +614,7 @@ export default function PDFTranslatorAPIPage() {
 
   const downloadResult = async (jobId: string, filename: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/pdf-translator-api/download/${jobId}`, {
+      const response = await fetch(getApiUrl(`/api/v1/pdf-translator-api/download/${jobId}`), {
         headers: {
           'Authorization': `Bearer ${selectedApiKey}`
         }
@@ -1164,7 +1165,7 @@ export default function PDFTranslatorAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">1. Get Supported Languages</h3>
                   <p className="mb-4 text-gray-900">Get a list of all supported languages for translation.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/languages" \\
+                    <pre>{`curl -X GET getApiUrl("/api/v1/pdf-translator-api/languages") \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
                   </div>
                   <p className="text-gray-900"><strong>Note:</strong> Replace <code>YOUR_API_KEY</code> with your actual API key from the API Keys tab.</p>
@@ -1174,7 +1175,7 @@ export default function PDFTranslatorAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">2. Analyze PDF</h3>
                   <p className="mb-4 text-gray-900">Analyze a PDF to detect its language before translation.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-translator-api/analyze" \\
+                    <pre>{`curl -X POST getApiUrl("/api/v1/pdf-translator-api/analyze") \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -F "file=@document.pdf"`}</pre>
                   </div>
@@ -1184,7 +1185,7 @@ export default function PDFTranslatorAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">3. Translate PDF</h3>
                   <p className="mb-4 text-gray-900">Start a PDF translation job.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X POST "http://localhost:8000/api/v1/pdf-translator-api/translate" \\
+                    <pre>{`curl -X POST getApiUrl("/api/v1/pdf-translator-api/translate") \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -F "file=@document.pdf" \\
   -F "source_language=en" \\
@@ -1197,7 +1198,7 @@ export default function PDFTranslatorAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">4. Check Job Status</h3>
                   <p className="mb-4 text-gray-900">Check the status of a translation job.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/jobs/{job_id}/status" \\
+                    <pre>{`curl -X GET getApiUrl("/api/v1/pdf-translator-api/jobs/{job_id}/status") \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
                   </div>
                 </div>
@@ -1206,7 +1207,7 @@ export default function PDFTranslatorAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">5. Download Result</h3>
                   <p className="mb-4 text-gray-900">Download the translated PDF file.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/download/{job_id}" \\
+                    <pre>{`curl -X GET getApiUrl("/api/v1/pdf-translator-api/download/{job_id}") \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -o "translated.pdf"`}</pre>
                   </div>
@@ -1216,7 +1217,7 @@ export default function PDFTranslatorAPIPage() {
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">6. List Jobs</h3>
                   <p className="mb-4 text-gray-900">List all your translation jobs.</p>
                   <div className="bg-gray-900 text-green-400 p-4 rounded-md mb-4">
-                    <pre>{`curl -X GET "http://localhost:8000/api/v1/pdf-translator-api/jobs" \\
+                    <pre>{`curl -X GET getApiUrl("/api/v1/pdf-translator-api/jobs") \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
                   </div>
                 </div>

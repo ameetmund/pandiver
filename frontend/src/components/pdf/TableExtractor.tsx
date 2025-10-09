@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { 
+
+import { apiClient, getApiUrl } from '@/lib/api';import { 
   Upload, 
   FileText, 
   Eye, 
@@ -126,7 +127,7 @@ const TableExtractor: React.FC = () => {
       formData.append('confidence_threshold', extractionSettings.confidence_threshold.toString());
       formData.append('merge_nearby', extractionSettings.merge_nearby_tables.toString());
       
-      const response = await fetch('http://localhost:8000/api/v1/table-extract', {
+      const response = await fetch(getApiUrl('/api/v1/table-extract'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -158,7 +159,7 @@ const TableExtractor: React.FC = () => {
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/table-extract/${jobId}/status`, {
+        const response = await fetch(getApiUrl(`/api/v1/table-extract/${jobId}/status`), {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
           },
@@ -198,7 +199,7 @@ const TableExtractor: React.FC = () => {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/table-extract/${extractionJob.job_id}/download?format=${format}`, {
+      const response = await fetch(getApiUrl(`/api/v1/table-extract/${extractionJob.job_id}/download?format=${format}`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },

@@ -110,10 +110,10 @@ start_docker_services() {
     echo -e "${YELLOW}This may take a few minutes...${NC}"
 
     # Stop any existing containers
-    $COMPOSE_CMD down 2>/dev/null || echo "No existing containers to stop"
+    $COMPOSE_CMD -f docker-compose.dev.yml down 2>/dev/null || echo "No existing containers to stop"
 
     # Build and start services
-    $COMPOSE_CMD up --build -d
+    $COMPOSE_CMD -f docker-compose.dev.yml up --build -d
 
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Failed to start Docker services${NC}"
@@ -126,6 +126,23 @@ start_docker_services() {
 # Function to wait for services to be healthy
 wait_for_services() {
     echo -e "${BLUE}⏳ Waiting for services to be ready...${NC}"
+
+    # Wait for PostgreSQL health check
+    echo -e "${YELLOW}Checking PostgreSQL health...${NC}"
+    for i in {1..30}; do
+        if docker exec pandiver-postgres-dev pg_isready -U pandiver -d pandiver_db > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ PostgreSQL is healthy${NC}"
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            echo -e "${RED}❌ PostgreSQL health check failed${NC}"
+            echo -e "${YELLOW}📋 PostgreSQL logs:${NC}"
+            docker logs pandiver-postgres-dev
+            exit 1
+        fi
+        echo "Waiting for PostgreSQL... ($i/30)"
+        sleep 2
+    done
 
     # Wait for backend health check
     echo -e "${YELLOW}Checking backend health...${NC}"
@@ -225,29 +242,28 @@ display_final_status() {
     echo -e "${BLUE}📋 API Documentation:${NC} http://localhost:8000/docs"
     echo ""
     echo -e "${YELLOW}📝 Management Commands:${NC}"
-    echo "   View all logs:     docker-compose logs -f"
-    echo "   View backend logs: docker-compose logs -f backend"
-    echo "   View frontend logs:docker-compose logs -f frontend"
-    echo "   Stop services:     docker-compose down"
-    echo "   Restart services:  docker-compose restart"
+    echo "   View all logs:     docker-compose -f docker-compose.dev.yml logs -f"
+    echo "   View backend logs: docker-compose -f docker-compose.dev.yml logs -f backend"
+    echo "   View frontend logs:docker-compose -f docker-compose.dev.yml logs -f frontend"
+    echo "   View postgres logs:docker-compose -f docker-compose.dev.yml logs -f postgres"
+    echo "   Stop services:     docker-compose -f docker-compose.dev.yml down"
+    echo "   Restart services:  docker-compose -f docker-compose.dev.yml restart"
     echo ""
     echo -e "${YELLOW}🔧 Container Status:${NC}"
     docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     echo ""
     echo -e "${YELLOW}💾 Database Status:${NC}"
-    if [ -f "pandiver.db" ]; then
-        echo "   Database file: ✅ Present in root directory"
-    fi
-    if [ -f "backend/pandiver.db" ]; then
-        echo "   Backend mount: ✅ Database mounted in backend container"
-    fi
-    if [ -f "app/pandiver.db" ]; then
-        echo "   App directory: ✅ Database accessible by complete backend"
+    echo "   PostgreSQL:    ✅ Running on localhost:5432"
+    echo "   Database Name: pandiver_db"
+    if docker exec pandiver-postgres-dev psql -U pandiver -d pandiver_db -c "\dt" > /dev/null 2>&1; then
+        echo "   Tables:        ✅ Initialized"
+    else
+        echo "   Tables:        ⚠️ Not initialized"
     fi
     echo ""
     echo -e "${GREEN}🚀 Ready for development and testing!${NC}"
     echo ""
-    echo -e "${BLUE}💡 Tip: Use 'docker-compose down && ./start_pandiver_docker.sh' to do a complete restart${NC}"
+    echo -e "${BLUE}💡 Tip: Use 'docker-compose -f docker-compose.dev.yml down && ./start_pandiver_docker.sh' to do a complete restart${NC}"
 }
 
 # Main execution
