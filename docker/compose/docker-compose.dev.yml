@@ -1,3 +1,5 @@
+name: pandiver
+
 services:
   # PostgreSQL Database
   postgres:
@@ -23,27 +25,25 @@ services:
       start_period: 10s
 
   backend:
+    container_name: pandiver-backend
     build:
-      context: ./backend
+      context: ../../backend
       dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
     volumes:
       # Mount backend code for hot reload
-      - ./backend:/app:delegated
+      - ../../backend:/app:delegated
       # Exclude Python cache and virtual environment
       - /app/__pycache__
       - /app/venv
+    env_file:
+      - ../../environments/.env.development
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
-      - SECRET_KEY=${SECRET_KEY}
       - DATABASE_URL=postgresql://pandiver:pandiver_dev_password@postgres:5432/pandiver_db
-      - ALGORITHM=${ALGORITHM:-HS256}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
-    env_file:
-      - ./environments/.env.development
     networks:
       - pandiver_network
     depends_on:
@@ -58,19 +58,20 @@ services:
       start_period: 40s
 
   frontend:
+    container_name: pandiver-frontend
     build:
-      context: ./frontend
+      context: ../../frontend
       dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
     volumes:
       # Mount source code for hot reload, but preserve node_modules from image
-      - ./frontend/src:/app/src:delegated
-      - ./frontend/public:/app/public:delegated
-      - ./frontend/next.config.js:/app/next.config.js:delegated
-      - ./frontend/tsconfig.json:/app/tsconfig.json:delegated
-      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts:delegated
-      - ./frontend/postcss.config.js:/app/postcss.config.js:delegated
+      - ../../frontend/src:/app/src:delegated
+      - ../../frontend/public:/app/public:delegated
+      - ../../frontend/next.config.js:/app/next.config.js:delegated
+      - ../../frontend/tsconfig.json:/app/tsconfig.json:delegated
+      - ../../frontend/tailwind.config.ts:/app/tailwind.config.ts:delegated
+      - ../../frontend/postcss.config.js:/app/postcss.config.js:delegated
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
       - DOCKER_ENV=true  # Flag to enable Docker-specific URL replacement

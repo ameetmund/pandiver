@@ -11,12 +11,12 @@ NC='\033[0m' # No Color
 echo -e "${YELLOW}🛑 Stopping Pandiver Docker containers...${NC}"
 
 # Stop and remove containers
-docker-compose -f docker-compose.dev.yml down
+docker-compose -f ../docker/compose/docker-compose.dev.yml down
 
 # Show status
 echo -e "${GREEN}✅ Pandiver Docker containers stopped${NC}"
 echo ""
 echo -e "${BLUE}🐳 Available commands:${NC}"
 echo -e "  Start:     ./docker-start.sh"
-echo -e "  Cleanup:   docker-compose -f docker-compose.dev.yml down --volumes --rmi all"
-echo -e "  Logs:      docker-compose -f docker-compose.dev.yml logs"
+echo -e "  Cleanup:   docker-compose -f ../docker/compose/docker-compose.dev.yml down --volumes --rmi all"
+echo -e "  Logs:      docker-compose -f ../docker/compose/docker-compose.dev.yml logs"

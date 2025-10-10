@@ -73,14 +73,14 @@ mkdir -p docker_data/database
 
 # Stop any existing containers
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
-docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
+docker-compose -f ../docker/compose/docker-compose.dev.yml down 2>/dev/null || true
 
 # Build and start containers
 echo -e "${BLUE}🔨 Building Docker images...${NC}"
-docker-compose -f docker-compose.dev.yml build
+docker-compose -f ../docker/compose/docker-compose.dev.yml build
 
 echo -e "${BLUE}🚀 Starting services...${NC}"
-docker-compose -f docker-compose.dev.yml up -d
+docker-compose -f ../docker/compose/docker-compose.dev.yml up -d
 
 # Wait for services to be healthy
 echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
@@ -96,7 +96,7 @@ echo -e "  📋 API Docs: http://localhost:8000/docs"
 echo ""
 echo -e "${BLUE}🐳 Docker Commands:${NC}"
 echo -e "  Stop:      ./docker-stop.sh"
-echo -e "  Logs:      docker-compose -f docker-compose.dev.yml logs -f"
-echo -e "  Restart:   docker-compose -f docker-compose.dev.yml restart"
+echo -e "  Logs:      docker-compose -f ../docker/compose/docker-compose.dev.yml logs -f"
+echo -e "  Restart:   docker-compose -f ../docker/compose/docker-compose.dev.yml restart"
 echo ""
 echo -e "${GREEN}✅ Development environment ready!${NC}"

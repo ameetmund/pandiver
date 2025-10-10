@@ -59,20 +59,6 @@ cleanup_local_processes() {
     echo -e "${GREEN}✅ Local cleanup completed${NC}"
 }
 
-# Function to ensure correct backend configuration
-fix_backend_dockerfile() {
-    echo -e "${YELLOW}🔧 Ensuring correct backend configuration...${NC}"
-
-    # Check if Dockerfile.backend has the correct command
-    if grep -q "main:app" Dockerfile.backend && ! grep -q "app.main:app" Dockerfile.backend; then
-        echo -e "${YELLOW}📝 Fixing Dockerfile.backend to use complete backend...${NC}"
-        sed -i '' 's/main:app/app.main:app/g' Dockerfile.backend
-        echo -e "${GREEN}✅ Dockerfile.backend fixed${NC}"
-    else
-        echo -e "${GREEN}✅ Dockerfile.backend already configured correctly${NC}"
-    fi
-}
-
 # Function to ensure required files are in place
 setup_required_files() {
     echo -e "${YELLOW}📋 Setting up required files...${NC}"
@@ -110,10 +96,10 @@ start_docker_services() {
     echo -e "${YELLOW}This may take a few minutes...${NC}"
 
     # Stop any existing containers
-    $COMPOSE_CMD -f docker-compose.dev.yml down 2>/dev/null || echo "No existing containers to stop"
+    $COMPOSE_CMD -f docker/compose/docker-compose.dev.yml down 2>/dev/null || echo "No existing containers to stop"
 
     # Build and start services
-    $COMPOSE_CMD -f docker-compose.dev.yml up --build -d
+    $COMPOSE_CMD -f docker/compose/docker-compose.dev.yml up --build -d
 
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Failed to start Docker services${NC}"
@@ -154,7 +140,7 @@ wait_for_services() {
         if [ $i -eq 30 ]; then
             echo -e "${RED}❌ Backend health check failed${NC}"
             echo -e "${YELLOW}📋 Backend logs:${NC}"
-            docker logs pandiver-backend || docker logs pandiver-new-backend-1
+            docker logs pandiver-backend
             exit 1
         fi
         echo "Waiting for backend... ($i/30)"
@@ -171,7 +157,7 @@ wait_for_services() {
         if [ $i -eq 45 ]; then
             echo -e "${RED}❌ Frontend health check failed${NC}"
             echo -e "${YELLOW}📋 Frontend logs:${NC}"
-            docker logs pandiver-frontend || docker logs pandiver-new-frontend-1
+            docker logs pandiver-frontend
             exit 1
         fi
         echo "Waiting for frontend... ($i/45)"
@@ -242,12 +228,12 @@ display_final_status() {
     echo -e "${BLUE}📋 API Documentation:${NC} http://localhost:8000/docs"
     echo ""
     echo -e "${YELLOW}📝 Management Commands:${NC}"
-    echo "   View all logs:     docker-compose -f docker-compose.dev.yml logs -f"
-    echo "   View backend logs: docker-compose -f docker-compose.dev.yml logs -f backend"
-    echo "   View frontend logs:docker-compose -f docker-compose.dev.yml logs -f frontend"
-    echo "   View postgres logs:docker-compose -f docker-compose.dev.yml logs -f postgres"
-    echo "   Stop services:     docker-compose -f docker-compose.dev.yml down"
-    echo "   Restart services:  docker-compose -f docker-compose.dev.yml restart"
+    echo "   View all logs:     docker-compose -f docker/compose/docker-compose.dev.yml logs -f"
+    echo "   View backend logs: docker-compose -f docker/compose/docker-compose.dev.yml logs -f backend"
+    echo "   View frontend logs:docker-compose -f docker/compose/docker-compose.dev.yml logs -f frontend"
+    echo "   View postgres logs:docker-compose -f docker/compose/docker-compose.dev.yml logs -f postgres"
+    echo "   Stop services:     docker-compose -f docker/compose/docker-compose.dev.yml down"
+    echo "   Restart services:  docker-compose -f docker/compose/docker-compose.dev.yml restart"
     echo ""
     echo -e "${YELLOW}🔧 Container Status:${NC}"
     docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
@@ -263,7 +249,7 @@ display_final_status() {
     echo ""
     echo -e "${GREEN}🚀 Ready for development and testing!${NC}"
     echo ""
-    echo -e "${BLUE}💡 Tip: Use 'docker-compose -f docker-compose.dev.yml down && ./start_pandiver_docker.sh' to do a complete restart${NC}"
+    echo -e "${BLUE}💡 Tip: Use 'docker-compose -f docker/compose/docker-compose.dev.yml down && ./start_pandiver_docker.sh' to do a complete restart${NC}"
 }
 
 # Main execution
@@ -283,26 +269,23 @@ main() {
     # Step 2: Clean up any local processes
     cleanup_local_processes
 
-    # Step 3: Fix backend configuration
-    fix_backend_dockerfile
-
-    # Step 4: Setup required files
+    # Step 3: Setup required files
     setup_required_files
 
-    # Step 5: Start Docker services
+    # Step 4: Start Docker services
     start_docker_services "$COMPOSE_CMD"
 
-    # Step 6: Wait for services to be ready
+    # Step 5: Wait for services to be ready
     wait_for_services
 
-    # Step 7: Test API endpoints
+    # Step 6: Test API endpoints
     if test_api_endpoints; then
         echo -e "${GREEN}✅ All tests passed!${NC}"
     else
         echo -e "${YELLOW}⚠️ Some tests failed, but core services are running${NC}"
     fi
 
-    # Step 8: Display final status
+    # Step 7: Display final status
     display_final_status
 }
 

@@ -44,7 +44,7 @@ stop_services() {
     echo ""
 
     echo -e "${YELLOW}🛑 Stopping Docker services...${NC}"
-    $COMPOSE_CMD -f docker-compose.dev.yml down
+    $COMPOSE_CMD -f docker/compose/docker-compose.dev.yml down
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ All services stopped successfully${NC}"
@@ -83,9 +83,9 @@ show_final_status() {
     echo ""
     echo -e "${YELLOW}📝 Additional Commands:${NC}"
     echo "   View stopped containers: docker ps -a --filter name=pandiver"
-    echo "   Remove containers:       docker-compose -f docker-compose.dev.yml rm"
+    echo "   Remove containers:       docker-compose -f docker/compose/docker-compose.dev.yml rm"
     echo "   Remove volumes:          docker volume rm pandiver_postgres_dev_data"
-    echo "   Full cleanup:            docker-compose -f docker-compose.dev.yml down -v"
+    echo "   Full cleanup:            docker-compose -f docker/compose/docker-compose.dev.yml down -v"
     echo ""
 }
 
