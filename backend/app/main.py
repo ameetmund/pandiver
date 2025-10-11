@@ -127,28 +127,20 @@ def get_db_session():
     finally:
         db.close()
 
-# CORS setup
-origins = [
-    "http://localhost:3000",  # Next.js default
-    "http://127.0.0.1:3000"
-]
-
-# Add environment-specific origins
-environment = os.getenv("ENVIRONMENT", "development")
-if environment == "staging":
-    origins.extend([
-        "https://pandiver-frontend-staging.nicebush-1ad1302f.centralindia.azurecontainerapps.io",
-    ])
-elif environment == "production":
-    origins.extend([
-        "https://pandiver.com",
-        "https://www.pandiver.com",
-    ])
-
-# Allow additional origins from env var (comma-separated)
-additional_origins = os.getenv("CORS_ADDITIONAL_ORIGINS", "")
-if additional_origins:
-    origins.extend([origin.strip() for origin in additional_origins.split(",") if origin.strip()])
+# CORS setup - Read from ALLOWED_ORIGINS environment variable
+# ALLOWED_ORIGINS is set by deployment script as a JSON array
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_str:
+    try:
+        origins = json.loads(allowed_origins_str)
+        print(f"✅ Loaded CORS origins from ALLOWED_ORIGINS: {origins}")
+    except json.JSONDecodeError as e:
+        print(f"⚠️  Failed to parse ALLOWED_ORIGINS JSON: {e}")
+        origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+else:
+    # Default to localhost for local development
+    origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    print(f"ℹ️  No ALLOWED_ORIGINS env var, using default: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -330,7 +322,9 @@ async def get_api_keys(
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     api_keys = db.query(ApiKey).filter(ApiKey.user_id == current_user.id).all()
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")

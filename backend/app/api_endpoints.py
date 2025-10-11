@@ -451,7 +451,9 @@ async def get_job_results_api(
         )
     
     # Generate download URLs with correct extensions (matching UI behavior)
-    base_url = "http://localhost:8000/api/v1/intelligent-data"
+    # Use environment variable for base URL (set by deployment) or fallback to localhost
+    api_base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+    base_url = f"{api_base_url}/api/v1/intelligent-data"
     download_urls = {
         "tables": {
             "individual": f"{base_url}/download/{job_id}/tables/{format}?mode=individual",  # Returns .zip
