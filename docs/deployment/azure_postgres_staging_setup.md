@@ -439,6 +439,133 @@ az postgres flexible-server delete \
   --yes
 ```
 
+## Deployment Scripts
+
+After the initial setup, use these scripts to manage your staging environment:
+
+### 1. Deploy Application (`deploy-staging-azure.sh`)
+
+**Purpose**: Build and deploy both backend and frontend containers to Azure staging
+
+**Usage**:
+```bash
+# Deploy with latest tag
+./deploy-staging-azure.sh
+
+# Deploy with specific tag and skip confirmation
+./deploy-staging-azure.sh v1.2.3 --yes
+```
+
+**What it does**:
+1. Builds backend and frontend Docker images in Azure (ACR Tasks with linux/amd64)
+2. Pushes images to Container Registry
+3. Retrieves secrets from Key Vault
+4. Deploys/updates backend container app
+5. Deploys/updates frontend container app
+6. Automatically configures CORS (`ALLOWED_ORIGINS`)
+7. Automatically configures API base URL (`API_BASE_URL`)
+8. Performs health checks
+
+**Time**: ~30 minutes (due to ACR cloud builds)
+
+**Key Features**:
+- ✅ Platform-independent builds (always linux/amd64)
+- ✅ Automatic URL configuration (no hardcoding)
+- ✅ Integrated health checks
+- ✅ Complete deployment summary
+
+### 2. Stop Services (`stop_staging_azure.sh`)
+
+**Purpose**: Scale down containers to save costs
+
+**Usage**:
+```bash
+./stop_staging_azure.sh
+```
+
+**What it does**:
+- Scales backend to 0 replicas (no compute costs)
+- Scales frontend to 0 replicas (no compute costs)
+- PostgreSQL remains running (cannot be stopped)
+
+**Cost Savings**: Eliminates compute costs (~80% of total staging costs)
+
+**When to use**: When staging environment is not actively being used
+
+### 3. Start Services (`start_staging_azure.sh`)
+
+**Purpose**: Resume stopped containers
+
+**Usage**:
+```bash
+./start_staging_azure.sh
+```
+
+**What it does**:
+- Scales backend to 1 replica (min)
+- Scales frontend to 1 replica (min)
+- Waits for services to be ready
+- Displays service URLs
+
+**Time**: ~30-60 seconds for containers to start
+
+### Deployment Workflow
+
+**Initial Setup (One-time)**:
+```bash
+1. ./setup-azure-postgres-staging.sh  # Create infrastructure
+2. Add GitHub secrets (if using CI/CD)
+```
+
+**Regular Deployments**:
+```bash
+# Deploy new code
+./deploy-staging-azure.sh latest --yes
+
+# Test the deployment
+curl https://<backend-url>/
+curl https://<frontend-url>
+```
+
+**Cost Management**:
+```bash
+# When done testing, stop services
+./stop_staging_azure.sh
+
+# When ready to test again, start services
+./start_staging_azure.sh
+```
+
+### Key Differences from Manual Deployment
+
+| Aspect | deploy-staging-azure.sh | Manual |
+|--------|------------------------|--------|
+| **Build Location** | Azure (ACR Tasks) | Local machine |
+| **Architecture** | Always linux/amd64 | Depends on local OS |
+| **URL Configuration** | Automatic (env vars) | Manual hardcoding |
+| **CORS Setup** | Automatic | Manual updates |
+| **Time** | ~30 minutes | Varies |
+| **Consistency** | Always same | May vary |
+
+### Why These Scripts Are Needed
+
+**`deploy-staging-azure.sh`**:
+- Ensures consistent deployments
+- Handles ARM64/AMD64 architecture compatibility automatically
+- Configures environment variables dynamically (no hardcoded URLs)
+- Performs health checks to verify deployment
+
+**`start_staging_azure.sh` / `stop_staging_azure.sh`**:
+- **Different from deploy**: These scripts don't rebuild or redeploy code
+- **Purpose**: Quick start/stop of existing containers for cost management
+- **Use case**: Testing environment doesn't need to run 24/7
+- **Cost benefit**: Save ~$50-100/month in compute costs when not testing
+
+**When to use each**:
+- Use `deploy-staging-azure.sh` when you have new code to deploy
+- Use `stop_staging_azure.sh` when done testing for the day/week
+- Use `start_staging_azure.sh` when you need to resume testing (no code changes)
+
 ## Next Steps
 
 1. ✅ Set up CI/CD pipeline with GitHub Actions

@@ -5,53 +5,58 @@
 # ============================================
 # This script stops all staging services to save costs
 # Run this when you want to pause the staging environment
+#
+# Cost savings: Container Apps scaled to 0 replicas = no compute costs
+# PostgreSQL cannot be stopped (remains on B1ms tier - minimal cost)
 
 set -e  # Exit on error
 
-RESOURCE_GROUP="pandiver-containerapp-rg"
+RESOURCE_GROUP="pandiver-staging-rg"
+BACKEND_APP="pandiver-backend-staging"
+FRONTEND_APP="pandiver-frontend-staging"
 
 echo "=================================================="
 echo "🛑 Stopping Pandiver Staging Services on Azure"
 echo "=================================================="
 echo ""
 
-# Stop Container Apps
+# Stop Container Apps by setting min replicas to 0
 echo "📦 Stopping Container Apps..."
-echo "  → Stopping backend (pandiver-backend-staging)..."
+echo "  → Stopping backend ($BACKEND_APP)..."
 az containerapp update \
-  --name pandiver-backend-staging \
+  --name $BACKEND_APP \
   --resource-group $RESOURCE_GROUP \
   --min-replicas 0 \
-  --max-replicas 1 \
+  --max-replicas 3 \
   --output none
 
-echo "  → Stopping frontend (pandiver-frontend-staging)..."
+echo "  → Stopping frontend ($FRONTEND_APP)..."
 az containerapp update \
-  --name pandiver-frontend-staging \
+  --name $FRONTEND_APP \
   --resource-group $RESOURCE_GROUP \
   --min-replicas 0 \
-  --max-replicas 1 \
+  --max-replicas 3 \
   --output none
 
-echo "  ✅ Container Apps stopped"
+echo "  ✅ Container Apps stopped (scaled to 0 replicas)"
 echo ""
 
-# Note: SQL Databases cannot be paused (only Data Warehouse can)
-# They are kept running but already on minimal tier
-# To fully stop, you would need to delete and recreate from backups
-echo "💡 SQL Databases remain active (cannot pause regular SQL DB)"
-echo "   Databases are already on Basic tier (minimal cost)"
-echo "   To fully stop: delete databases and restore from backup when needed"
+# Note: PostgreSQL Flexible Server cannot be paused
+# It remains running on B1ms tier (minimal cost)
+echo "💡 PostgreSQL Database remains active (cannot pause Flexible Server)"
+echo "   Database: pandiver-staging (B1ms tier - ~$13/month)"
+echo "   To fully stop: delete server and restore from backup when needed"
 echo ""
 
 echo "=================================================="
 echo "✅ All staging services stopped successfully!"
 echo "=================================================="
 echo ""
-echo "💰 Services stopped:"
-echo "  - Backend Container App (0 replicas) ✅"
-echo "  - Frontend Container App (0 replicas) ✅"
-echo "  - SQL Databases (still active - minimal cost)"
+echo "💰 Cost savings achieved:"
+echo "  - Backend Container App (0 replicas) ✅ - No compute costs"
+echo "  - Frontend Container App (0 replicas) ✅ - No compute costs"
+echo "  - PostgreSQL (still running) - Minimal cost (~$13/month)"
+echo "  - Container Registry (storage only) - ~$5/month"
 echo ""
 echo "📝 To restart services, run: ./start_staging_azure.sh"
 echo ""
