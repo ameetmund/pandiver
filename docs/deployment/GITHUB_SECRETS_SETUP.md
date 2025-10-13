@@ -47,7 +47,41 @@ Add these after creating production environment:
 |------------|-------------|-------|
 | `DEPLOYMENT_EMAIL` | Email for deployment notifications | `pandiverpdf@gmail.com` |
 
-### 4. Optional: Slack/Teams Notifications
+### 4. Azure Blob Storage SAS Tokens (IMPORTANT)
+
+**These are stored in Azure Key Vault, not GitHub Secrets.**
+
+The following secrets must exist in Azure Key Vault:
+
+| Key Vault Secret Name | Description | Environment Variable |
+|----------------------|-------------|---------------------|
+| `azure-blob-src-sas-token` | SAS token for 'src' container | `AZURE_BLOB_SRC_SAS_TOKEN` |
+| `azure-blob-out-sas-token` | SAS token for 'out' container | `AZURE_BLOB_OUT_SAS_TOKEN` |
+| `azure-blob-config-sas-token` | SAS token for 'config' container | `AZURE_BLOB_CONFIG_SAS_TOKEN` |
+
+**To add these to Key Vault:**
+
+```bash
+# Get SAS tokens from your local .env file or generate new ones
+# Then add them to Key Vault:
+
+az keyvault secret set \
+  --vault-name kv-pandiver-staging-8766 \
+  --name azure-blob-src-sas-token \
+  --value "YOUR_SRC_SAS_TOKEN"
+
+az keyvault secret set \
+  --vault-name kv-pandiver-staging-8766 \
+  --name azure-blob-out-sas-token \
+  --value "YOUR_OUT_SAS_TOKEN"
+
+az keyvault secret set \
+  --vault-name kv-pandiver-staging-8766 \
+  --name azure-blob-config-sas-token \
+  --value "YOUR_CONFIG_SAS_TOKEN"
+```
+
+### 5. Optional: Slack/Teams Notifications
 
 | Secret Name | Description | Value |
 |------------|-------------|-------|

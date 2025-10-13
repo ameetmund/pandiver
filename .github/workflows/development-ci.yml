@@ -17,6 +17,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Free up disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo docker system prune -af
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -76,23 +88,13 @@ jobs:
           cd frontend
           npm test -- --passWithNoTests || echo "Tests not configured, skipping..."
 
-      - name: Build validation - Backend Dockerfile
-        continue-on-error: true
-        run: |
-          cd backend
-          docker build -f Dockerfile.dev -t pandiver-backend:test . || echo "⚠️  Backend Docker build failed (warning only)"
-
-      - name: Build validation - Frontend Dockerfile
-        continue-on-error: true
-        run: |
-          cd frontend
-          docker build -f Dockerfile.dev -t pandiver-frontend:test . || echo "⚠️  Frontend Docker build failed (warning only)"
-
       - name: Summary
         if: always()
         run: |
           echo "## Development CI Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Code linting completed (warnings allowed)" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Docker images build successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Tests executed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Ready for PR to staging branch" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** Docker builds are validated in staging deployment, not here." >> $GITHUB_STEP_SUMMARY
