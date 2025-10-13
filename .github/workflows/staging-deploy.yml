@@ -1,0 +1,264 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag (default: staging-{SHA})'
+        required: false
+        default: ''
+
+env:
+  RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP_STAGING }}
+  ACR_NAME: ${{ secrets.ACR_NAME_STAGING }}
+  KEY_VAULT_NAME: ${{ secrets.KEY_VAULT_NAME_STAGING }}
+  CONTAINER_APPS_ENV: ${{ secrets.CONTAINER_APPS_ENVIRONMENT_STAGING }}
+  AZURE_LOCATION: ${{ secrets.AZURE_LOCATION_STAGING }}
+  BACKEND_APP_NAME: pandiver-backend-staging
+  FRONTEND_APP_NAME: pandiver-frontend-staging
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to Azure Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: set_tag
+        run: |
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "IMAGE_TAG=staging-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_STAGING }}
+
+      - name: Get ACR credentials
+        id: acr_creds
+        run: |
+          ACR_USERNAME=$(az acr credential show --name ${{ env.ACR_NAME }} --query username -o tsv)
+          ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query passwords[0].value -o tsv)
+          echo "::add-mask::$ACR_PASSWORD"
+          echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
+          echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+
+      - name: Build backend image in Azure (linux/amd64)
+        run: |
+          echo "🐳 Building backend image: ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.set_tag.outputs.IMAGE_TAG }}"
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image pandiver-backend:${{ steps.set_tag.outputs.IMAGE_TAG }} \
+            --file backend/Dockerfile.dev \
+            --platform linux/amd64 \
+            ./backend
+
+      - name: Build frontend image in Azure (linux/amd64)
+        run: |
+          echo "🐳 Building frontend image: ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.set_tag.outputs.IMAGE_TAG }}"
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image pandiver-frontend:${{ steps.set_tag.outputs.IMAGE_TAG }} \
+            --file frontend/Dockerfile.dev \
+            --platform linux/amd64 \
+            ./frontend
+
+      - name: Get secrets from Key Vault
+        id: get_secrets
+        run: |
+          DATABASE_URL=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name staging-database-url --query value -o tsv)
+          SECRET_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name staging-secret-key --query value -o tsv)
+          AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
+          AZURE_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-region --query value -o tsv)
+          AZURE_DOC_INTELLIGENCE_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-intelligence-key --query value -o tsv)
+          AZURE_DOC_INTELLIGENCE_ENDPOINT=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-intelligence-endpoint --query value -o tsv)
+          AZURE_BLOB_CONNECTION_STRING=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-blob-connection-string --query value -o tsv)
+
+          echo "::add-mask::$DATABASE_URL"
+          echo "::add-mask::$SECRET_KEY"
+          echo "::add-mask::$AZURE_TRANSLATOR_KEY"
+          echo "::add-mask::$AZURE_DOC_INTELLIGENCE_KEY"
+          echo "::add-mask::$AZURE_BLOB_CONNECTION_STRING"
+
+          echo "database_url=$DATABASE_URL" >> $GITHUB_OUTPUT
+          echo "secret_key=$SECRET_KEY" >> $GITHUB_OUTPUT
+          echo "translator_key=$AZURE_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
+          echo "translator_region=$AZURE_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
+          echo "doc_intelligence_key=$AZURE_DOC_INTELLIGENCE_KEY" >> $GITHUB_OUTPUT
+          echo "doc_intelligence_endpoint=$AZURE_DOC_INTELLIGENCE_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "blob_connection_string=$AZURE_BLOB_CONNECTION_STRING" >> $GITHUB_OUTPUT
+
+      - name: Deploy backend container app
+        run: |
+          if az containerapp show --name ${{ env.BACKEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+            echo "Updating existing backend app..."
+            az containerapp update \
+              --name ${{ env.BACKEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.set_tag.outputs.IMAGE_TAG }} \
+              --set-env-vars \
+                "DATABASE_URL=${{ steps.get_secrets.outputs.database_url }}" \
+                "SECRET_KEY=${{ steps.get_secrets.outputs.secret_key }}" \
+                "AZURE_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.translator_key }}" \
+                "AZURE_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.translator_region }}" \
+                "AZURE_DOC_INTELLIGENCE_KEY=${{ steps.get_secrets.outputs.doc_intelligence_key }}" \
+                "AZURE_DOC_INTELLIGENCE_ENDPOINT=${{ steps.get_secrets.outputs.doc_intelligence_endpoint }}" \
+                "AZURE_BLOB_CONNECTION_STRING=${{ steps.get_secrets.outputs.blob_connection_string }}" \
+                "ENVIRONMENT=staging"
+          else
+            echo "Creating new backend app..."
+            az containerapp create \
+              --name ${{ env.BACKEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APPS_ENV }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.set_tag.outputs.IMAGE_TAG }} \
+              --registry-server ${{ env.ACR_NAME }}.azurecr.io \
+              --registry-username ${{ steps.acr_creds.outputs.username }} \
+              --registry-password "${{ steps.acr_creds.outputs.password }}" \
+              --target-port 8000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 3 \
+              --cpu 0.5 \
+              --memory 1Gi \
+              --env-vars \
+                "DATABASE_URL=${{ steps.get_secrets.outputs.database_url }}" \
+                "SECRET_KEY=${{ steps.get_secrets.outputs.secret_key }}" \
+                "AZURE_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.translator_key }}" \
+                "AZURE_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.translator_region }}" \
+                "AZURE_DOC_INTELLIGENCE_KEY=${{ steps.get_secrets.outputs.doc_intelligence_key }}" \
+                "AZURE_DOC_INTELLIGENCE_ENDPOINT=${{ steps.get_secrets.outputs.doc_intelligence_endpoint }}" \
+                "AZURE_BLOB_CONNECTION_STRING=${{ steps.get_secrets.outputs.blob_connection_string }}" \
+                "ENVIRONMENT=staging"
+          fi
+
+      - name: Get backend URL
+        id: backend_url
+        run: |
+          BACKEND_FQDN=$(az containerapp show --name ${{ env.BACKEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          BACKEND_URL="https://$BACKEND_FQDN"
+          echo "url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "Backend URL: $BACKEND_URL"
+
+      - name: Deploy frontend container app
+        run: |
+          if az containerapp show --name ${{ env.FRONTEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+            echo "Updating existing frontend app..."
+            az containerapp update \
+              --name ${{ env.FRONTEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.set_tag.outputs.IMAGE_TAG }} \
+              --set-env-vars \
+                "NEXT_PUBLIC_API_URL=${{ steps.backend_url.outputs.url }}" \
+                "NEXT_PUBLIC_ENVIRONMENT=staging" \
+                "DOCKER_ENV=true"
+          else
+            echo "Creating new frontend app..."
+            az containerapp create \
+              --name ${{ env.FRONTEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APPS_ENV }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.set_tag.outputs.IMAGE_TAG }} \
+              --registry-server ${{ env.ACR_NAME }}.azurecr.io \
+              --registry-username ${{ steps.acr_creds.outputs.username }} \
+              --registry-password "${{ steps.acr_creds.outputs.password }}" \
+              --target-port 3000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 3 \
+              --cpu 0.5 \
+              --memory 1Gi \
+              --env-vars \
+                "NEXT_PUBLIC_API_URL=${{ steps.backend_url.outputs.url }}" \
+                "NEXT_PUBLIC_ENVIRONMENT=staging" \
+                "DOCKER_ENV=true"
+          fi
+
+      - name: Get frontend URL
+        id: frontend_url
+        run: |
+          FRONTEND_FQDN=$(az containerapp show --name ${{ env.FRONTEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          FRONTEND_URL="https://$FRONTEND_FQDN"
+          echo "url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          echo "Frontend URL: $FRONTEND_URL"
+
+      - name: Update backend CORS and API_BASE_URL
+        run: |
+          ALLOWED_ORIGINS='["${{ steps.frontend_url.outputs.url }}","http://localhost:3000","http://localhost:8000"]'
+          az containerapp update \
+            --name ${{ env.BACKEND_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --set-env-vars \
+              "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" \
+              "API_BASE_URL=${{ steps.backend_url.outputs.url }}"
+
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check - Backend
+        run: |
+          echo "Testing backend health..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.backend_url.outputs.url }}/ || echo "000")
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Backend is healthy (HTTP 200)"
+          else
+            echo "⚠️  Backend returned HTTP $RESPONSE"
+            exit 1
+          fi
+
+      - name: Health check - Frontend
+        run: |
+          echo "Testing frontend health..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.frontend_url.outputs.url }}/ || echo "000")
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Frontend is healthy (HTTP 200)"
+          else
+            echo "⚠️  Frontend returned HTTP $RESPONSE"
+            exit 1
+          fi
+
+      - name: Send email notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.DEPLOYMENT_EMAIL }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "Staging Deployment: ${{ job.status }}"
+          to: ${{ secrets.DEPLOYMENT_EMAIL }}
+          from: Pandiver CI/CD
+          body: |
+            Staging Deployment Status: ${{ job.status }}
+
+            Image Tag: ${{ steps.set_tag.outputs.IMAGE_TAG }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+
+            Backend URL: ${{ steps.backend_url.outputs.url }}
+            Frontend URL: ${{ steps.frontend_url.outputs.url }}
+
+            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## 🚀 Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ steps.set_tag.outputs.IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Deployment URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend:** ${{ steps.backend_url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** ${{ steps.frontend_url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Docs:** ${{ steps.backend_url.outputs.url }}/docs" >> $GITHUB_STEP_SUMMARY

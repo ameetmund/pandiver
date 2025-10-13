@@ -1,0 +1,329 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      staging_image_tag:
+        description: 'Staging image tag to promote (e.g., staging-abc123)'
+        required: true
+
+env:
+  RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP_PRODUCTION }}
+  ACR_NAME: ${{ secrets.ACR_NAME_PRODUCTION }}
+  KEY_VAULT_NAME: ${{ secrets.KEY_VAULT_NAME_PRODUCTION }}
+  CONTAINER_APPS_ENV: ${{ secrets.CONTAINER_APPS_ENVIRONMENT_PRODUCTION }}
+  AZURE_LOCATION: ${{ secrets.AZURE_LOCATION_PRODUCTION }}
+  BACKEND_APP_NAME: pandiver-backend-production
+  FRONTEND_APP_NAME: pandiver-frontend-production
+  STAGING_ACR_NAME: ${{ secrets.ACR_NAME_STAGING }}
+
+jobs:
+  promote-and-deploy:
+    name: Promote Images and Deploy to Production
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ steps.frontend_url.outputs.url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine staging image tag
+        id: staging_tag
+        run: |
+          if [ -n "${{ github.event.inputs.staging_image_tag }}" ]; then
+            echo "STAGING_TAG=${{ github.event.inputs.staging_image_tag }}" >> $GITHUB_OUTPUT
+          else
+            # Get the latest staging tag from staging ACR
+            echo "STAGING_TAG=staging-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set production image tag
+        id: prod_tag
+        run: |
+          PROD_TAG="production-${{ github.sha }}"
+          echo "PRODUCTION_TAG=$PROD_TAG" >> $GITHUB_OUTPUT
+          echo "Production tag: $PROD_TAG"
+
+      - name: Azure Login - Staging
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_STAGING }}
+
+      - name: Azure Login - Production
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_PRODUCTION }}
+
+      - name: Get ACR credentials
+        id: acr_creds
+        run: |
+          STAGING_ACR_USERNAME=$(az acr credential show --name ${{ env.STAGING_ACR_NAME }} --query username -o tsv)
+          STAGING_ACR_PASSWORD=$(az acr credential show --name ${{ env.STAGING_ACR_NAME }} --query passwords[0].value -o tsv)
+
+          PROD_ACR_USERNAME=$(az acr credential show --name ${{ env.ACR_NAME }} --query username -o tsv)
+          PROD_ACR_PASSWORD=$(az acr credential show --name ${{ env.ACR_NAME }} --query passwords[0].value -o tsv)
+
+          echo "::add-mask::$STAGING_ACR_PASSWORD"
+          echo "::add-mask::$PROD_ACR_PASSWORD"
+
+          echo "staging_username=$STAGING_ACR_USERNAME" >> $GITHUB_OUTPUT
+          echo "staging_password=$STAGING_ACR_PASSWORD" >> $GITHUB_OUTPUT
+          echo "prod_username=$PROD_ACR_USERNAME" >> $GITHUB_OUTPUT
+          echo "prod_password=$PROD_ACR_PASSWORD" >> $GITHUB_OUTPUT
+
+      - name: Promote backend image from staging to production
+        run: |
+          echo "🚀 Promoting backend image from staging to production..."
+
+          # Pull from staging ACR
+          echo "${{ steps.acr_creds.outputs.staging_password }}" | docker login ${{ env.STAGING_ACR_NAME }}.azurecr.io -u ${{ steps.acr_creds.outputs.staging_username }} --password-stdin
+          docker pull ${{ env.STAGING_ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.staging_tag.outputs.STAGING_TAG }}
+
+          # Tag for production ACR
+          docker tag \
+            ${{ env.STAGING_ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.staging_tag.outputs.STAGING_TAG }} \
+            ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }}
+
+          # Push to production ACR
+          echo "${{ steps.acr_creds.outputs.prod_password }}" | docker login ${{ env.ACR_NAME }}.azurecr.io -u ${{ steps.acr_creds.outputs.prod_username }} --password-stdin
+          docker push ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }}
+
+          echo "✅ Backend image promoted successfully"
+
+      - name: Promote frontend image from staging to production
+        run: |
+          echo "🚀 Promoting frontend image from staging to production..."
+
+          # Pull from staging ACR
+          docker pull ${{ env.STAGING_ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.staging_tag.outputs.STAGING_TAG }}
+
+          # Tag for production ACR
+          docker tag \
+            ${{ env.STAGING_ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.staging_tag.outputs.STAGING_TAG }} \
+            ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }}
+
+          # Push to production ACR
+          docker push ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }}
+
+          echo "✅ Frontend image promoted successfully"
+
+      - name: Get secrets from Key Vault
+        id: get_secrets
+        run: |
+          DATABASE_URL=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name production-database-url --query value -o tsv)
+          SECRET_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name production-secret-key --query value -o tsv)
+          AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
+          AZURE_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-region --query value -o tsv)
+          AZURE_DOC_INTELLIGENCE_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-intelligence-key --query value -o tsv)
+          AZURE_DOC_INTELLIGENCE_ENDPOINT=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-intelligence-endpoint --query value -o tsv)
+          AZURE_BLOB_CONNECTION_STRING=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-blob-connection-string --query value -o tsv)
+
+          echo "::add-mask::$DATABASE_URL"
+          echo "::add-mask::$SECRET_KEY"
+          echo "::add-mask::$AZURE_TRANSLATOR_KEY"
+          echo "::add-mask::$AZURE_DOC_INTELLIGENCE_KEY"
+          echo "::add-mask::$AZURE_BLOB_CONNECTION_STRING"
+
+          echo "database_url=$DATABASE_URL" >> $GITHUB_OUTPUT
+          echo "secret_key=$SECRET_KEY" >> $GITHUB_OUTPUT
+          echo "translator_key=$AZURE_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
+          echo "translator_region=$AZURE_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
+          echo "doc_intelligence_key=$AZURE_DOC_INTELLIGENCE_KEY" >> $GITHUB_OUTPUT
+          echo "doc_intelligence_endpoint=$AZURE_DOC_INTELLIGENCE_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "blob_connection_string=$AZURE_BLOB_CONNECTION_STRING" >> $GITHUB_OUTPUT
+
+      - name: Deploy backend container app
+        run: |
+          if az containerapp show --name ${{ env.BACKEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+            echo "Updating existing backend app..."
+            az containerapp update \
+              --name ${{ env.BACKEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }} \
+              --set-env-vars \
+                "DATABASE_URL=${{ steps.get_secrets.outputs.database_url }}" \
+                "SECRET_KEY=${{ steps.get_secrets.outputs.secret_key }}" \
+                "AZURE_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.translator_key }}" \
+                "AZURE_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.translator_region }}" \
+                "AZURE_DOC_INTELLIGENCE_KEY=${{ steps.get_secrets.outputs.doc_intelligence_key }}" \
+                "AZURE_DOC_INTELLIGENCE_ENDPOINT=${{ steps.get_secrets.outputs.doc_intelligence_endpoint }}" \
+                "AZURE_BLOB_CONNECTION_STRING=${{ steps.get_secrets.outputs.blob_connection_string }}" \
+                "ENVIRONMENT=production"
+          else
+            echo "Creating new backend app..."
+            az containerapp create \
+              --name ${{ env.BACKEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APPS_ENV }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-backend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }} \
+              --registry-server ${{ env.ACR_NAME }}.azurecr.io \
+              --registry-username ${{ steps.acr_creds.outputs.prod_username }} \
+              --registry-password "${{ steps.acr_creds.outputs.prod_password }}" \
+              --target-port 8000 \
+              --ingress external \
+              --min-replicas 2 \
+              --max-replicas 10 \
+              --cpu 1.0 \
+              --memory 2Gi \
+              --env-vars \
+                "DATABASE_URL=${{ steps.get_secrets.outputs.database_url }}" \
+                "SECRET_KEY=${{ steps.get_secrets.outputs.secret_key }}" \
+                "AZURE_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.translator_key }}" \
+                "AZURE_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.translator_region }}" \
+                "AZURE_DOC_INTELLIGENCE_KEY=${{ steps.get_secrets.outputs.doc_intelligence_key }}" \
+                "AZURE_DOC_INTELLIGENCE_ENDPOINT=${{ steps.get_secrets.outputs.doc_intelligence_endpoint }}" \
+                "AZURE_BLOB_CONNECTION_STRING=${{ steps.get_secrets.outputs.blob_connection_string }}" \
+                "ENVIRONMENT=production"
+          fi
+
+      - name: Get backend URL
+        id: backend_url
+        run: |
+          BACKEND_FQDN=$(az containerapp show --name ${{ env.BACKEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          BACKEND_URL="https://$BACKEND_FQDN"
+          echo "url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "Backend URL: $BACKEND_URL"
+
+      - name: Deploy frontend container app
+        run: |
+          if az containerapp show --name ${{ env.FRONTEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+            echo "Updating existing frontend app..."
+            az containerapp update \
+              --name ${{ env.FRONTEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }} \
+              --set-env-vars \
+                "NEXT_PUBLIC_API_URL=${{ steps.backend_url.outputs.url }}" \
+                "NEXT_PUBLIC_ENVIRONMENT=production" \
+                "DOCKER_ENV=true"
+          else
+            echo "Creating new frontend app..."
+            az containerapp create \
+              --name ${{ env.FRONTEND_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APPS_ENV }} \
+              --image ${{ env.ACR_NAME }}.azurecr.io/pandiver-frontend:${{ steps.prod_tag.outputs.PRODUCTION_TAG }} \
+              --registry-server ${{ env.ACR_NAME }}.azurecr.io \
+              --registry-username ${{ steps.acr_creds.outputs.prod_username }} \
+              --registry-password "${{ steps.acr_creds.outputs.prod_password }}" \
+              --target-port 3000 \
+              --ingress external \
+              --min-replicas 2 \
+              --max-replicas 10 \
+              --cpu 1.0 \
+              --memory 2Gi \
+              --env-vars \
+                "NEXT_PUBLIC_API_URL=${{ steps.backend_url.outputs.url }}" \
+                "NEXT_PUBLIC_ENVIRONMENT=production" \
+                "DOCKER_ENV=true"
+          fi
+
+      - name: Get frontend URL
+        id: frontend_url
+        run: |
+          FRONTEND_FQDN=$(az containerapp show --name ${{ env.FRONTEND_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          FRONTEND_URL="https://$FRONTEND_FQDN"
+          echo "url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          echo "Frontend URL: $FRONTEND_URL"
+
+      - name: Update backend CORS and API_BASE_URL
+        run: |
+          ALLOWED_ORIGINS='["${{ steps.frontend_url.outputs.url }}","https://pandiver.com","https://www.pandiver.com"]'
+          az containerapp update \
+            --name ${{ env.BACKEND_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --set-env-vars \
+              "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" \
+              "API_BASE_URL=${{ steps.backend_url.outputs.url }}"
+
+      - name: Wait for deployment
+        run: sleep 60
+
+      - name: Health check - Backend
+        run: |
+          echo "Testing backend health..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.backend_url.outputs.url }}/ || echo "000")
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Backend is healthy (HTTP 200)"
+          else
+            echo "⚠️  Backend returned HTTP $RESPONSE"
+            exit 1
+          fi
+
+      - name: Health check - Frontend
+        run: |
+          echo "Testing frontend health..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" ${{ steps.frontend_url.outputs.url }}/ || echo "000")
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Frontend is healthy (HTTP 200)"
+          else
+            echo "⚠️  Frontend returned HTTP $RESPONSE"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.prod_tag.outputs.PRODUCTION_TAG }}
+          release_name: Production Release ${{ steps.prod_tag.outputs.PRODUCTION_TAG }}
+          body: |
+            Production deployment completed successfully.
+
+            **Deployed from:** Staging image `${{ steps.staging_tag.outputs.STAGING_TAG }}`
+            **Production tag:** `${{ steps.prod_tag.outputs.PRODUCTION_TAG }}`
+            **Commit:** ${{ github.sha }}
+
+            ### Deployment URLs
+            - Backend: ${{ steps.backend_url.outputs.url }}
+            - Frontend: ${{ steps.frontend_url.outputs.url }}
+            - API Docs: ${{ steps.backend_url.outputs.url }}/docs
+          draft: false
+          prerelease: false
+
+      - name: Send email notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.DEPLOYMENT_EMAIL }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "Production Deployment: ${{ job.status }}"
+          to: ${{ secrets.DEPLOYMENT_EMAIL }}
+          from: Pandiver CI/CD
+          body: |
+            Production Deployment Status: ${{ job.status }}
+
+            Staging Image: ${{ steps.staging_tag.outputs.STAGING_TAG }}
+            Production Tag: ${{ steps.prod_tag.outputs.PRODUCTION_TAG }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+
+            Backend URL: ${{ steps.backend_url.outputs.url }}
+            Frontend URL: ${{ steps.frontend_url.outputs.url }}
+
+            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## 🎉 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Staging Image:** \`${{ steps.staging_tag.outputs.STAGING_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Production Tag:** \`${{ steps.prod_tag.outputs.PRODUCTION_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Production URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend:** ${{ steps.backend_url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** ${{ steps.frontend_url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Docs:** ${{ steps.backend_url.outputs.url }}/docs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**⚠️  Note:** Images were promoted from staging (no rebuild). Exact same code that was tested in staging." >> $GITHUB_STEP_SUMMARY
