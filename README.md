@@ -1,4 +1,4 @@
-# Pandiver - PDF Text Extraction & Table Builder.
+# Pandiver - PDF Text Extraction & Table Builder
 
 🚀 **Azure Container Apps Deployment Ready** - All GitHub secrets configured for automated CI/CD.
 
