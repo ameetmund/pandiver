@@ -77,8 +77,9 @@ jobs:
         run: |
           DATABASE_URL=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name staging-database-url --query value -o tsv)
           SECRET_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name secret-key --query value -o tsv)
-          AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
-          AZURE_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-region --query value -o tsv)
+          AZURE_DOC_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-translator-key --query value -o tsv)
+          AZURE_DOC_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-translator-region --query value -o tsv)
+          AZURE_DOC_TRANSLATOR_ENDPOINT=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-translator-endpoint --query value -o tsv)
           AZURE_DOC_INTELLIGENCE_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-intelligence-key --query value -o tsv)
           AZURE_DOC_INTELLIGENCE_ENDPOINT=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-intelligence-endpoint --query value -o tsv)
           AZURE_BLOB_CONNECTION_STRING=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-blob-connection-string --query value -o tsv)
@@ -88,7 +89,7 @@ jobs:
 
           echo "::add-mask::$DATABASE_URL"
           echo "::add-mask::$SECRET_KEY"
-          echo "::add-mask::$AZURE_TRANSLATOR_KEY"
+          echo "::add-mask::$AZURE_DOC_TRANSLATOR_KEY"
           echo "::add-mask::$AZURE_DOC_INTELLIGENCE_KEY"
           echo "::add-mask::$AZURE_BLOB_CONNECTION_STRING"
           echo "::add-mask::$AZURE_BLOB_SRC_SAS_TOKEN"
@@ -97,8 +98,9 @@ jobs:
 
           echo "database_url=$DATABASE_URL" >> $GITHUB_OUTPUT
           echo "secret_key=$SECRET_KEY" >> $GITHUB_OUTPUT
-          echo "translator_key=$AZURE_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
-          echo "translator_region=$AZURE_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
+          echo "doc_translator_key=$AZURE_DOC_TRANSLATOR_KEY" >> $GITHUB_OUTPUT
+          echo "doc_translator_region=$AZURE_DOC_TRANSLATOR_REGION" >> $GITHUB_OUTPUT
+          echo "doc_translator_endpoint=$AZURE_DOC_TRANSLATOR_ENDPOINT" >> $GITHUB_OUTPUT
           echo "doc_intelligence_key=$AZURE_DOC_INTELLIGENCE_KEY" >> $GITHUB_OUTPUT
           echo "doc_intelligence_endpoint=$AZURE_DOC_INTELLIGENCE_ENDPOINT" >> $GITHUB_OUTPUT
           echo "blob_connection_string=$AZURE_BLOB_CONNECTION_STRING" >> $GITHUB_OUTPUT
@@ -117,8 +119,9 @@ jobs:
               --set-env-vars \
                 "DATABASE_URL=${{ steps.get_secrets.outputs.database_url }}" \
                 "SECRET_KEY=${{ steps.get_secrets.outputs.secret_key }}" \
-                "AZURE_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.translator_key }}" \
-                "AZURE_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.translator_region }}" \
+                "AZURE_DOC_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.doc_translator_key }}" \
+                "AZURE_DOC_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.doc_translator_region }}" \
+                "AZURE_DOC_TRANSLATOR_ENDPOINT=${{ steps.get_secrets.outputs.doc_translator_endpoint }}" \
                 "AZURE_DOC_INTELLIGENCE_KEY=${{ steps.get_secrets.outputs.doc_intelligence_key }}" \
                 "AZURE_DOC_INTELLIGENCE_ENDPOINT=${{ steps.get_secrets.outputs.doc_intelligence_endpoint }}" \
                 "AZURE_BLOB_CONNECTION_STRING=${{ steps.get_secrets.outputs.blob_connection_string }}" \
@@ -145,8 +148,9 @@ jobs:
               --env-vars \
                 "DATABASE_URL=${{ steps.get_secrets.outputs.database_url }}" \
                 "SECRET_KEY=${{ steps.get_secrets.outputs.secret_key }}" \
-                "AZURE_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.translator_key }}" \
-                "AZURE_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.translator_region }}" \
+                "AZURE_DOC_TRANSLATOR_KEY=${{ steps.get_secrets.outputs.doc_translator_key }}" \
+                "AZURE_DOC_TRANSLATOR_REGION=${{ steps.get_secrets.outputs.doc_translator_region }}" \
+                "AZURE_DOC_TRANSLATOR_ENDPOINT=${{ steps.get_secrets.outputs.doc_translator_endpoint }}" \
                 "AZURE_DOC_INTELLIGENCE_KEY=${{ steps.get_secrets.outputs.doc_intelligence_key }}" \
                 "AZURE_DOC_INTELLIGENCE_ENDPOINT=${{ steps.get_secrets.outputs.doc_intelligence_endpoint }}" \
                 "AZURE_BLOB_CONNECTION_STRING=${{ steps.get_secrets.outputs.blob_connection_string }}" \
