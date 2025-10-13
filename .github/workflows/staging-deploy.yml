@@ -76,7 +76,7 @@ jobs:
         id: get_secrets
         run: |
           DATABASE_URL=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name staging-database-url --query value -o tsv)
-          SECRET_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name staging-secret-key --query value -o tsv)
+          SECRET_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name secret-key --query value -o tsv)
           AZURE_TRANSLATOR_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-key --query value -o tsv)
           AZURE_TRANSLATOR_REGION=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-translator-region --query value -o tsv)
           AZURE_DOC_INTELLIGENCE_KEY=$(az keyvault secret show --vault-name ${{ env.KEY_VAULT_NAME }} --name azure-doc-intelligence-key --query value -o tsv)
