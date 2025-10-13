@@ -91,3 +91,14 @@ dmypy.json
 *.prod
 .deployment/
 docker-compose.override.yml
+
+# GitHub Actions
+.github/workflows/*.bak
+
+# BFG Repo Cleaner
+.bfg-report/
+
+# Migration docs with secrets (removed from history)
+docs/migration/PHASE3_ENVIRONMENT_CONSOLIDATION_SUMMARY.md
+docs/migration/POSTGRESQL_MIGRATION_PLAN.md
+environments/.env.development
