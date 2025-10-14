@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 KEY_VAULT_NAME="kv-pandiver-staging-8766"
-ENV_FILE="backend/.env"
+ENV_FILE="environments/.env.staging"
 
 # Colors for output
 RED='\033[0;31m'
