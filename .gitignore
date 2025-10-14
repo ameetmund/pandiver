@@ -2,6 +2,9 @@
 .env
 .env.local
 .env.*.local
+environments/.env.development
+environments/.env.staging
+environments/.env.production
 
 # DO NOT ignore environments/ directory - it's version controlled
 # Individual environment files in environments/ are tracked intentionally
@@ -101,4 +104,3 @@ docker-compose.override.yml
 # Migration docs with secrets (removed from history)
 docs/migration/PHASE3_ENVIRONMENT_CONSOLIDATION_SUMMARY.md
 docs/migration/POSTGRESQL_MIGRATION_PLAN.md
-environments/.env.development
