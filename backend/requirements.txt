@@ -40,6 +40,9 @@ pydantic[email]==2.7.*  # For enhanced validation
 # Azure Document Intelligence dependencies
 azure-ai-documentintelligence==1.0.*  # For Azure Document Intelligence SDK
 
-# Azure AI Translator dependencies  
+# Azure AI Translator dependencies
 azure-ai-translation-text==1.0.*  # For Azure AI Translator Text API
-azure-storage-blob==12.19.*  # For Azure Blob Storage integration 
+azure-storage-blob==12.19.*  # For Azure Blob Storage integration
+
+# PDF Compression & Optimization dependencies
+pikepdf==8.15.*  # For advanced PDF optimization and compression 

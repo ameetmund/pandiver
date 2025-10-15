@@ -115,3 +115,25 @@ class PDFTranslationJob(Base):
     # Relationships
     user = relationship("User")
     api_key = relationship("ApiKey")
+
+class PDFCompressorJob(Base):
+    __tablename__ = "pdf_compressor_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=True)
+    original_filename = Column(String, index=True)
+    output_filename = Column(String)
+    compression_level = Column(String(20))  # 'light', 'moderate', 'aggressive'
+    original_size = Column(Integer, nullable=True)  # Original file size in bytes
+    compressed_size = Column(Integer, nullable=True)  # Compressed file size in bytes
+    size_reduction_percentage = Column(Float, nullable=True)  # Percentage reduction
+    status = Column(String, default="PENDING")  # PENDING, PROCESSING, COMPLETED, FAILED
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+    api_key = relationship("ApiKey")

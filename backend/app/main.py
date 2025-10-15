@@ -27,7 +27,7 @@ from datetime import datetime, timedelta
 import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from .models import Base, User as UserModel, UserTable, ApiKey, ApiUsage, PDFSplitterJob, PDFTranslationJob
+from .models import Base, User as UserModel, UserTable, ApiKey, ApiUsage, PDFSplitterJob, PDFTranslationJob, PDFCompressorJob
 # from .tasks import parse_statement  # Optional celery dependency
 from .pdf_processor import get_pdf_info, extract_all_words, get_all_page_rows, analyze_row_structure
 # from .export_utils import StatementExporter  # Optional dependency
@@ -59,6 +59,8 @@ from .pdf_splitter_endpoints import router as pdf_splitter_router
 from .pdf_splitter_api_endpoints import router as pdf_splitter_api_router
 from .pdf_translation_endpoints import router as pdf_translation_router
 from .pdf_translator_api_endpoints import router as pdf_translator_api_router
+from .pdf_compressor_endpoints import router as pdf_compressor_router
+from .pdf_compressor_api_endpoints import router as pdf_compressor_api_router
 
 app = FastAPI(
     title="Pandiver PDF Processing API",
@@ -87,6 +89,8 @@ app.include_router(pdf_splitter_router, tags=["PDF Splitter"])
 app.include_router(pdf_splitter_api_router, tags=["PDF Splitter API"])
 app.include_router(pdf_translation_router, tags=["PDF Translator"])
 app.include_router(pdf_translator_api_router, tags=["PDF Translator API"])
+app.include_router(pdf_compressor_router, tags=["PDF Compressor & Optimizer"])
+app.include_router(pdf_compressor_api_router, tags=["PDF Compressor & Optimizer API"])
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./pandiver.db")
@@ -326,7 +330,11 @@ async def get_api_keys(
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     api_keys = db.query(ApiKey).filter(ApiKey.user_id == current_user.id).all()
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
