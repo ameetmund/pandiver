@@ -67,6 +67,11 @@ const sidebarItems: SidebarItem[] = [
         href: '/dashboard/api/pdf-splitter'
       },
       {
+        id: 'api-pdf-compressor',
+        title: 'PDF Compressor & Optimizer',
+        href: '/dashboard/api/pdf-compressor-optimizer'
+      },
+      {
         id: 'api-pdf-translator',
         title: 'PDF Translator',
         href: '/dashboard/api/pdf-translator'
@@ -94,6 +99,19 @@ const sidebarItems: SidebarItem[] = [
       </svg>
     ),
     href: '/dashboard/pdf-splitter',
+    isActive: true
+  },
+  {
+    id: 'pdf-compressor',
+    title: 'PDF Compressor & Optimizer',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </svg>
+    ),
+    href: '/dashboard/pdf-compressor-optimizer',
     isActive: true
   },
   {

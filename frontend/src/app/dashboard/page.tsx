@@ -31,6 +31,14 @@ const features: Feature[] = [
     isActive: true
   },
   {
+    id: 'pdf-compressor',
+    title: 'PDF Compressor & Optimizer',
+    description: 'Reduce PDF file sizes with multiple compression levels. Optimize images, remove metadata, and achieve up to 70% file size reduction.',
+    icon: '📦',
+    href: '/dashboard/pdf-compressor-optimizer',
+    isActive: true
+  },
+  {
     id: 'pdf-translator',
     title: 'PDF Translator',
     description: 'Translate PDF documents to multiple languages while preserving formatting. Support for 100+ languages with Azure AI.',
@@ -99,7 +107,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">3</p>
+                <p className="text-2xl font-bold text-gray-900">4</p>
                 <p className="text-sm text-gray-600">Active Features</p>
               </div>
             </div>

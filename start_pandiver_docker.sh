@@ -45,6 +45,37 @@ get_compose_command() {
     fi
 }
 
+# Function to clean up Docker resources to free up space
+cleanup_docker_space() {
+    echo -e "${YELLOW}🧹 Cleaning up Docker resources to free up space...${NC}"
+
+    # Get current Docker disk usage before cleanup
+    echo -e "${BLUE}📊 Current Docker disk usage:${NC}"
+    docker system df
+
+    # Remove stopped containers, unused networks, dangling images, and build cache
+    echo -e "${YELLOW}Removing unused Docker resources...${NC}"
+    docker system prune -f > /dev/null 2>&1 || echo "Basic cleanup completed"
+
+    # More aggressive cleanup: remove unused volumes (but preserve active ones)
+    # Only remove volumes that are not currently in use
+    UNUSED_VOLUMES=$(docker volume ls -qf dangling=true)
+    if [ ! -z "$UNUSED_VOLUMES" ]; then
+        echo -e "${YELLOW}Removing unused volumes...${NC}"
+        echo "$UNUSED_VOLUMES" | xargs docker volume rm 2>/dev/null || echo "Some volumes in use, skipped"
+    fi
+
+    # Remove old build cache (keep recent builds)
+    echo -e "${YELLOW}Removing old build cache...${NC}"
+    docker builder prune -f --filter "until=24h" > /dev/null 2>&1 || echo "Build cache cleanup completed"
+
+    # Show disk usage after cleanup
+    echo -e "${GREEN}✅ Docker cleanup completed${NC}"
+    echo -e "${BLUE}📊 Docker disk usage after cleanup:${NC}"
+    docker system df
+    echo ""
+}
+
 # Function to stop any local processes that might conflict
 cleanup_local_processes() {
     echo -e "${YELLOW}🧹 Cleaning up local processes...${NC}"
@@ -266,26 +297,29 @@ main() {
     check_docker_compose
     COMPOSE_CMD=$(get_compose_command)
 
-    # Step 2: Clean up any local processes
+    # Step 2: Clean up Docker resources to free up space
+    cleanup_docker_space
+
+    # Step 3: Clean up any local processes
     cleanup_local_processes
 
-    # Step 3: Setup required files
+    # Step 4: Setup required files
     setup_required_files
 
-    # Step 4: Start Docker services
+    # Step 5: Start Docker services
     start_docker_services "$COMPOSE_CMD"
 
-    # Step 5: Wait for services to be ready
+    # Step 6: Wait for services to be ready
     wait_for_services
 
-    # Step 6: Test API endpoints
+    # Step 7: Test API endpoints
     if test_api_endpoints; then
         echo -e "${GREEN}✅ All tests passed!${NC}"
     else
         echo -e "${YELLOW}⚠️ Some tests failed, but core services are running${NC}"
     fi
 
-    # Step 7: Display final status
+    # Step 8: Display final status
     display_final_status
 }
 
