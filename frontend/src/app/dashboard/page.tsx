@@ -31,6 +31,14 @@ const features: Feature[] = [
     isActive: true
   },
   {
+    id: 'pdf-converter',
+    title: 'PDF ↔ Office Converter',
+    description: 'Convert PDFs to Word, Excel, PowerPoint, and images. Convert Office documents and images to PDF with layout preservation.',
+    icon: '🔄',
+    href: '/dashboard/pdf-converter',
+    isActive: true
+  },
+  {
     id: 'pdf-compressor',
     title: 'PDF Compressor & Optimizer',
     description: 'Reduce PDF file sizes with multiple compression levels. Optimize images, remove metadata, and achieve up to 70% file size reduction.',
@@ -107,7 +115,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">4</p>
+                <p className="text-2xl font-bold text-gray-900">5</p>
                 <p className="text-sm text-gray-600">Active Features</p>
               </div>
             </div>

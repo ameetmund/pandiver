@@ -45,4 +45,7 @@ azure-ai-translation-text==1.0.*  # For Azure AI Translator Text API
 azure-storage-blob==12.19.*  # For Azure Blob Storage integration
 
 # PDF Compression & Optimization dependencies
-pikepdf==8.15.*  # For advanced PDF optimization and compression 
+pikepdf==8.15.*  # For advanced PDF optimization and compression
+
+# Adobe PDF Services API dependencies
+pdfservices-sdk==4.2.*  # For PDF conversion to/from Office formats

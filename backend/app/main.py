@@ -61,6 +61,8 @@ from .pdf_translation_endpoints import router as pdf_translation_router
 from .pdf_translator_api_endpoints import router as pdf_translator_api_router
 from .pdf_compressor_endpoints import router as pdf_compressor_router
 from .pdf_compressor_api_endpoints import router as pdf_compressor_api_router
+from .pdf_converter_endpoints import router as pdf_converter_router
+from .pdf_converter_api_endpoints import router as pdf_converter_api_router
 
 app = FastAPI(
     title="Pandiver PDF Processing API",
@@ -91,6 +93,8 @@ app.include_router(pdf_translation_router, tags=["PDF Translator"])
 app.include_router(pdf_translator_api_router, tags=["PDF Translator API"])
 app.include_router(pdf_compressor_router, tags=["PDF Compressor & Optimizer"])
 app.include_router(pdf_compressor_api_router, tags=["PDF Compressor & Optimizer API"])
+app.include_router(pdf_converter_router, tags=["PDF ↔ Office Converter"])
+app.include_router(pdf_converter_api_router, tags=["PDF ↔ Office Converter API"])
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./pandiver.db")
@@ -335,7 +339,19 @@ async def get_api_keys(
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
+    print(f"DEBUG: API Keys - User ID: {current_user.id}, User email: {current_user.email}")
     api_keys = db.query(ApiKey).filter(ApiKey.user_id == current_user.id).all()
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
+    print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
     print(f"DEBUG: API Keys - Found {len(api_keys)} keys for user {current_user.id}")
